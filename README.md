@@ -13,13 +13,13 @@ This code was used to generate data for the following publications:
 ## Notes
 
 * Contains an embedded version of part of the [IrisTK](http://www.iristk.net/) platform from 8 June 2017 (revision [8440b4cbca9ae6a7231d558b7b289717a2ffb56d](https://github.com/gabriel-skantze/IrisTK/commit/8440b4cbca9ae6a7231d558b7b289717a2ffb56d)), refactored to be buildable via Maven --- see sub-modules `iristk-core`, `iristk-system`, and `iristk-broker`,
-* * Likewise, IrisTK depends on Java wrappers for [PortAudio](http://www.portaudio.com/); The wrappers from version [19.6.0 `pa_stable_v190600_20161030`](https://app.assembla.com/wiki/show/portaudio/pa_stable_v190600_20161030) have been included in the sub-module `jportaudio.`
+  * Likewise, IrisTK depends on Java wrappers for [PortAudio](http://www.portaudio.com/); The wrappers from version [19.6.0 `pa_stable_v190600_20161030`](https://app.assembla.com/wiki/show/portaudio/pa_stable_v190600_20161030) have been included in the sub-module `jportaudio.`
 
 ## Open issues
 
 
 * The logged event times are broken and cannot be relied on to mean anything: They actually mean when the given event was *received* according to the receiving machine's own local time. Create a new `Event` attribute called e.g. `sendTime` and use that for time-syncing instead
-* * Add `submission_time` attr to each game event so that *that* timestamp can be used instead of the `event_time` attr, which is actually the time the client received the event (thereby adding a degree of lag)
+  * Add `submission_time` attr to each game event so that *that* timestamp can be used instead of the `event_time` attr, which is actually the time the client received the event (thereby adding a degree of lag)
 * Add feature for measuring the similarity of two game models, i.e. the similarity of the initial state of two different games (e.g. one seeded for "1" vs. one seeded for "2")
 * Add timer which stops the game (and recording) after e.g. 15 minutes
 * Add error handling for re-sending an event if the connection is lost (e.g. implement an "event received" event reply which the sending client waits for)
