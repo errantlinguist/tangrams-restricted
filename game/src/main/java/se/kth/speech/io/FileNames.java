@@ -33,8 +33,22 @@ import com.google.common.collect.Maps;
  */
 public final class FileNames {
 
+	/**
+	 * A {@link Pattern} matching characters which are invalid as parts of
+	 * either Windows or POSIX-style filenames.
+	 *
+	 * @see <a href=
+	 *      "http://stackoverflow.com/a/894133/1391325">StackOverflow</a>
+	 */
 	public static final Pattern ILLEGAL_CHAR_PATTERN;
 
+	/**
+	 * An array of characters which are invalid as parts of either Windows or
+	 * POSIX-style filenames.
+	 *
+	 * @see <a href=
+	 *      "http://stackoverflow.com/a/894133/1391325">StackOverflow</a>
+	 */
 	public static final char[] ILLEGAL_CHARACTERS;
 
 	/**
@@ -79,6 +93,20 @@ public final class FileNames {
 		return result;
 	}
 
+	/**
+	 * Replaces characters in a given string which are
+	 * {@link FileNames#ILLEGAL_CHARACTERS invalid either as Windows or as
+	 * POSIX-style filenames}, i.e.&nbsp;as single path components.
+	 *
+	 * @param fileName
+	 *            The filename to sanitize,
+	 *            e.g.&nbsp;{@code "weird|filename.txt"} for a file with the
+	 *            path {@code "/home/users/bob/Documents/weird|filename.txt"}.
+	 * @param replacement
+	 *            The {@link String} to use as a replacement.
+	 * @return A {@link String} with all invalid characters replaced by the
+	 *         given replacement.
+	 */
 	public static String sanitize(final CharSequence fileName, final String replacement) {
 		return ILLEGAL_CHAR_PATTERN.matcher(fileName).replaceAll(replacement);
 	}
