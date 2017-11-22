@@ -138,7 +138,9 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 	private static Map<String, Path> createSubjectImgInfoFileMap(final Collection<Path> files) {
 		final Map<String, Path> result = Maps.newHashMapWithExpectedSize(Math.min(files.size(), 2));
 		for (final Path file : files) {
-			final String filenameStr = file.getFileName().toString();
+			final Path fileName = file.getFileName();
+			assert fileName != null;
+			final String filenameStr = fileName.toString();
 			LOGGER.debug("Testing filename \"{}\".", filenameStr);
 			final Matcher imgInfoFilenameMatcher = IMG_INFO_FILENAME_PATTERN.matcher(filenameStr);
 			if (imgInfoFilenameMatcher.matches()) {
