@@ -70,10 +70,11 @@
 		<profile>
 			<id>analysis</id>
 			<modules>
-				<module>iristk-core</module>
-				<module>hat</module>
-				<module>game</module>
 				<module>analysis</module>
+				<module>client-analysis</module>
+				<module>game</module>
+				<module>hat</module>
+				<module>iristk-core</module>
 			</modules>
 		</profile>
 		<profile>
