@@ -79,17 +79,14 @@ public final class RandomCollectionElementChooser {
 
 	/**
 	 * <strong>NOTE:</strong> For {@link Collection} instances which do not
-	 * implement both {@link List} and {@link RandomAccess}, the complexity of
-	 * this method is linear to the {@link Collection#size() size} of the given
-	 * {@link Collection}.
+	 * implement both {@link List} and {@link RandomAccess}, the worst-case
+	 * complexity of this method is linear to the {@link Collection#size() size}
+	 * of the given {@code Collection}.
 	 *
 	 * @param <T>
 	 *            The type of the element returned.
 	 * @param coll
 	 *            The {@code Collection} to get a random element from.
-	 * @param random
-	 *            The {@link Random} instance to use for getting a random
-	 *            element.
 	 * @return A random element.
 	 */
 	public <T> T getRandomElement(final Collection<? extends T> coll) {
@@ -109,14 +106,36 @@ public final class RandomCollectionElementChooser {
 		return result;
 	}
 
+	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
 	public int getRandomElement(final int[] array) {
 		return array[random.nextInt(array.length)];
 	}
 
+	/**
+	 * <strong>NOTE:</strong> For {@link List} instances which do not implement
+	 * {@link RandomAccess}, the worst-case complexity of this method is linear
+	 * to the {@link List#size() size} of the given {@code List}.
+	 *
+	 * @param list
+	 *            The {@code List} to get a random element from.
+	 * @return A random element.
+	 */
 	public <T> T getRandomElement(final List<? extends T> list) {
 		return list.get(random.nextInt(list.size()));
 	}
 
+	/**
+	 * @param <T>
+	 *            The type of the element returned.
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
 	public <T> T getRandomElement(final T[] array) {
 		return array[random.nextInt(array.length)];
 	}
