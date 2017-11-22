@@ -33,15 +33,11 @@ public class RuntimeJAXBException extends RuntimeException {
 		super(cause);
 	}
 
-	public RuntimeJAXBException(final String message) {
-		super(message);
-	}
-
-	public RuntimeJAXBException(final String message, final JAXBException cause) {
+	public RuntimeJAXBException(final String message, final JAXBException cause) { // NO_UCD (unused code)
 		super(message, cause);
 	}
 
-	public RuntimeJAXBException(final String message, final JAXBException cause, final boolean enableSuppression,
+	public RuntimeJAXBException(final String message, final JAXBException cause, final boolean enableSuppression, // NO_UCD (unused code)
 			final boolean writableStackTrace) {
 		super(message, cause, enableSuppression, writableStackTrace);
 	}
