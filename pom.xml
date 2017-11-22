@@ -53,7 +53,7 @@
 
 	<profiles>
 		<profile>
-			<id>all</all>
+			<id>all</id>
 			<activation>
 				<activeByDefault>true</activeByDefault>
 			</activation>
