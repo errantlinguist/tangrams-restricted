@@ -121,7 +121,7 @@ public final class RandomCollectionElementChooser {
 	 */
 	public <T> T getRandomElement(final Collection<? extends T> coll) {
 		final T result;
-		if (coll instanceof RandomAccess && coll instanceof List) {
+		if (coll instanceof List) {
 			final List<? extends T> downcast = (List<? extends T>) coll;
 			result = getRandomElement(downcast);
 		} else {
