@@ -7,8 +7,9 @@
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-
 	<artifactId>game</artifactId>
+	
+	<name>tangrams-restricted game</name>
 	<description>The game mechanics.</description>
 
 	<dependencies>

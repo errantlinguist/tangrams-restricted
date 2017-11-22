@@ -7,7 +7,8 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	<artifactId>client-analysis</artifactId>
-	<name>client-analysis</name>
+	
+	<name>tangrams-restricted client analysis</name>
 	<description>Analysis tools which rely on the client submodule and thus cannot be built using traditional Maven targets.</description>
 
 	<dependencies>

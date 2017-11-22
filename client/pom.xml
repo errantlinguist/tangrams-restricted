@@ -7,8 +7,9 @@
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-
 	<artifactId>client</artifactId>
+
+	<name>tangrams-restricted client</name>
 	<description>The game client.</description>
 
 	<properties>

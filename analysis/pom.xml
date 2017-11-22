@@ -7,8 +7,9 @@
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-
 	<artifactId>analysis</artifactId>
+
+	<name>tangrams-restricted analysis</name>
 	<description>Tools for offline analysis of data collected from the tangrams game.</description>
 
 	<properties>

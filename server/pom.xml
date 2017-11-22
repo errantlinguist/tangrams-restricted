@@ -7,8 +7,9 @@
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-
 	<artifactId>server</artifactId>
+	
+	<name>tangrams-restricted server</name>
 	<description>The game server.</description>
 
 	<properties>
