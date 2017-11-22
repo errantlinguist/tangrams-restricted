@@ -32,20 +32,20 @@ public final class RandomCollectionElementChooser {
 	/**
 	 * The {@link Random} instance used for randomization.
 	 */
-	private final Random rnd;
+	private final Random random;
 
 	/**
 	 *
-	 * @param rnd
+	 * @param random
 	 *            The {@link Random} instance to use for randomization.
 	 */
-	public RandomCollectionElementChooser(final Random rnd) {
-		this.rnd = rnd;
+	public RandomCollectionElementChooser(final Random random) {
+		this.random = random;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -60,14 +60,21 @@ public final class RandomCollectionElementChooser {
 			return false;
 		}
 		final RandomCollectionElementChooser other = (RandomCollectionElementChooser) obj;
-		if (rnd == null) {
-			if (other.rnd != null) {
+		if (random == null) {
+			if (other.random != null) {
 				return false;
 			}
-		} else if (!rnd.equals(other.rnd)) {
+		} else if (!random.equals(other.random)) {
 			return false;
 		}
 		return true;
+	}
+
+	/**
+	 * @return The {@link Random} instance used for randomization.
+	 */
+	public Random getRandom() {
+		return random;
 	}
 
 	/**
@@ -80,7 +87,7 @@ public final class RandomCollectionElementChooser {
 	 *            The type of the element returned.
 	 * @param coll
 	 *            The {@code Collection} to get a random element from.
-	 * @param rnd
+	 * @param random
 	 *            The {@link Random} instance to use for getting a random
 	 *            element.
 	 * @return A random element.
@@ -92,7 +99,7 @@ public final class RandomCollectionElementChooser {
 			result = getRandomElement(downcast);
 		} else {
 			final Iterator<? extends T> iter = coll.iterator();
-			final int idx = rnd.nextInt(coll.size());
+			final int idx = random.nextInt(coll.size());
 			// Start at one because the last-iterated element should be returned
 			for (int i = 1; i < idx; ++i) {
 				iter.next();
@@ -103,47 +110,40 @@ public final class RandomCollectionElementChooser {
 	}
 
 	public int getRandomElement(final int[] array) {
-		return array[rnd.nextInt(array.length)];
+		return array[random.nextInt(array.length)];
 	}
 
 	public <T> T getRandomElement(final List<? extends T> list) {
-		return list.get(rnd.nextInt(list.size()));
+		return list.get(random.nextInt(list.size()));
 	}
 
 	public <T> T getRandomElement(final T[] array) {
-		return array[rnd.nextInt(array.length)];
-	}
-
-	/**
-	 * @return The {@link Random} instance used for randomization.
-	 */
-	public Random getRnd() {
-		return rnd;
+		return array[random.nextInt(array.length)];
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + (rnd == null ? 0 : rnd.hashCode());
+		result = prime * result + (random == null ? 0 : random.hashCode());
 		return result;
 	}
 
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		final StringBuilder builder = new StringBuilder(64);
-		builder.append("RandomCollectionElementChooser [rnd=");
-		builder.append(rnd);
+		builder.append("RandomCollectionElementChooser [random=");
+		builder.append(random);
 		builder.append("]");
 		return builder.toString();
 	}
