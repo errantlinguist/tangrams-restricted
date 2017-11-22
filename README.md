@@ -4,7 +4,7 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 * **Since:** 2017-03-02
 * **Author:** Todd Shore
 * **Website:**  https://github.com/errantlinguist/tangrams-restricted
-* **Licensing:** Copyright 2016 Todd Shore. Licensed for distribution under the GNU General Public License 3.0: See the file `LICENSE`. Selected audio content, by Mike Koenig, is licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+* **Licensing:** Copyright 2016 Todd Shore. Licensed for distribution under the GNU General Public License 3.0: See the file `NOTICE` and `LICENSE`. Selected audio content, by Mike Koenig, is licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 
 This code was used to generate data for the following publications:
 
@@ -14,6 +14,7 @@ This code was used to generate data for the following publications:
 
 * Contains an embedded version of part of the [IrisTK](http://www.iristk.net/) platform from 8 June 2017 (revision [8440b4cbca9ae6a7231d558b7b289717a2ffb56d](https://github.com/gabriel-skantze/IrisTK/commit/8440b4cbca9ae6a7231d558b7b289717a2ffb56d)), refactored to be buildable via Maven --- see sub-modules `iristk-core`, `iristk-system`, and `iristk-broker`.
   * Likewise, IrisTK depends on Java wrappers for [PortAudio](http://www.portaudio.com/); The wrappers from version [19.6.0 `pa_stable_v190600_20161030`](https://app.assembla.com/wiki/show/portaudio/pa_stable_v190600_20161030) have been included in the sub-module `jportaudio`.
+* Contains an XSD file for generating classes for parsing XML annotation files in the format used by the [Higgins Annotation Tool (HAT)](http://www.speech.kth.se/hat/), copyright 2009--2011 [Gabriel Skantze](mailto:gabriel@speech.kth.se).
 
 ## Open issues
 

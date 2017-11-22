@@ -8,7 +8,7 @@
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
 	
-	<artifactId>hat</artifactId>
+	<artifactId>HAT</artifactId>
 	<description>Tools for manipulating XML files created by the Higgins Annotation Tool (http://www.speech.kth.se/hat/).</description>
 
 	<properties>

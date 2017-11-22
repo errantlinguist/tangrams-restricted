@@ -17,7 +17,13 @@
 			<name>GNU General Public License, Version 3</name>
 			<url>https://www.gnu.org/licenses/gpl-3.0.html</url>
 			<distribution>repo</distribution>
-			<comments>The license for the entire project.</comments>
+			<comments>The license for the entire project, being the most restrictive license of all included in this project.</comments>
+		</license>
+		<license>
+			<name>PortAudio License for V19</name>
+			<url>http://www.portaudio.com/license.html</url>
+			<distribution>repo</distribution>
+			<comments>The license for the original PortAudio code.</comments>
 		</license>
 		<license>
 			<name>Creative Commons Attribution 3.0 Unported License</name>
