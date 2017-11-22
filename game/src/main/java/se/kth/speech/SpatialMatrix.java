@@ -381,13 +381,6 @@ public final class SpatialMatrix<E> {
 		elementPlacements.put(element, target);
 	}
 
-	public void putValidMoves(final Map<SpatialRegion, Collection<? super SpatialRegion>> validMoves,
-			final SpatialRegion movablePieceRegion) {
-		final Collection<? super SpatialRegion> possibleMoveRegions = validMoves.computeIfAbsent(movablePieceRegion,
-				regionSetFactory);
-		addValidMoves(possibleMoveRegions, movablePieceRegion);
-	}
-
 	/*
 	 * (non-Javadoc)
 	 *

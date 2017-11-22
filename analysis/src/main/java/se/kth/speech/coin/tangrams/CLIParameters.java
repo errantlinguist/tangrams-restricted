@@ -22,17 +22,9 @@ import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-import java.util.HashSet;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.stream.Stream;
 
-import org.apache.commons.cli.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,41 +39,6 @@ public final class CLIParameters {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(CLIParameters.class);
 
-	public static Set<String> parseAppCtxDefPaths(final String[] appCtxLocs) throws IOException {
-		final Set<String> result = new HashSet<>();
-		for (final String appCtxLoc : appCtxLocs) {
-			final Path appCtxPath = Paths.get(appCtxLoc);
-			try (Stream<Path> childPaths = Files.walk(appCtxPath, FileVisitOption.FOLLOW_LINKS)) {
-				final Stream<Path> xmlFilePaths = childPaths.filter(inpath -> {
-					boolean shouldBeParsed = false;
-					try {
-						final String contentType = Files.probeContentType(inpath);
-						shouldBeParsed = contentType != null && contentType.endsWith("/xml");
-					} catch (final IOException e) {
-						LOGGER.warn("A(n) {} occurred while probing the content type of \"{}\"; Skipping file.",
-								new Object[] { e.getClass().getSimpleName(), inpath }, e);
-						shouldBeParsed = true;
-					}
-					return shouldBeParsed;
-				});
-				xmlFilePaths.map(Path::toAbsolutePath).map(Path::toString).forEach(result::add);
-			}
-		}
-		return result;
-	}
-
-	public static OptionalInt parseIterCount(final Number optVal) throws ParseException {
-		final OptionalInt result;
-		if (optVal == null) {
-			result = OptionalInt.empty();
-		} else {
-			final int val = optVal.intValue();
-			LOGGER.info("Will run {} training/testing iteration(s).", val);
-			result = OptionalInt.of(val);
-		}
-		return result;
-	}
-
 	public static PrintWriter parseOutpath(final File outfile) throws IOException {
 		return parseOutpath(outfile, DEFAULT_OUTPUT_ENCODING);
 	}
@@ -95,17 +52,6 @@ public final class CLIParameters {
 			LOGGER.info("Output file path is \"{}\".", outfile);
 			result = new PrintWriter(Files.newBufferedWriter(outfile.toPath(), outputEncoding,
 					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING));
-		}
-		return result;
-	}
-
-	public static String parseOutputType(final String outputFileExtension) {
-		final String result;
-		final char extPrefix = '.';
-		if (outputFileExtension.charAt(0) == extPrefix) {
-			result = outputFileExtension;
-		} else {
-			result = extPrefix + outputFileExtension;
 		}
 		return result;
 	}

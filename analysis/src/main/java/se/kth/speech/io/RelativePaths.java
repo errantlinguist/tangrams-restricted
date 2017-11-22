@@ -16,7 +16,6 @@
 */
 package se.kth.speech.io;
 
-import java.io.File;
 import java.nio.file.Path;
 
 /**
@@ -25,16 +24,6 @@ import java.nio.file.Path;
  *
  */
 public final class RelativePaths {
-
-	public static File resolveIfNotAbsolute(final File path, final File defaultBasePath) {
-		final File result;
-		if (path.isAbsolute()) {
-			result = path;
-		} else {
-			result = new File(defaultBasePath, path.toString());
-		}
-		return result;
-	}
 
 	public static Path resolveIfNotAbsolute(final Path path, final Path defaultBasePath) {
 		final Path result;

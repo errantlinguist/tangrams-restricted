@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,6 +68,16 @@ public final class SpatialMatrixTest {
 	@DataPoints("gridDims")
 	public static final List<int[]> TEST_DIMENSIONS;
 
+	private static final BiFunction<Object, Integer, Integer> NULLABLE_INTEGER_VALUE_INCREMENTER = (key, oldValue) -> {
+		final Integer newValue;
+		if (oldValue == null) {
+			newValue = 1;
+		} else {
+			newValue = oldValue + 1;
+		}
+		return newValue;
+	};
+
 	static {
 		TEST_DIMENSIONS = Arrays.asList(new int[] { 1, 2 }, new int[] { 3, 3 }, new int[] { 5, 2 },
 				new int[] { 10, 11 }, new int[] { 10, 50 });
@@ -107,8 +118,7 @@ public final class SpatialMatrixTest {
 
 		final SpatialRegion totalRegion = matrix.getRegion(0, xUpperBound, 0, yUpperBound);
 		final Map<Integer, Integer> cellValueCounts = Maps.newHashMapWithExpectedSize(2);
-		matrix.getCells(totalRegion)
-				.forEach(cell -> cellValueCounts.compute(cell, ComparableValueMaps.NULLABLE_INTEGER_VALUE_INCREMENTER));
+		matrix.getCells(totalRegion).forEach(cell -> cellValueCounts.compute(cell, NULLABLE_INTEGER_VALUE_INCREMENTER));
 		final Integer pieceOccupiedCellCount = cellValueCounts.get(pieceId);
 		Assert.assertNotNull(pieceOccupiedCellCount);
 		final int regionArea = IntArrays.product(r.getDimensions());

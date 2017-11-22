@@ -18,7 +18,6 @@ package se.kth.speech.coin.tangrams.view;
 
 import java.awt.Component;
 import java.io.File;
-import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.regex.Pattern;
 
@@ -33,34 +32,6 @@ import javax.swing.JOptionPane;
 public final class UserPrompts {
 
 	private static final Pattern EMPTY_OR_WHITESPACE_PATTERN = Pattern.compile("\\s*");
-
-	public static Optional<BigDecimal> promptDecimalFraction(final String message) {
-		return promptDecimalFraction(message, null);
-	}
-
-	public static Optional<BigDecimal> promptDecimalFraction(final String message,
-			final Component dialogParentComponent) {
-		Optional<BigDecimal> result = Optional.empty();
-		boolean parsedInput = false;
-		do {
-			final String input = JOptionPane.showInputDialog(dialogParentComponent, message);
-			// If the user cancels input, break out of the loop
-			if (input == null) {
-				parsedInput = true;
-			} else {
-				// Pre-process and validate the input before assigning it as the
-				// result
-				try {
-					result = Optional.of(new BigDecimal(input));
-					parsedInput = true;
-				} catch (final NumberFormatException e) {
-					JOptionPane.showMessageDialog(dialogParentComponent,
-							"The input could not be parsed as a decimal fraction.", "Error", JOptionPane.ERROR_MESSAGE);
-				}
-			}
-		} while (!parsedInput);
-		return result;
-	}
 
 	public static Optional<File> promptFile(final JFileChooser chooser) {
 		return promptFile(chooser, null);
