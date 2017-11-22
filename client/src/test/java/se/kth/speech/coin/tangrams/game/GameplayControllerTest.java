@@ -18,18 +18,18 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.junit.Assert;
 import org.junit.Rule;
-import org.junit.experimental.theories.DataPoints;
-import org.junit.experimental.theories.Theories;
-import org.junit.experimental.theories.Theory;
+import org.junit.Test;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
 import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.Matrix;
@@ -47,31 +47,19 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  * @since 24 Mar 2017
  *
  */
-@RunWith(Theories.class)
 public final class GameplayControllerTest {
 
-	// @DataPoints("historyLengths")
-	// public static final int[] TEST_HISTORY_LENGTHS;
-
-	@DataPoints("matrices")
-	public static final Collection<SpatialMatrix<Integer>> TEST_MODELS;
-
-	@DataPoints("seeds")
-	public static final long[] TEST_SEEDS;
+	public static final long[] TEST_SEEDS = new long[] { 1, 56, 3 };
 
 	private static final GameManagementClient CLIENT = Mockito.mock(GameManagementClient.class);
 
+	private static final Logger LOGGER = LoggerFactory.getLogger(GameplayControllerTest.class);
+
 	private static final Function<SpatialRegion, Area2D> REGION_AREA_FACTORY = new SpatialRegionAreaFactory();
 
-	static {
-		final Random rnd = new Random();
-		TEST_SEEDS = rnd.longs().distinct().limit(5).toArray();
-		// TEST_HISTORY_LENGTHS = rnd.ints(0, 10).distinct().limit(5).toArray();
-	}
-
-	static {
+	private static List<SpatialMatrix<Integer>> createMatrices() {
 		final Collection<MatrixTests.Description> testDescs = MatrixTests.getNamedTestDescs().values();
-		TEST_MODELS = testDescs.stream().map(desc -> new Matrix<>(desc.getValues(), desc.getColCount()))
+		return testDescs.stream().map(desc -> new Matrix<>(desc.getValues(), desc.getColCount()))
 				.map(matrix -> SpatialMatrix.Factory.STABLE_ITER_ORDER.create(matrix))
 				.collect(Collectors.toCollection(() -> new ArrayList<>(testDescs.size())));
 	}
@@ -91,25 +79,30 @@ public final class GameplayControllerTest {
 		return result;
 	}
 
-	@Rule
-	public final ExpectedException thrown = ExpectedException.none();
+	private static void submitTurnComplete(final Controller controller) {
+		LOGGER.info("Submitting turn complete signal.");
+		try {
+			controller.submitTurnComplete();
+		} catch (final Exception e) {
+			LOGGER.error("Exception on submitting turn.", e);
+			throw e;
+		}
+		LOGGER.error("Successfuly sent turn complete signal.");
+	}
 
-	@Theory
-	public void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
+	private static void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		Assert.assertEquals(0, controller.getTurnCount());
 	}
 
-	@Theory
-	public void testGetTurnCountOneTurn(final SpatialMatrix<Integer> model, final long seed) {
+	private static void testGetTurnCountOneTurn(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		submitRandomTurn(controller, new RandomCollectionElementChooser(rnd));
 		Assert.assertEquals(1, controller.getTurnCount());
 	}
 
-	@Theory
-	public void testNotifyPlayerSelectionPositive(final SpatialMatrix<Integer> model, final long seed) {
+	private static void testNotifyPlayerSelectionPositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model,
@@ -123,8 +116,7 @@ public final class GameplayControllerTest {
 				new Selection(pieceId, REGION_AREA_FACTORY.apply(sourceRegion)));
 	}
 
-	@Theory
-	public void testSubmitNextMovePositive(final SpatialMatrix<Integer> model, final long seed) {
+	private static void testSubmitNextMovePositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model,
@@ -136,11 +128,10 @@ public final class GameplayControllerTest {
 		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
 		controller.notifyPlayerSelection("otherPlayer",
 				new Selection(pieceId, REGION_AREA_FACTORY.apply(sourceRegion)));
-		controller.submitTurnComplete();
+		submitTurnComplete(controller);
 	}
 
-	@Theory
-	public void testSubmitTurnCompletePositive(final SpatialMatrix<Integer> model, final long seed) {
+	private static void testSubmitTurnCompletePositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
 		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model,
@@ -152,7 +143,55 @@ public final class GameplayControllerTest {
 		controller.submitNextMove(sourceRegion, targetRegion, pieceId);
 		controller.notifyPlayerSelection("otherPlayer",
 				new Selection(pieceId, REGION_AREA_FACTORY.apply(sourceRegion)));
-		controller.submitTurnComplete();
+		submitTurnComplete(controller);
+	}
+
+	@Rule
+	public final ExpectedException thrown = ExpectedException.none();
+
+	@Test
+	public void testGetTurnCountNoMoves() {
+		for (final long seed : TEST_SEEDS) {
+			for (final SpatialMatrix<Integer> matrix : createMatrices()) {
+				testGetTurnCountNoMoves(matrix, seed);
+			}
+		}
+	}
+
+	@Test
+	public void testGetTurnCountOneTurn() {
+		for (final long seed : TEST_SEEDS) {
+			for (final SpatialMatrix<Integer> matrix : createMatrices()) {
+				testGetTurnCountOneTurn(matrix, seed);
+			}
+		}
+	}
+
+	@Test
+	public void testNotifyPlayerSelectionPositive() {
+		for (final long seed : TEST_SEEDS) {
+			for (final SpatialMatrix<Integer> matrix : createMatrices()) {
+				testNotifyPlayerSelectionPositive(matrix, seed);
+			}
+		}
+	}
+
+	@Test
+	public void testSubmitNextMovePositive() {
+		for (final long seed : TEST_SEEDS) {
+			for (final SpatialMatrix<Integer> matrix : createMatrices()) {
+				testSubmitNextMovePositive(matrix, seed);
+			}
+		}
+	}
+
+	@Test
+	public void testSubmitTurnCompletePositive() {
+		for (final long seed : TEST_SEEDS) {
+			for (final SpatialMatrix<Integer> matrix : createMatrices()) {
+				testSubmitTurnCompletePositive(matrix, seed);
+			}
+		}
 	}
 
 }
