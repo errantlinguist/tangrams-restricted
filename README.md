@@ -14,7 +14,7 @@ This code was used to generate data for the following publications:
 
 * Contains an embedded version of part of the [IrisTK](http://www.iristk.net/) platform from 8 June 2017 (revision [8440b4cbca9ae6a7231d558b7b289717a2ffb56d](https://github.com/gabriel-skantze/IrisTK/commit/8440b4cbca9ae6a7231d558b7b289717a2ffb56d)), refactored to be buildable via Maven --- see sub-modules `iristk-core`, `iristk-system`, and `iristk-broker`.
   * Likewise, IrisTK depends on Java wrappers for [PortAudio](http://www.portaudio.com/); The wrappers from version [19.6.0 `pa_stable_v190600_20161030`](https://app.assembla.com/wiki/show/portaudio/pa_stable_v190600_20161030) have been included in the sub-module `jportaudio`.
-* Contains an XSD file for generating classes for parsing XML annotation files in the format used by the [Higgins Annotation Tool (HAT)](http://www.speech.kth.se/hat/), copyright 2009--2011 [Gabriel Skantze](mailto:gabriel@speech.kth.se).
+* Contains an XSD file for generating classes for parsing XML annotation files in the format used by the [Higgins Annotation Tool (HAT)](http://www.speech.kth.se/hat/), copyright 2009&ndash;2011 [Gabriel Skantze](mailto:gabriel@speech.kth.se).
 
 ## Open issues
 
