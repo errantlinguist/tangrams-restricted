@@ -94,8 +94,10 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			public Option get() {
 				final Cleaning[] possibleVals = Cleaning.values();
 				return Option.builder(optName).longOpt("cleaning")
-						.desc("A list of cleaning method(s) to use. Possible values: " + Arrays.toString(possibleVals))
-						.hasArg().argName("names").required().build();
+						.desc(String.format(
+								"A list of cleaning method(s) to use. Possible values: %s; Default values: %s ",
+								Arrays.toString(possibleVals), DEFAULT_CLEANING_METHOD_SET))
+						.hasArg().argName("names").build();
 			}
 		},
 		OUTFILE_NAME("n") {
@@ -141,20 +143,21 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			}
 		};
 
+		private static final Set<Cleaning> DEFAULT_CLEANING_METHOD_SET = EnumSet.allOf(Cleaning.class);
+
 		private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
 
 		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
-			final String[] names = parseOptEnumValueNames(cl, Parameter.CLEANING.optName);
-			final Stream<Cleaning> insts = names == null ? Stream.empty()
-					: Arrays.stream(names).map(String::trim).filter(str -> !str.isEmpty()).map(Cleaning::valueOf);
-			final EnumSet<Cleaning> result = EnumSet.noneOf(Cleaning.class);
-			insts.forEach(result::add);
+			final Set<Cleaning> result;
+			final String optValue = cl.getOptionValue(Parameter.CLEANING.optName);
+			if (optValue == null) {
+				result = DEFAULT_CLEANING_METHOD_SET;
+			} else {
+				result = EnumSet.noneOf(Cleaning.class);
+				final Stream<Cleaning> insts = MULTI_OPT_VALUE_DELIMITER.splitAsStream(optValue).map(Cleaning::valueOf);
+				insts.forEach(result::add);
+			}
 			return result;
-		}
-
-		private static String[] parseOptEnumValueNames(final CommandLine cl, final String optName) {
-			final String val = cl.getOptionValue(optName);
-			return val == null ? null : MULTI_OPT_VALUE_DELIMITER.split(val);
 		}
 
 		private static TokenFiltering parseTokenFilteringMethod(final CommandLine cl) {
