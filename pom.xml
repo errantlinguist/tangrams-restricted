@@ -50,23 +50,21 @@
 			</roles>
 		</developer>
 	</developers>
+	
+	<modules>
+		<module>analysis</module>
+		<module>client</module>
+		<module>client-analysis</module>
+		<module>game</module>
+		<module>hat</module>
+		<module>iristk-core</module>
+		<module>iristk-broker</module>
+		<module>iristk-system</module>
+		<module>jportaudio</module>
+		<module>server</module>
+	</modules>
 
 	<profiles>
-		<profile>
-			<id>all</id>
-			<modules>
-				<module>analysis</module>
-				<module>client</module>
-				<module>client-analysis</module>
-				<module>game</module>
-				<module>hat</module>
-				<module>iristk-core</module>
-				<module>iristk-broker</module>
-				<module>iristk-system</module>
-				<module>jportaudio</module>
-				<module>server</module>
-			</modules>
-		</profile>
 		<profile>
 			<id>analysis</id>
 			<modules>
