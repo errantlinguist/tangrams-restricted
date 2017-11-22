@@ -74,6 +74,8 @@
 			<id>analysis</id>
 			<modules>
 				<module>analysis</module>
+				<!-- Dependency of client-analysis -->
+				<module>client</module>
 				<module>client-analysis</module>
 				<module>game</module>
 				<module>hat</module>
