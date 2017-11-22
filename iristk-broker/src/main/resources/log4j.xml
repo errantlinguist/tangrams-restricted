@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE log4j:configuration SYSTEM "log4j.dtd">
-<!-- NOTE: The version of log4j slf4j bindings used in this project do not 
+<!-- NOTE: The version of log4j SLF4J bindings used in this project does not 
 	support "*.properties" configuration files. -->
 <log4j:configuration xmlns:log4j='http://jakarta.apache.org/log4j/'>
 
