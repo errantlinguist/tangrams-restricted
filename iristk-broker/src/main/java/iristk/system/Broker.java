@@ -47,7 +47,7 @@ public class Broker extends Thread {
 	private static Logger logger = IrisUtils.getLogger(Broker.class);
 
 	private ServerSocket socket;
-	private HashMap<String,BrokerSystem> systems = new HashMap<String,BrokerSystem>();
+	private HashMap<String,ArrayList<ServerClient>> systems = new HashMap<String,ArrayList<ServerClient>>();
 	private List<BrokerListener> listeners = new ArrayList<>();
 	private int port;
 
@@ -78,7 +78,7 @@ public class Broker extends Thread {
 		}
 	}
 
-	public Map<String,BrokerSystem> getSystems() {
+	public Map<String,ArrayList<ServerClient>> getSystems() {
 		return systems;
 	}
 
@@ -94,7 +94,7 @@ public class Broker extends Thread {
 
 	private synchronized void addClient(ServerClient client) {
 		if (!systems.containsKey(client.ticket))
-			systems.put(client.ticket, new BrokerSystem());
+			systems.put(client.ticket, new ArrayList<>());
 		for (BrokerListener listener : listeners) {
 			listener.clientConnected(client);
 		}
@@ -156,10 +156,6 @@ public class Broker extends Thread {
 		void clientDisconnected(ServerClient client);
 
 		void clientConnected(ServerClient client);
-
-	}
-
-	public class BrokerSystem extends ArrayList<ServerClient> {
 
 	}
 
