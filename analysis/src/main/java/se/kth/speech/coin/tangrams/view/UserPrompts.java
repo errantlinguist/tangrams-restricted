@@ -37,7 +37,7 @@ public final class UserPrompts {
 		return promptFile(chooser, null);
 	}
 
-	public static Optional<File> promptFile(final JFileChooser chooser, final Component parent) {
+	public static Optional<File> promptFile(final JFileChooser chooser, final Component parent) { // NO_UCD (use private)
 		Optional<File> result = Optional.empty();
 		final int returnVal = chooser.showOpenDialog(parent);
 		switch (returnVal) {
