@@ -7,7 +7,7 @@
 		<artifactId>parent</artifactId>
 		<version>0.0.1-SNAPSHOT</version>
 	</parent>
-	
+
 	<artifactId>game</artifactId>
 	<description>The game mechanics.</description>
 
@@ -16,16 +16,13 @@
 			<groupId>${project.groupId}</groupId>
 			<artifactId>hat</artifactId>
 			<version>${project.version}</version>
-		</dependency>		
-	
-		<dependency>
-			<groupId>commons-io</groupId>
-			<artifactId>commons-io</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.eclipsesource.minimal-json</groupId>
-			<artifactId>minimal-json</artifactId>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>iristk-core</artifactId>
+			<version>${project.version}</version>
 		</dependency>
+
 		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>

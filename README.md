@@ -10,10 +10,9 @@ This code was used to generate data for the following publications:
 
 * Todd Shore and Gabriel Skantze. 2017. ["Enhancing Reference Resolution in Dialogue Using Participant Feedback"](http://dx.doi.org/10.21437/GLU.2017-16) in Giampiero Salvi and St&eacute;phane Dupont (eds.) [*Proceedings of the GLU2017 International Workshop on Grounding Language Understanding*](http://dx.doi.org/10.21437/GLU.2017), pp. 78&ndash;82.
 
-## Requirements
+## Notes
 
-* For the `client` and `server` modules, [IrisTK](http://iristk.net/) version 2017.01.27+. Currently the only way to include this is to import both this project and that of IrisTK into Eclipse and then to add the IrisTK project as a "required project on the build path" to the Eclipse projects representing both modules. [A fork of IrisTK](https://github.com/errantlinguist/IrisTK) contains the exact same classes which had to be included in this Maven project in order to get the whole thing to work together (such as the functionalities in e.g.&nbsp;`analysis`), so it's best to use that fork for the Eclipse IrisTK project to use as a dependency so that there's no possibility of getting two different versions of the same class on the classpath.
-* When using tokenizing powered by [the Google Cloud Natural Language API](https://cloud.google.com/natural-language/), the system environment variable `GOOGLE_APPLICATION_CREDENTIALS` must point to [a valid Google API credentials file](https://developers.google.com/identity/protocols/application-default-credentials#howtheywork).
+Contains an embedded version of part of the [IrisTK](http://www.iristk.net/) platform from 8 June 2017 (revision [8440b4cbca9ae6a7231d558b7b289717a2ffb56d](https://github.com/gabriel-skantze/IrisTK/commit/8440b4cbca9ae6a7231d558b7b289717a2ffb56d)).
 
 ## Open issues
 

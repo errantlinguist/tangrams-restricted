@@ -13,13 +13,18 @@
 
 	<properties>
 		<batik.version>1.8</batik.version>
-		<main-class>se.kth.speech.coin.tangrams.TangramsClient</main-class>
+		<mainClass>se.kth.speech.coin.tangrams.TangramsClient</mainClass>
 	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>${project.groupId}</groupId>
 			<artifactId>game</artifactId>
+			<version>${project.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>${project.groupId}</groupId>
+			<artifactId>iristk-system</artifactId>
 			<version>${project.version}</version>
 		</dependency>
 
@@ -75,26 +80,22 @@
 				<artifactId>maven-compiler-plugin</artifactId>
 			</plugin>
 			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<addClasspath>true</addClasspath>
+							<mainClass>${mainClass}</mainClass>
+						</manifest>
+					</archive>
+				</configuration>
+			</plugin>
+			<plugin>
 				<artifactId>maven-javadoc-plugin</artifactId>
 			</plugin>
 			<plugin>
 				<artifactId>maven-source-plugin</artifactId>
 			</plugin>
 		</plugins>
-
-		<resources>
-			<resource>
-				<!-- NOTE: This must be set explicitly because just having the additional resource below overrides Maven's defaults -->
-				<directory>src/main/resources</directory>
-				<filtering>false</filtering>
-			</resource>
-			<resource>
-				<directory />
-				<filtering>true</filtering>
-				<includes>
-					<include>**/project.properties</include>
-				</includes>
-			</resource>
-		</resources>
 	</build>
 </project>

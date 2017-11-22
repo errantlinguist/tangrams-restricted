@@ -10,7 +10,7 @@
 
 	<name>tangrams-restricted</name>
 	<description>A game for organizing tangrams in the fewest number of moves using two players.</description>
-	<url>https://www.kth.se/csc/forskning/tmh/research</url>
+	<url>http://www.coinssf.se/</url>
 
 	<licenses>
 		<license>
@@ -27,6 +27,12 @@
 		</license>
 	</licenses>
 
+	<scm>
+		<connection>scm:git:git://github.com/errantlinguist/tangrams-restricted.git</connection>
+		<developerConnection>scm:git:git@github.com:errantlinguist/tangrams-restricted.git</developerConnection>
+		<url>https://github.com/errantlinguist/tangrams-restricted</url>
+	</scm>
+
 	<developers>
 		<developer>
 			<id>tshore</id>
@@ -39,6 +45,19 @@
 		</developer>
 	</developers>
 
+	<modules>
+		<module>analysis</module>
+		<module>client</module>
+		<module>client-analysis</module>
+		<module>game</module>
+		<module>hat</module>
+		<module>iristk-core</module>
+		<module>iristk-broker</module>
+		<module>iristk-system</module>
+		<module>jportaudio</module>
+		<module>server</module>
+	</modules>
+
 	<profiles>
 		<profile>
 			<id>all</id>
@@ -48,6 +67,10 @@
 				<module>client-analysis</module>
 				<module>game</module>
 				<module>hat</module>
+				<module>iristk-core</module>
+				<module>iristk-broker</module>
+				<module>iristk-system</module>
+				<module>jportaudio</module>
 				<module>server</module>
 			</modules>
 		</profile>
@@ -59,7 +82,41 @@
 			<modules>
 				<module>analysis</module>
 				<module>game</module>
+				<module>iristk-core</module>
 				<module>hat</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>client</id>
+			<modules>
+				<module>game</module>
+				<module>client</module>
+				<module>hat</module>
+				<module>iristk-core</module>
+				<module>iristk-broker</module>
+				<module>iristk-system</module>
+				<module>jportaudio</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>iristk-broker</id>
+			<modules>
+				<module>iristk-core</module>
+				<module>iristk-broker</module>
+				<module>iristk-system</module>
+				<module>jportaudio</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>server</id>
+			<modules>
+				<module>game</module>
+				<module>hat</module>
+				<module>iristk-core</module>
+				<module>iristk-broker</module>
+				<module>iristk-system</module>
+				<module>jportaudio</module>
+				<module>server</module>
 			</modules>
 		</profile>
 	</profiles>
@@ -85,7 +142,8 @@
 			<dependency>
 				<groupId>com.eclipsesource.minimal-json</groupId>
 				<artifactId>minimal-json</artifactId>
-				<!-- NOTE: IrisTK actually uses 0.9.3 but that version isn't publicly available anymore -->
+				<!-- NOTE: IrisTK actually uses 0.9.3 but that version isn't publicly 
+					available anymore -->
 				<version>0.9.4</version>
 			</dependency>
 			<dependency>
@@ -142,6 +200,10 @@
 						<source>${javac.version}</source>
 						<target>${javac.version}</target>
 					</configuration>
+				</plugin>
+				<plugin>
+					<artifactId>maven-jar-plugin</artifactId>
+					<version>3.0.2</version>
 				</plugin>
 				<plugin>
 					<artifactId>maven-javadoc-plugin</artifactId>

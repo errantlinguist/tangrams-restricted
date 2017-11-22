@@ -80,14 +80,14 @@ public final class GameplayControllerTest {
 	}
 
 	private static void submitTurnComplete(final Controller controller) {
-		LOGGER.info("Submitting turn complete signal.");
+		LOGGER.debug("Submitting turn complete signal.");
 		try {
 			controller.submitTurnComplete();
 		} catch (final Exception e) {
 			LOGGER.error("Exception on submitting turn.", e);
 			throw e;
 		}
-		LOGGER.error("Successfuly sent turn complete signal.");
+		LOGGER.debug("Successfuly sent turn complete signal.");
 	}
 
 	private static void testGetTurnCountNoMoves(final SpatialMatrix<Integer> model, final long seed) {
