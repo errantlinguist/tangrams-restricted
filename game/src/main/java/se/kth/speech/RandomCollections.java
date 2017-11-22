@@ -30,9 +30,13 @@ import java.util.RandomAccess;
 public final class RandomCollections {
 
 	/**
-	 * <strong>NOTE:</strong> The complexity of this method is linear to the
-	 * {@link Collection#size() size} of the given {@link Collection}.
+	 * <strong>NOTE:</strong> For {@link Collection} instances which do not
+	 * implement both {@link List} and {@link RandomAccess}, the complexity of
+	 * this method is linear to the {@link Collection#size() size} of the given
+	 * {@link Collection}.
 	 *
+	 * @param <T>
+	 *            The type of the element returned.
 	 * @param coll
 	 *            The {@code Collection} to get a random element from.
 	 * @param rnd
