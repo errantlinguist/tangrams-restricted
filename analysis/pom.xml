@@ -38,11 +38,6 @@
 			<artifactId>commons-cli</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>com.google.cloud</groupId>
-			<artifactId>google-cloud-language</artifactId>
-			<version>0.26.0-beta</version>
-		</dependency>
-		<dependency>
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 		</dependency>
