@@ -16,7 +16,7 @@ Contains an embedded version of part of the [IrisTK](http://www.iristk.net/) pla
 
 ## Open issues
 
-* Overhaul code to not use IrisTK for anything so that the entire game can be run like a normal Java program, outside of Eclipse
+
 * The logged event times are broken and cannot be relied on to mean anything; Create a new `Event` attribute called e.g. `sendTime` and use that for time-syncing instead
 * * Add `submission_time` attr to each game event so that *that* timestamp can be used instead of the `event_time` attr, which is actually the time the client received the event (thereby adding a degree of lag)
 * Add feature for measuring the similarity of two game models, i.e. the similarity of the initial state of two different games (e.g. one seeded for "1" vs. one seeded for "2")
