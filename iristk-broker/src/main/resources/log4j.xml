@@ -18,7 +18,7 @@
 			ends in .gz, it gzips it, based on the date stamp it rolls at that time, 
 			default is yyyy-MM-dd, (rolls at midnight)
 			See: http://logging.apache.org/log4j/companions/extras/apidocs/org/apache/log4j/rolling/TimeBasedRollingPolicy.html -->
-			<param name="FileNamePattern" value="logs/iristk/system/%d{yyyy-MM-dd}.log.gz" />
+			<param name="FileNamePattern" value="log/iristk/system/%d{yyyy-MM-dd}.log.gz" />
 		</rollingPolicy>
 
 		<layout class="org.apache.log4j.EnhancedPatternLayout">
