@@ -30,7 +30,7 @@ import java.util.RandomAccess;
 public final class RandomCollectionElementChooser {
 
 	/**
-	 * The {@link Random} instance to use for randomization.
+	 * The {@link Random} instance used for randomization.
 	 */
 	private final Random rnd;
 
@@ -41,6 +41,33 @@ public final class RandomCollectionElementChooser {
 	 */
 	public RandomCollectionElementChooser(final Random rnd) {
 		this.rnd = rnd;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(final Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof RandomCollectionElementChooser)) {
+			return false;
+		}
+		final RandomCollectionElementChooser other = (RandomCollectionElementChooser) obj;
+		if (rnd == null) {
+			if (other.rnd != null) {
+				return false;
+			}
+		} else if (!rnd.equals(other.rnd)) {
+			return false;
+		}
+		return true;
 	}
 
 	/**
@@ -85,6 +112,40 @@ public final class RandomCollectionElementChooser {
 
 	public <T> T getRandomElement(final T[] array) {
 		return array[rnd.nextInt(array.length)];
+	}
+
+	/**
+	 * @return The {@link Random} instance used for randomization.
+	 */
+	public Random getRnd() {
+		return rnd;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + (rnd == null ? 0 : rnd.hashCode());
+		return result;
+	}
+
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		final StringBuilder builder = new StringBuilder(64);
+		builder.append("RandomCollectionElementChooser [rnd=");
+		builder.append(rnd);
+		builder.append("]");
+		return builder.toString();
 	}
 
 }
