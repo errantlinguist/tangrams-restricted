@@ -55,7 +55,6 @@ import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.hat.xsd.Annotation;
 import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.nlp.MetaLanguage;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
