@@ -147,10 +147,7 @@ final class TangramsServer implements Runnable { // NO_UCD (use default)
 		 */
 		private static final long serialVersionUID = 4642677256770391448L;
 
-		/**
-		 * @param cause
-		 */
-		public Exception(final Throwable cause) {
+		private Exception(final Throwable cause) {
 			super(cause);
 		}
 

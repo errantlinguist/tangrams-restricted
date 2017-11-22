@@ -211,10 +211,7 @@ public final class TangramsClient implements Runnable {
 		 */
 		private static final long serialVersionUID = -3850730452105933272L;
 
-		/**
-		 * @param cause
-		 */
-		public Exception(final Throwable cause) {
+		private Exception(final Throwable cause) {
 			super(cause);
 		}
 
