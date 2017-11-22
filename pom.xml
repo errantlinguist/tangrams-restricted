@@ -63,8 +63,8 @@
 				<module>client-analysis</module>
 				<module>game</module>
 				<module>hat</module>
-				<module>iristk-core</module>
 				<module>iristk-broker</module>
+				<module>iristk-core</module>
 				<module>iristk-system</module>
 				<module>jportaudio</module>
 				<module>server</module>
@@ -83,11 +83,11 @@
 		<profile>
 			<id>client</id>
 			<modules>
-				<module>game</module>
 				<module>client</module>
+				<module>game</module>
 				<module>hat</module>
-				<module>iristk-core</module>
 				<module>iristk-broker</module>
+				<module>iristk-core</module>
 				<module>iristk-system</module>
 				<module>jportaudio</module>
 			</modules>
@@ -103,8 +103,8 @@
 		<profile>
 			<id>iristk-broker</id>
 			<modules>
-				<module>iristk-core</module>
 				<module>iristk-broker</module>
+				<module>iristk-core</module>
 				<module>iristk-system</module>
 				<module>jportaudio</module>
 			</modules>
@@ -114,8 +114,8 @@
 			<modules>
 				<module>game</module>
 				<module>hat</module>
-				<module>iristk-core</module>
 				<module>iristk-broker</module>
+				<module>iristk-core</module>
 				<module>iristk-system</module>
 				<module>jportaudio</module>
 				<module>server</module>
