@@ -22,14 +22,16 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 
 	/**
 	 * A closure class for trimming objects implementing the
-	 * {@link Object2ObjectMap} interface, i.e.&nbsp;for use with a method reference
-	 * to {@link Object2ObjectOpenHashMap#trim()}.
+	 * {@link Object2ObjectMap} interface, i.e.&nbsp;for use with a method
+	 * reference to {@link Object2ObjectOpenHashMap#trim()}. This has a
+	 * signature similar to a {@code Callable<Boolean>} but avoids auto-boxing
+	 * of primitive {@code boolean} values to {@link Boolean} objects.
 	 *
 	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
 	 * @since 18 Nov 2017
 	 *
 	 */
-	public interface Trimmer {
+	public interface Trimmer { // NO_UCD (use private)
 		/**
 		 * Trims the given {@link Object2ObjectMap}.
 		 *
@@ -69,8 +71,8 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 	 * @param decorated
 	 *            The {@link Object2ObjectMap} to decorate.
 	 * @param trimmer
-	 *            A {@link Trimmer} which trims (i.e.&nbsp;compacts) the decorated
-	 *            {@code Object2ObjectMap}.
+	 *            A {@link Trimmer} which trims (i.e.&nbsp;compacts) the
+	 *            decorated {@code Object2ObjectMap}.
 	 */
 	public TrimmableObject2ObjectMap(final Object2ObjectMap<K, V> decorated, final Trimmer trimmer) {
 		this.decorated = decorated;
