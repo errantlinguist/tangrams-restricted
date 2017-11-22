@@ -43,7 +43,7 @@ public final class CLIParameters {
 		return parseOutpath(outfile, DEFAULT_OUTPUT_ENCODING);
 	}
 
-	public static PrintWriter parseOutpath(final File outfile, final Charset outputEncoding) throws IOException {
+	public static PrintWriter parseOutpath(final File outfile, final Charset outputEncoding) throws IOException { // NO_UCD (use private)
 		final PrintWriter result;
 		if (outfile == null) {
 			LOGGER.info("No output file path specified; Writing to standard output.");
