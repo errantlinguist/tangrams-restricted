@@ -204,7 +204,7 @@ public final class TangramsClient implements Runnable {
 
 	}
 
-	static final class Exception extends RuntimeException {
+	static final class Exception extends RuntimeException { // NO_UCD (use private)
 
 		/**
 		 *
