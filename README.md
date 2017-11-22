@@ -17,7 +17,7 @@ Contains an embedded version of part of the [IrisTK](http://www.iristk.net/) pla
 ## Open issues
 
 
-* The logged event times are broken and cannot be relied on to mean anything; Create a new `Event` attribute called e.g. `sendTime` and use that for time-syncing instead
+* The logged event times are broken and cannot be relied on to mean anything: They actually mean when the given event was *received* according to the receiving machine's own local time. Create a new `Event` attribute called e.g. `sendTime` and use that for time-syncing instead
 * * Add `submission_time` attr to each game event so that *that* timestamp can be used instead of the `event_time` attr, which is actually the time the client received the event (thereby adding a degree of lag)
 * Add feature for measuring the similarity of two game models, i.e. the similarity of the initial state of two different games (e.g. one seeded for "1" vs. one seeded for "2")
 * Add timer which stops the game (and recording) after e.g. 15 minutes
