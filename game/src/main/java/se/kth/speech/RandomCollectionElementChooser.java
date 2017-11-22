@@ -27,7 +27,21 @@ import java.util.RandomAccess;
  * @since 7 Mar 2017
  *
  */
-public final class RandomCollections {
+public final class RandomCollectionElementChooser {
+
+	/**
+	 * The {@link Random} instance to use for randomization.
+	 */
+	private final Random rnd;
+
+	/**
+	 *
+	 * @param rnd
+	 *            The {@link Random} instance to use for randomization.
+	 */
+	public RandomCollectionElementChooser(final Random rnd) {
+		this.rnd = rnd;
+	}
 
 	/**
 	 * <strong>NOTE:</strong> For {@link Collection} instances which do not
@@ -44,11 +58,11 @@ public final class RandomCollections {
 	 *            element.
 	 * @return A random element.
 	 */
-	public static <T> T getRandomElement(final Collection<? extends T> coll, final Random rnd) {
+	public <T> T getRandomElement(final Collection<? extends T> coll) {
 		final T result;
 		if (coll instanceof RandomAccess && coll instanceof List) {
 			final List<? extends T> downcast = (List<? extends T>) coll;
-			result = getRandomElement(downcast, rnd);
+			result = getRandomElement(downcast);
 		} else {
 			final Iterator<? extends T> iter = coll.iterator();
 			final int idx = rnd.nextInt(coll.size());
@@ -61,20 +75,16 @@ public final class RandomCollections {
 		return result;
 	}
 
-	public static int getRandomElement(final int[] array, final Random rnd) {
+	public int getRandomElement(final int[] array) {
 		return array[rnd.nextInt(array.length)];
 	}
 
-	public static <T> T getRandomElement(final List<? extends T> list, final Random rnd) {
+	public <T> T getRandomElement(final List<? extends T> list) {
 		return list.get(rnd.nextInt(list.size()));
 	}
 
-	public static <T> T getRandomElement(final T[] array, final Random rnd) {
+	public <T> T getRandomElement(final T[] array) {
 		return array[rnd.nextInt(array.length)];
-	}
-
-	private RandomCollections() {
-
 	}
 
 }

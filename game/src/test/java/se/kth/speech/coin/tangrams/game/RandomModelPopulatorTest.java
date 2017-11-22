@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import com.google.common.collect.Sets;
 
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
@@ -134,7 +135,7 @@ public final class RandomModelPopulatorTest {
 		final ImageVisualizationInfo imgVisualizationInfo = imgDataFactory.apply(piecePlacementCount);
 		final RandomModelPopulator modelPopulator = new RandomModelPopulator(result, imgVisualizationInfo,
 				DEFAULT_OCCUPIED_GRID_AREA, false, imgViewInfoFactory);
-		modelPopulator.accept(rnd);
+		modelPopulator.accept(new RandomCollectionElementChooser(rnd));
 
 		Assert.assertEquals(piecePlacementCount, result.createValidMoveMap().size());
 		final Set<Integer> pieceIds = result.getCells().filter(Objects::nonNull)

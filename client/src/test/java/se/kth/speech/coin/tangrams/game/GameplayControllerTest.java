@@ -33,6 +33,7 @@ import org.mockito.Mockito;
 
 import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.Matrix;
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.MatrixTests;
@@ -76,7 +77,7 @@ public final class GameplayControllerTest {
 	}
 
 	private static MapEntryRemapping<Integer, SpatialRegion> submitRandomTurn(final Controller controller,
-			final Random rnd) {
+			final RandomCollectionElementChooser rnd) {
 		final MapEntryRemapping<Integer, SpatialRegion> result = SpatialMatrixTests
 				.createRandomValidMove(controller.getModel(), rnd);
 		final SpatialRegion sourceRegion = result.getOldValue();
@@ -103,7 +104,7 @@ public final class GameplayControllerTest {
 	public void testGetTurnCountOneTurn(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
-		submitRandomTurn(controller, rnd);
+		submitRandomTurn(controller, new RandomCollectionElementChooser(rnd));
 		Assert.assertEquals(1, controller.getTurnCount());
 	}
 
@@ -111,7 +112,8 @@ public final class GameplayControllerTest {
 	public void testNotifyPlayerSelectionPositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
-		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
+		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model,
+				new RandomCollectionElementChooser(rnd));
 		final SpatialRegion sourceRegion = move.getOldValue();
 		final Integer pieceId = move.getKey();
 		final SpatialRegion targetRegion = move.getNewValue();
@@ -125,7 +127,8 @@ public final class GameplayControllerTest {
 	public void testSubmitNextMovePositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
-		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
+		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model,
+				new RandomCollectionElementChooser(rnd));
 		final SpatialRegion sourceRegion = move.getOldValue();
 		final Integer pieceId = move.getKey();
 		final SpatialRegion targetRegion = move.getNewValue();
@@ -140,7 +143,8 @@ public final class GameplayControllerTest {
 	public void testSubmitTurnCompletePositive(final SpatialMatrix<Integer> model, final long seed) {
 		final Controller controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION, CLIENT);
 		final Random rnd = new Random(seed);
-		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model, rnd);
+		final MapEntryRemapping<Integer, SpatialRegion> move = SpatialMatrixTests.createRandomValidMove(model,
+				new RandomCollectionElementChooser(rnd));
 		final SpatialRegion sourceRegion = move.getOldValue();
 		final Integer pieceId = move.getKey();
 		final SpatialRegion targetRegion = move.getNewValue();

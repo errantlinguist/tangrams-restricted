@@ -73,19 +73,20 @@ public final class SpatialRegionTest {
 		final int testRegionCount = testPointCount / 4;
 		TEST_REGIONS = Sets.newHashSetWithExpectedSize(testRegionCount);
 		TEST_POINT_ARRAYS = Sets.newHashSetWithExpectedSize(testRegionCount);
+		final RandomCollectionElementChooser rndElemChooser = new RandomCollectionElementChooser(rnd);
 		do {
-			final int[] x = createRandomIntervalArray(rnd, TEST_POINTS);
-			final int[] y = createRandomIntervalArray(rnd, TEST_POINTS);
+			final int[] x = createRandomIntervalArray(rndElemChooser, TEST_POINTS);
+			final int[] y = createRandomIntervalArray(rndElemChooser, TEST_POINTS);
 			TEST_REGIONS.add(new SpatialRegion(x[0], x[1], y[0], y[1]));
 			TEST_POINT_ARRAYS.add(IntArrays.concatenate(x, y));
 		} while (TEST_REGIONS.size() < testRegionCount);
 	}
 
-	private static int[] createRandomIntervalArray(final Random rnd, final int[] points) {
-		final int first = RandomCollections.getRandomElement(points, rnd);
-		int second = RandomCollections.getRandomElement(points, rnd);
+	private static int[] createRandomIntervalArray(final RandomCollectionElementChooser rnd, final int[] points) {
+		final int first = rnd.getRandomElement(points);
+		int second = rnd.getRandomElement(points);
 		while (first == second) {
-			second = RandomCollections.getRandomElement(points, rnd);
+			second = rnd.getRandomElement(points);
 		}
 		return first < second ? new int[] { first, second } : new int[] { second, first };
 	}

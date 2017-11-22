@@ -39,6 +39,7 @@ import java.util.stream.Stream;
 import com.github.errantlinguist.ClassProperties;
 import com.google.common.collect.Maps;
 
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.URLQueryParamMapFactory;
 import se.kth.speech.awt.RandomHueColorFactory;
@@ -253,7 +254,7 @@ public final class GameFactory implements Function<String, Game<Integer>> {
 		final ImageVisualizationInfo imgVisualizationInfo = imgDataFactory.apply(pieceCount);
 
 		final RandomPopulatedModelFactory modelFactory = createModelFactory(imgVisualizationInfo, gameParams);
-		final SpatialMatrix<Integer> model = modelFactory.apply(rnd);
+		final SpatialMatrix<Integer> model = modelFactory.apply(new RandomCollectionElementChooser(rnd));
 
 		return new Game<>(seed, model, imgVisualizationInfo, new EnumMap<>(PlayerRole.class));
 	}

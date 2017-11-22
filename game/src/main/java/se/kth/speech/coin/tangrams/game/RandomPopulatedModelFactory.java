@@ -18,10 +18,10 @@ package se.kth.speech.coin.tangrams.game;
 
 import java.awt.Image;
 import java.awt.Toolkit;
-import java.util.Random;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageLoadingImageViewInfoFactory;
@@ -32,7 +32,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  * @since 20 Mar 2017
  *
  */
-final class RandomPopulatedModelFactory implements Function<Random, SpatialMatrix<Integer>> {
+final class RandomPopulatedModelFactory implements Function<RandomCollectionElementChooser, SpatialMatrix<Integer>> {
 
 	private final boolean allowFailedPlacements;
 
@@ -59,7 +59,7 @@ final class RandomPopulatedModelFactory implements Function<Random, SpatialMatri
 	}
 
 	@Override
-	public SpatialMatrix<Integer> apply(final Random rnd) {
+	public SpatialMatrix<Integer> apply(final RandomCollectionElementChooser rnd) {
 		final int piecePlacementCount = imgVisualizationInfo.getData().size();
 		final SpatialMatrix<Integer> result = SpatialMatrix.Factory.STABLE_ITER_ORDER.create(gridSize,
 				SpatialMap.Factory.STABLE_ITER_ORDER.create(piecePlacementCount));

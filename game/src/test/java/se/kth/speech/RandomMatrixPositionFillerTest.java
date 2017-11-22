@@ -75,10 +75,10 @@ public final class RandomMatrixPositionFillerTest {
 	}
 
 	private static MutablePair<SpatialMatrix<Integer>, Set<Integer>> apply(final long seed) {
-		return apply(new Random(seed));
+		return apply(new RandomCollectionElementChooser(new Random(seed)));
 	}
 
-	private static MutablePair<SpatialMatrix<Integer>, Set<Integer>> apply(final Random rnd) {
+	private static MutablePair<SpatialMatrix<Integer>, Set<Integer>> apply(final RandomCollectionElementChooser rnd) {
 		final SpatialMatrixConstructionData constData = new SpatialMatrixConstructionData(new int[] { 10, 10 });
 
 		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(constData.matrix,
@@ -103,7 +103,7 @@ public final class RandomMatrixPositionFillerTest {
 		final SpatialMatrixConstructionData constData = new SpatialMatrixConstructionData(new int[] { 10, 10 });
 
 		final RandomMatrixPositionFiller<Integer, int[]> filler = new RandomMatrixPositionFiller<>(constData.matrix,
-				new Random(), constData.piecePosMatrixSizeFactory, false);
+				new RandomCollectionElementChooser(new Random()), constData.piecePosMatrixSizeFactory, false);
 		final Set<Integer> addedIds = filler.apply(TEST_PIECE_IDS.entrySet());
 		// Test added IDs
 		Assert.assertEquals(TEST_PIECE_IDS.values().size(), addedIds.size());

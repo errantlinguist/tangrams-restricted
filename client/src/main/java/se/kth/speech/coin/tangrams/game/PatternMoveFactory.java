@@ -33,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 
 import se.kth.speech.MapEntryRemapping;
-import se.kth.speech.RandomCollections;
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
@@ -59,6 +59,8 @@ public final class PatternMoveFactory
 	private final SpatialMatrix<Integer> posMatrix;
 
 	private final Random rnd;
+	
+	private final RandomCollectionElementChooser rndElemChooser;
 
 	private final Set<Integer> seenPieceIds;
 
@@ -73,6 +75,7 @@ public final class PatternMoveFactory
 							minInitialRndOnsetLength));
 		}
 		this.rnd = rnd;
+		this.rndElemChooser = new RandomCollectionElementChooser(rnd);
 		this.posMatrix = posMatrix;
 		this.initialRndOnsetLength = initialRndOnsetLength;
 		history = new LinkedList<>();
@@ -283,7 +286,7 @@ public final class PatternMoveFactory
 			LOGGER.debug("No valid moves for piece \"{}\", at {}.", pieceId, sourceRegion);
 			result = NULL_MOVE;
 		} else {
-			final SpatialRegion targetRegion = RandomCollections.getRandomElement(possibleTargetRegions, rnd);
+			final SpatialRegion targetRegion = rndElemChooser.getRandomElement(possibleTargetRegions);
 			result = Optional.of(new MapEntryRemapping<>(pieceId, sourceRegion, targetRegion));
 		}
 		return result;

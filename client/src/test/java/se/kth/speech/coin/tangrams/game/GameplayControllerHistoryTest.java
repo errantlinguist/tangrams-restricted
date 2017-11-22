@@ -33,6 +33,7 @@ import org.mockito.Mockito;
 
 import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.Matrix;
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.RandomTests;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -68,7 +69,7 @@ public final class GameplayControllerHistoryTest {
 	}
 
 	private static MapEntryRemapping<Integer, SpatialRegion> submitRandomTurn(final Controller controller,
-			final Random rnd) {
+			final RandomCollectionElementChooser rnd) {
 		final MapEntryRemapping<Integer, SpatialRegion> result = SpatialMatrixTests
 				.createRandomValidMove(controller.getModel(), rnd);
 		final SpatialRegion sourceRegion = result.getOldValue();
@@ -98,7 +99,7 @@ public final class GameplayControllerHistoryTest {
 		final GameplayController controller = new GameplayController(model, "localPlayer", PlayerRole.MOVE_SUBMISSION,
 				CLIENT);
 		final Random rnd = new Random(seed);
-		submitRandomTurn(controller, rnd);
+		submitRandomTurn(controller, new RandomCollectionElementChooser(rnd));
 		final GameplayController.History history = controller.getHistory();
 		Assert.assertEquals(1, history.getTurnCount());
 	}

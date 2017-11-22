@@ -20,12 +20,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 
 import se.kth.speech.MapEntryRemapping;
 import se.kth.speech.MutablePair;
-import se.kth.speech.RandomCollections;
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.SpatialMap;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
@@ -38,33 +37,33 @@ import se.kth.speech.SpatialRegion;
 public final class SpatialMatrixTests {
 
 	public static MapEntryRemapping<Integer, SpatialRegion> createRandomValidMove(final SpatialMatrix<Integer> model,
-			final Random rnd) {
+			final RandomCollectionElementChooser rnd) {
 		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
 		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
 		SpatialRegion sourceRegion = null;
 		Set<SpatialRegion> regionValidMoves = Collections.emptySet();
 		do {
-			sourceRegion = RandomCollections.getRandomElement(occupiedRegions, rnd);
+			sourceRegion = rnd.getRandomElement(occupiedRegions);
 			regionValidMoves = model.createValidMoveSet(sourceRegion);
 		} while (regionValidMoves.isEmpty());
 		final Collection<Integer> pieceIds = elemPlacements.getMinimalRegionElements().get(sourceRegion);
-		final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
-		final SpatialRegion targetRegion = RandomCollections.getRandomElement(regionValidMoves, rnd);
+		final Integer pieceId = rnd.getRandomElement(pieceIds);
+		final SpatialRegion targetRegion = rnd.getRandomElement(regionValidMoves);
 		return new MapEntryRemapping<>(pieceId, sourceRegion, targetRegion);
 	}
 
 	public static Entry<SpatialRegion, Integer> findRandomMovableElement(final SpatialMatrix<Integer> model,
-			final Random rnd) {
+			final RandomCollectionElementChooser rnd) {
 		final SpatialMap<Integer> elemPlacements = model.getElementPlacements();
 		final List<SpatialRegion> occupiedRegions = elemPlacements.getMinimalRegions();
 		SpatialRegion sourceRegion = null;
 		Set<SpatialRegion> regionValidMoves = Collections.emptySet();
 		do {
-			sourceRegion = RandomCollections.getRandomElement(occupiedRegions, rnd);
+			sourceRegion = rnd.getRandomElement(occupiedRegions);
 			regionValidMoves = model.createValidMoveSet(sourceRegion);
 		} while (regionValidMoves.isEmpty());
 		final Collection<Integer> pieceIds = elemPlacements.getMinimalRegionElements().get(sourceRegion);
-		final Integer pieceId = RandomCollections.getRandomElement(pieceIds, rnd);
+		final Integer pieceId = rnd.getRandomElement(pieceIds);
 		return new MutablePair<>(sourceRegion, pieceId);
 	}
 

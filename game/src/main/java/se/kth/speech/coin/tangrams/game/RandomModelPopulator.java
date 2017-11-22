@@ -20,6 +20,7 @@ import java.awt.Image;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -27,12 +28,10 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Random;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import java.util.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,6 +40,7 @@ import com.google.common.collect.Maps;
 import se.kth.speech.IntArrays;
 import se.kth.speech.MathDivisors;
 import se.kth.speech.MatrixStringReprFactory;
+import se.kth.speech.RandomCollectionElementChooser;
 import se.kth.speech.RandomMatrixPositionFiller;
 import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageSize;
@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  * @since 3 Jan 2017
  *
  */
-final class RandomModelPopulator implements Consumer<Random> {
+final class RandomModelPopulator implements Consumer<RandomCollectionElementChooser> {
 
 	private static class PositionGridSizeSummary {
 		private final List<Integer> commonDivisors;
@@ -156,7 +156,7 @@ final class RandomModelPopulator implements Consumer<Random> {
 	}
 
 	@Override
-	public void accept(final Random rnd) {
+	public void accept(final RandomCollectionElementChooser rnd) {
 		final List<ImageVisualizationInfo.Datum> imgVizInfoData = imgVizInfo.getData();
 		final List<? extends Entry<ImageViewInfo, ? extends Image>> imgViewInfoLoadedImgs = imgVizInfoData.stream()
 				.map(imgViewInfoFactory).collect(Collectors.toCollection(() -> new ArrayList<>(imgVizInfoData.size())));
@@ -199,7 +199,7 @@ final class RandomModelPopulator implements Consumer<Random> {
 	}
 
 	private void fillMatrix(final SpatialMatrix<Integer> posMatrix,
-			final Collection<? extends Entry<ImageViewInfo, Integer>> pieceIds, final Random rnd) {
+			final Collection<? extends Entry<ImageViewInfo, Integer>> pieceIds, final RandomCollectionElementChooser rnd) {
 		final RandomMatrixPositionFiller<Integer, ImageViewInfo> matrixFiller = new RandomMatrixPositionFiller<>(
 				posMatrix, rnd, PIECE_GRID_SIZE_FACTORY, allowFailedPlacements);
 		matrixFiller.apply(pieceIds);

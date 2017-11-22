@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map.Entry;
-import java.util.Random;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.function.IntFunction;
@@ -53,9 +52,9 @@ public final class RandomMatrixPositionFiller<I, E>
 
 	private final SpatialMatrix<? super I> posMatrix;
 
-	private final Random rnd;
+	private final RandomCollectionElementChooser rnd;
 
-	public RandomMatrixPositionFiller(final SpatialMatrix<? super I> posMatrix, final Random rnd,
+	public RandomMatrixPositionFiller(final SpatialMatrix<? super I> posMatrix, final RandomCollectionElementChooser rnd,
 			final Function<? super E, int[]> elementPosMatrixSizeFactory, final boolean allowFailedPlacements) {
 		this.posMatrix = posMatrix;
 		this.rnd = rnd;
@@ -102,7 +101,7 @@ public final class RandomMatrixPositionFiller<I, E>
 			SpatialRegion result = null;
 			do {
 				// Randomly pick a space in the matrix
-				result = RandomCollections.getRandomElement(allFittingSubRegions, rnd);
+				result = rnd.getRandomElement(allFittingSubRegions);
 				LOGGER.debug("Result size: {}", result.getDimensions());
 				if (posMatrix.isOccupied(result)) {
 					LOGGER.debug("Region {} is already occupied.", result);
