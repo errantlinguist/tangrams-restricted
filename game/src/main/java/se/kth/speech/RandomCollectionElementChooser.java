@@ -78,6 +78,36 @@ public final class RandomCollectionElementChooser {
 	}
 
 	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
+	public boolean getRandomElement(final boolean[] array) {
+		return array[random.nextInt(array.length)];
+	}
+
+	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
+	public byte getRandomElement(final byte[] array) {
+		return array[random.nextInt(array.length)];
+	}
+
+	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
+	public char getRandomElement(final char[] array) {
+		return array[random.nextInt(array.length)];
+	}
+
+	/**
 	 * <strong>NOTE:</strong> For {@link Collection} instances which do not
 	 * implement both {@link List} and {@link RandomAccess}, the worst-case
 	 * complexity of this method is linear to the {@link Collection#size() size}
@@ -112,6 +142,26 @@ public final class RandomCollectionElementChooser {
 	 *            The array to get a random element from.
 	 * @return A random element.
 	 */
+	public double getRandomElement(final double[] array) {
+		return array[random.nextInt(array.length)];
+	}
+
+	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
+	public float getRandomElement(final float[] array) {
+		return array[random.nextInt(array.length)];
+	}
+
+	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
 	public int getRandomElement(final int[] array) {
 		return array[random.nextInt(array.length)];
 	}
@@ -127,6 +177,26 @@ public final class RandomCollectionElementChooser {
 	 */
 	public <T> T getRandomElement(final List<? extends T> list) {
 		return list.get(random.nextInt(list.size()));
+	}
+
+	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
+	public long getRandomElement(final long[] array) {
+		return array[random.nextInt(array.length)];
+	}
+
+	/**
+	 *
+	 * @param array
+	 *            The array to get a random element from.
+	 * @return A random element.
+	 */
+	public short getRandomElement(final short[] array) {
+		return array[random.nextInt(array.length)];
 	}
 
 	/**
