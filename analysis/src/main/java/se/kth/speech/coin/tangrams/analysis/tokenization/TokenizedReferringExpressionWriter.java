@@ -247,19 +247,12 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			result.add(OUTFILE_HEADER);
 
 			final EventDialogue firstDiag = evtDiagsToPrint.next();
-
-			int roundId = 0;
-			if (firstDiag.getFirstEvent().isPresent()) {
-				// Round ID is 1-indexed
-				addUtteranceDataRows(++roundId, firstDiag, result);
-			} else {
-				// Use 0 index for pre-game dialogue
-				addUtteranceDataRows(roundId++, firstDiag, result);
-			}
-
+			// Use 0 index for pre-game dialogue
+			int roundId = firstDiag.getFirstEvent().isPresent() ? 1 : 0;
+			addUtteranceDataRows(roundId, firstDiag, result);
 			while (evtDiagsToPrint.hasNext()) {
 				final EventDialogue evtDiag = evtDiagsToPrint.next();
-				addUtteranceDataRows(roundId++, evtDiag, result);
+				addUtteranceDataRows(++roundId, evtDiag, result);
 			}
 			return result;
 		}
