@@ -28,9 +28,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.hat.xsd.Transcription;
-import se.kth.speech.hat.xsd.Transcription.T;
+import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
+import se.kth.speech.higgins._2005.annotation.Transcription;
+import se.kth.speech.higgins._2005.annotation.Transcription.T;
 
 public final class SegmentUtteranceFactory {
 

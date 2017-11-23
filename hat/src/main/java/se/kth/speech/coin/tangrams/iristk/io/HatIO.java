@@ -29,7 +29,7 @@ import javax.xml.bind.JAXBContext;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Unmarshaller;
 
-import se.kth.speech.hat.xsd.Annotation;
+import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.io.RuntimeJAXBException;
 
 /**

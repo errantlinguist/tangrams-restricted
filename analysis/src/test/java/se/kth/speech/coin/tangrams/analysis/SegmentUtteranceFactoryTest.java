@@ -39,10 +39,10 @@ import org.slf4j.LoggerFactory;
 import se.kth.speech.coin.tangrams.TestDataResources;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.io.HatIO;
-import se.kth.speech.hat.xsd.Annotation;
-import se.kth.speech.hat.xsd.Annotation.Segments;
-import se.kth.speech.hat.xsd.Annotation.Segments.Segment;
-import se.kth.speech.hat.xsd.Transcription.T;
+import se.kth.speech.higgins._2005.annotation.Annotation;
+import se.kth.speech.higgins._2005.annotation.Annotation.Segments;
+import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
+import se.kth.speech.higgins._2005.annotation.Transcription.T;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
@@ -98,7 +98,7 @@ public final class SegmentUtteranceFactoryTest {
 
 	/**
 	 * Test method for
-	 * {@link se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory#create(se.kth.speech.hat.xsd.Annotation.Segments.Segment)}.
+	 * {@link se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory#create(se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment)}.
 	 */
 	@Theory
 	public void testCreateSegment(final Segment seg) {
