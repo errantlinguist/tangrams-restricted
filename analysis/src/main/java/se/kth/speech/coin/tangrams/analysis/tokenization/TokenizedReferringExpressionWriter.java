@@ -140,10 +140,13 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			public Option get() {
 				final Tokenization[] possibleVals = Tokenization.values();
 				return Option.builder(optName).longOpt("tokenizers")
-						.desc("The tokenization method to use. Possible values: " + Arrays.toString(possibleVals))
+						.desc(String.format("The tokenization method to use. Possible values: %s; Default value: %s",
+								Arrays.toString(possibleVals), DEFAULT_TOKENIZATION_METHOD))
 						.hasArg().argName("name").required().build();
 			}
 		};
+
+		private static final Tokenization DEFAULT_TOKENIZATION_METHOD = Tokenization.STANFORD_NPS_WITHOUT_PPS;
 
 		private static final TokenType DEFAULT_TOKEN_TYPE = TokenType.INFLECTED;
 
@@ -173,7 +176,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private static Tokenization parseTokenizationMethod(final CommandLine cl) {
 			final String name = cl.getOptionValue(Parameter.TOKENIZER.optName);
-			return Tokenization.valueOf(name);
+			return name == null ? DEFAULT_TOKENIZATION_METHOD : Tokenization.valueOf(name);
 		}
 
 		private static TokenType parseTokenType(final CommandLine cl) {
