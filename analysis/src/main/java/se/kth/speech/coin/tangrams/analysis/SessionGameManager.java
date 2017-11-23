@@ -35,10 +35,10 @@ import com.google.common.collect.Maps;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.io.PlayerDataManager;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
+import se.kth.speech.higgins.io.HatIO;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

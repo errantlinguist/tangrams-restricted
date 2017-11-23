@@ -75,10 +75,10 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
+import se.kth.speech.higgins.io.HatIO;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**

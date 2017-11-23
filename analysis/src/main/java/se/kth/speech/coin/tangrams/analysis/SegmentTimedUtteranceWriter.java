@@ -51,10 +51,10 @@ import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.EventTimes;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
+import se.kth.speech.higgins.io.HatIO;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

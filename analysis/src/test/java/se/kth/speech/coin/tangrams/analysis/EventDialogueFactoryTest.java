@@ -39,9 +39,9 @@ import se.kth.speech.coin.tangrams.TestDataResources;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.higgins._2005.annotation.Annotation;
+import se.kth.speech.higgins.io.HatIO;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

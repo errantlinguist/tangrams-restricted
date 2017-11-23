@@ -42,10 +42,10 @@ import edu.stanford.nlp.trees.Tree;
 import edu.stanford.nlp.trees.TreeCoreAnnotations.TreeAnnotation;
 import edu.stanford.nlp.util.CoreMap;
 import edu.stanford.nlp.util.PropertiesUtils;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
 import se.kth.speech.higgins._2005.annotation.Transcription.T;
+import se.kth.speech.higgins.io.HatIO;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>

@@ -38,11 +38,11 @@ import org.slf4j.LoggerFactory;
 
 import se.kth.speech.coin.tangrams.TestDataResources;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.iristk.io.HatIO;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
 import se.kth.speech.higgins._2005.annotation.Transcription.T;
+import se.kth.speech.higgins.io.HatIO;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
