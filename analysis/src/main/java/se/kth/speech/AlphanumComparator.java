@@ -139,7 +139,7 @@ public final class AlphanumComparator implements Comparator<String> {
 	 * Length of string is passed in for improved efficiency (only need to
 	 * calculate it once)
 	 **/
-	private String getChunk(final String s, final int slength, int marker) {
+	private final String getChunk(final String s, final int slength, int marker) {
 		final StringBuilder chunk = new StringBuilder();
 		char c = s.charAt(marker);
 		chunk.append(c);
@@ -166,7 +166,7 @@ public final class AlphanumComparator implements Comparator<String> {
 		return chunk.toString();
 	}
 
-	private boolean isDigit(final char ch) {
+	private final boolean isDigit(final char ch) {
 		return ch >= 48 && ch <= 57;
 	}
 }
