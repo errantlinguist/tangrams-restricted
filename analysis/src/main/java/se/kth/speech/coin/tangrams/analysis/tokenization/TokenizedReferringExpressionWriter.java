@@ -95,7 +95,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final Cleaning[] possibleVals = Cleaning.values();
 				return Option.builder(optName).longOpt("cleaning")
 						.desc(String.format(
-								"A list of cleaning method(s) to use. Possible values: %s; Default values: %s ",
+								"A list of cleaning method(s) to use. Possible values: %s; Default values: %s",
 								Arrays.toString(possibleVals), DEFAULT_CLEANING_METHOD_SET))
 						.hasArg().argName("names").build();
 			}
@@ -120,8 +120,9 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			public Option get() {
 				final TokenFiltering[] possibleVals = TokenFiltering.values();
 				return Option.builder(optName).longOpt("token-filters")
-						.desc("The filtering method to use. Possible values: " + Arrays.toString(possibleVals)).hasArg()
-						.argName("name").required().build();
+						.desc(String.format("The token filtering method to use. Possible values: %s; Default value: %s",
+								Arrays.toString(possibleVals), DEFAULT_TOKEN_FILTER))
+						.hasArg().argName("name").required().build();
 			}
 		},
 		TOKEN_TYPE("tt") {
@@ -145,6 +146,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private static final Set<Cleaning> DEFAULT_CLEANING_METHOD_SET = EnumSet.allOf(Cleaning.class);
 
+		private static final TokenFiltering DEFAULT_TOKEN_FILTER = TokenFiltering.STOPWORDS;
+
 		private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
 
 		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
@@ -162,7 +165,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private static TokenFiltering parseTokenFilteringMethod(final CommandLine cl) {
 			final String name = cl.getOptionValue(Parameter.TOKEN_FILTER.optName);
-			return TokenFiltering.valueOf(name);
+			return name == null ? DEFAULT_TOKEN_FILTER : TokenFiltering.valueOf(name);
 		}
 
 		private static Tokenization parseTokenizationMethod(final CommandLine cl) {
