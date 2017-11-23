@@ -4,7 +4,7 @@ A game for organizing tangrams in the fewest number of moves using two players. 
 * **Since:** 2017-03-02
 * **Author:** Todd Shore
 * **Website:**  https://github.com/errantlinguist/tangrams-restricted
-* **Licensing:** Copyright 2016&ndash;2017 Todd Shore. Licensed for distribution under the GNU General Public License 3.0: See the file `NOTICE` and `LICENSE`. Selected audio content, by Mike Koenig, is licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+* **Licensing:** Copyright 2016&ndash;2017 Todd Shore. Licensed for distribution under the GNU General Public License 3.0: See the files `NOTICE.txt` and `COPYING.txt`. Selected audio content, by Mike Koenig, is licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
 
 This code was used to generate data for the following publications:
 
