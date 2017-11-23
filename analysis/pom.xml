@@ -12,15 +12,6 @@
 	<name>tangrams-restricted analysis</name>
 	<description>Tools for offline analysis of data collected from the tangrams game.</description>
 
-	<licenses>
-		<license>
-			<name>MIT License</name>
-			<url>http://www.opensource.org/licenses/mit-license.php</url>
-			<distribution>repo</distribution>
-			<comments>License for the class "AlphanumComparator", copyright 2007-2017 David Koelle.</comments>
-		</license>
-	</licenses>
-
 	<properties>
 		<stanford-corenlp.version>3.7.0</stanford-corenlp.version>
 		<spring.version>5.0.1.RELEASE</spring.version>

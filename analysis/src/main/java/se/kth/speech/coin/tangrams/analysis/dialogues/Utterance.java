@@ -21,13 +21,10 @@ import java.util.List;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
-import se.kth.speech.AlphanumComparator;
-
 public final class Utterance implements Comparable<Utterance> {
 
 	private static final Comparator<Utterance> NATURAL_COMPARATOR = Comparator.comparingDouble(Utterance::getStartTime)
-			.thenComparingDouble(Utterance::getEndTime)
-			.thenComparing(Comparator.comparing(Utterance::getSegmentId, AlphanumComparator.getInstance()));
+			.thenComparingDouble(Utterance::getEndTime).thenComparing(Utterance::getSegmentId);
 
 	private static final Collector<CharSequence, ?, String> WORD_JOINER = Collectors.joining(" ");
 
@@ -44,10 +41,9 @@ public final class Utterance implements Comparable<Utterance> {
 	public Utterance(final String segmentId, final String speakerId, final List<String> tokens, final float startTime,
 			final float endTime) {
 		assert startTime <= endTime;
-		// if (startTime > endTime) {
-		// throw new IllegalArgumentException("Start time is greater than end
-		// time.");
-		// }
+//		if (startTime > endTime) {
+//			throw new IllegalArgumentException("Start time is greater than end time.");
+//		}
 		this.segmentId = segmentId;
 		this.speakerId = speakerId;
 		this.tokens = tokens;
@@ -71,7 +67,7 @@ public final class Utterance implements Comparable<Utterance> {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#equals(java.lang.Object)
 	 */
 	@Override
@@ -153,7 +149,7 @@ public final class Utterance implements Comparable<Utterance> {
 
 	/*
 	 * (non-Javadoc)
-	 *
+	 * 
 	 * @see java.lang.Object#hashCode()
 	 */
 	@Override
