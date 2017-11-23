@@ -8,7 +8,7 @@
 	<version>0.0.1-SNAPSHOT</version>
 	<packaging>pom</packaging>
 
-	<name>tangrams-restricted parent POM</name>
+	<name>tangrams-restricted</name>
 	<description>A game for organizing tangrams in the fewest number of moves using two players.</description>
 	<url>http://www.coinssf.se/</url>
 
