@@ -130,8 +130,9 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			public Option get() {
 				final TokenType[] possibleVals = TokenType.values();
 				return Option.builder(optName).longOpt("token-types")
-						.desc("The token type to use. Possible values: " + Arrays.toString(possibleVals)).hasArg()
-						.argName("name").required().build();
+						.desc(String.format("The token type to use. Possible values: %s; Default value: %s",
+								Arrays.toString(possibleVals), DEFAULT_TOKEN_TYPE))
+						.hasArg().argName("name").required().build();
 			}
 		},
 		TOKENIZER("tok") {
@@ -143,6 +144,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						.hasArg().argName("name").required().build();
 			}
 		};
+
+		private static final TokenType DEFAULT_TOKEN_TYPE = TokenType.INFLECTED;
 
 		private static final Set<Cleaning> DEFAULT_CLEANING_METHOD_SET = EnumSet.allOf(Cleaning.class);
 
@@ -175,7 +178,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private static TokenType parseTokenType(final CommandLine cl) {
 			final String name = cl.getOptionValue(Parameter.TOKEN_TYPE.optName);
-			return TokenType.valueOf(name);
+			return name == null ? DEFAULT_TOKEN_TYPE : TokenType.valueOf(name);
 		}
 
 		protected final String optName;
