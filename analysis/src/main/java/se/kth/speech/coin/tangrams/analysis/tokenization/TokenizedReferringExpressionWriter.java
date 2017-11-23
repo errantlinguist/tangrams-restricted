@@ -122,7 +122,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				return Option.builder(optName).longOpt("token-filters")
 						.desc(String.format("The token filtering method to use. Possible values: %s; Default value: %s",
 								Arrays.toString(possibleVals), DEFAULT_TOKEN_FILTER))
-						.hasArg().argName("name").required().build();
+						.hasArg().argName("name").build();
 			}
 		},
 		TOKEN_TYPE("tt") {
@@ -132,7 +132,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				return Option.builder(optName).longOpt("token-types")
 						.desc(String.format("The token type to use. Possible values: %s; Default value: %s",
 								Arrays.toString(possibleVals), DEFAULT_TOKEN_TYPE))
-						.hasArg().argName("name").required().build();
+						.hasArg().argName("name").build();
 			}
 		},
 		TOKENIZER("tok") {
@@ -142,7 +142,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				return Option.builder(optName).longOpt("tokenizers")
 						.desc(String.format("The tokenization method to use. Possible values: %s; Default value: %s",
 								Arrays.toString(possibleVals), DEFAULT_TOKENIZATION_METHOD))
-						.hasArg().argName("name").required().build();
+						.hasArg().argName("name").build();
 			}
 		};
 
