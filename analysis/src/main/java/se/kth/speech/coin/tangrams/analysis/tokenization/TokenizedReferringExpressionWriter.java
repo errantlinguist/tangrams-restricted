@@ -199,11 +199,14 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private final Map<? super String, String> playerParticipantIds;
 
+		private final Map<String, PlayerRole> playerRoles;
+
 		private TabularDataFactory(final EventDialogueTransformer diagTransformer,
-				final Map<? super String, String> playerParticipantIds,
+				final Map<? super String, String> playerParticipantIds, final Map<String, PlayerRole> playerRoles,
 				final Map<String, Utterance> origUttsBySegmentId) {
 			this.diagTransformer = diagTransformer;
 			this.playerParticipantIds = playerParticipantIds;
+			this.playerRoles = playerRoles;
 			this.origUttsBySegmentId = origUttsBySegmentId;
 		}
 
@@ -224,6 +227,9 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final String speakerId = origUtt.getSpeakerId();
 				final String participantId = playerParticipantIds.get(speakerId);
 				rowCells.add(participantId);
+				final PlayerRole role = playerRoles.get(speakerId);
+				final String roleDesc = getPlayerRoleDesc(role);
+				rowCells.add(roleDesc);
 
 				final float startTime = origUtt.getStartTime();
 				rowCells.add(startTime);
@@ -305,8 +311,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	static {
 		ROW_CELL_JOINER = Collectors.joining("\t");
-		final List<String> colHeaders = Arrays.asList("ROUND", "SPEAKER", "START_TIME", "END_TIME", "UTTERANCE",
-				"REFERRING_TOKENS");
+		final List<String> colHeaders = Arrays.asList("ROUND", "SPEAKER", "DIALOGUE_ROLE", "START_TIME", "END_TIME",
+				"UTTERANCE", "REFERRING_TOKENS");
 		OUTFILE_HEADER = colHeaders.stream().collect(ROW_CELL_JOINER);
 	}
 
@@ -325,6 +331,21 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 	private static Options createOptions() {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+		return result;
+	}
+
+	private static String getPlayerRoleDesc(final PlayerRole role) {
+		final String result;
+		switch (role) {
+		case MOVE_SUBMISSION:
+			result = "INSTRUCTOR";
+			break;
+		case WAITING_FOR_NEXT_MOVE:
+			result = "MANIPULATOR";
+			break;
+		default:
+			throw new IllegalArgumentException(String.format("No description for player role %d.", role));
+		}
 		return result;
 	}
 
@@ -381,8 +402,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						.getPlayerRoles();
 				final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 				final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
-				final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds, uttsBySegmentId)
-						.apply(evtDiags);
+				final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds,
+						playerRoles.inverse(), uttsBySegmentId).apply(evtDiags);
 				final Path outfile = sessionOutputDir.resolve(outfileName);
 				LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
 				Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
