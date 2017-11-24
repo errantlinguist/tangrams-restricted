@@ -426,12 +426,12 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private final Predicate<? super Utterance> transformedUttRowFilter;
 
-	public TokenizedReferringExpressionWriter(final Path outDir, final String outfileName,
+	TokenizedReferringExpressionWriter(final Path outDir, final String outfileName,
 			final EventDialogueTransformer diagTransformer) {
 		this(outDir, outfileName, diagTransformer, DEFAULT_UTT_FILTER);
 	}
 
-	public TokenizedReferringExpressionWriter(final Path outDir, final String outfileName,
+	TokenizedReferringExpressionWriter(final Path outDir, final String outfileName,
 			final EventDialogueTransformer diagTransformer,
 			final Predicate<? super Utterance> transformedUttRowFilter) {
 		this.outDir = outDir;
@@ -440,7 +440,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		this.transformedUttRowFilter = transformedUttRowFilter;
 	}
 
-	public void accept(final Future<Map<SessionDataManager, Path>> sessionDataFuture)
+	void accept(final Future<Map<SessionDataManager, Path>> sessionDataFuture)
 			throws InterruptedException, ExecutionException, IOException, JAXBException {
 		final Map<SessionDataManager, Path> allSessionData = sessionDataFuture.get();
 		final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
