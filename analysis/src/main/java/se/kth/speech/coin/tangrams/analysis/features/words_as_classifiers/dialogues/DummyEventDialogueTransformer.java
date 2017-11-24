@@ -25,14 +25,26 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
  */
 public final class DummyEventDialogueTransformer implements EventDialogueTransformer {
 
+	private static class SingletonHolder {
+
+		private static final DummyEventDialogueTransformer INSTANCE = new DummyEventDialogueTransformer();
+	}
+
+	public static DummyEventDialogueTransformer getInstance() {
+		return SingletonHolder.INSTANCE;
+	}
+
+	private DummyEventDialogueTransformer() {
+
+	}
+
 	/*
 	 * (non-Javadoc)
-	 * 
+	 *
 	 * @see java.util.function.Function#apply(java.lang.Object)
 	 */
 	@Override
 	public EventDialogue apply(final EventDialogue diag) {
 		return diag;
 	}
-
 }
