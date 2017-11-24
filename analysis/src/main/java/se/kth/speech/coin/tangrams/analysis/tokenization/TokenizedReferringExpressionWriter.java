@@ -196,9 +196,9 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static class TabularDataFactory {
 
-		private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
-
 		private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
+
+		private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
 		private final List<String> COL_NAMES = Arrays.asList("ROUND", "SPEAKER", "DIALOGUE_ROLE", "START_TIME",
 				"END_TIME", "UTTERANCE", "REFERRING_TOKENS");
@@ -321,6 +321,11 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static final String DEFAULT_OUTFILE_NAME = "utt-referring-tokens.tsv";
 
+	/**
+	 * Print all utts by default
+	 */
+	private static final Predicate<Utterance> DEFAULT_UTT_FILTER = transformedUtt -> true;
+
 	private static final BiConsumer<CoreMap, List<Tree>> EXTRACTED_PHRASE_HANDLER = (sent, extractedPhrases) -> {
 		// Do nothing
 	};
@@ -346,7 +351,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		if (inpaths.isEmpty()) {
 			throw new MissingOptionException("No input path(s) specified.");
 		} else {
-			final Future<Map<SessionDataManager, Path>> allSessionDataFuture = ForkJoinPool.commonPool()
+			LOGGER.info("Reading session data underneath {}.", inpaths);
+			final Future<Map<SessionDataManager, Path>> sessionDataFuture = ForkJoinPool.commonPool()
 					.submit(() -> readTestSessionData(inpaths));
 			final Set<Cleaning> cleaningMethodSet = Parameter.parseCleaningMethods(cl);
 			LOGGER.info("Cleaning method set: {}", cleaningMethodSet);
@@ -356,53 +362,19 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			LOGGER.info("Tokenization method: {}", tokenizationMethod);
 			final TokenType tokenType = Parameter.parseTokenType(cl);
 			LOGGER.info("Token type: {}", tokenType);
+			final Tokenization.Context tokenizationContext = new Tokenization.Context(cleaningMethodSet, tokenType,
+					EXTRACTED_PHRASE_HANDLER, ANNOTATION_CACHE_FACTORY);
+			final ChainedEventDialogueTransformer diagTransformer = new ChainedEventDialogueTransformer(
+					Arrays.asList(tokenizationMethod.apply(tokenizationContext), tokenFilteringMethod.get()));
 
 			final Path outDir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath().toAbsolutePath();
 			LOGGER.info("Will write output underneath directory \"{}\".", outDir);
 			final String outfileName = cl.getOptionValue(Parameter.OUTFILE_NAME.optName, DEFAULT_OUTFILE_NAME);
 			LOGGER.info("Will name output files \"{}\".", outfileName);
 
-			final Map<SessionDataManager, Path> allSessionData = allSessionDataFuture.get();
-			final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
-			LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
-
-			final Tokenization.Context tokenizationContext = new Tokenization.Context(cleaningMethodSet, tokenType,
-					EXTRACTED_PHRASE_HANDLER, ANNOTATION_CACHE_FACTORY);
-			final ChainedEventDialogueTransformer diagTransformer = new ChainedEventDialogueTransformer(
-					Arrays.asList(tokenizationMethod.apply(tokenizationContext), tokenFilteringMethod.get()));
-
-			final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
-					new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10));
-			for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
-				final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
-				final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
-				final Path sessionDir = sessionPropsFilePath.getParent();
-				assert sessionDir != null;
-				final Path relativeSessionDir = sessionPrefixPath.relativize(sessionDir);
-				final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
-
-				final Stream<Utterance> utts = readUtterances(sessionDataMgr);
-				final Map<String, Utterance> uttsBySegmentId = utts
-						.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity()));
-
-				final SessionGameManager sessionGameMgr = sessionGameMgrFactory.apply(sessionDataMgr);
-				final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
-				final BiMap<PlayerRole, String> playerRoles = sessionGame.getHistory().getInitialState()
-						.getPlayerRoles();
-				final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
-				final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
-				final Predicate<Utterance> transformedUttRowFilter = transformedUtt -> true;
-				// final Predicate<Utterance> transformedUttRowFilter =
-				// transformedUtt -> !(transformedUtt == null ||
-				// transformedUtt.getTokens().isEmpty());
-				final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds,
-						playerRoles.inverse(), uttsBySegmentId, transformedUttRowFilter).apply(evtDiags);
-				final Path outfile = sessionOutputDir.resolve(outfileName);
-				LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
-				Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING);
-			}
-			LOGGER.info("Finished tokenizing {} session(s).", allSessionData.size());
+			final TokenizedReferringExpressionWriter writer = new TokenizedReferringExpressionWriter(outDir,
+					outfileName, diagTransformer);
+			writer.accept(sessionDataFuture);
 		}
 	}
 
@@ -446,7 +418,61 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		return segs.stream().flatMap(seg -> SEG_UTT_FACTORY.create(seg).stream());
 	}
 
-	private TokenizedReferringExpressionWriter() {
+	private final EventDialogueTransformer diagTransformer;
+
+	private final Path outDir;
+
+	private final String outfileName;
+
+	private final Predicate<? super Utterance> transformedUttRowFilter;
+
+	public TokenizedReferringExpressionWriter(final Path outDir, final String outfileName,
+			final EventDialogueTransformer diagTransformer) {
+		this(outDir, outfileName, diagTransformer, DEFAULT_UTT_FILTER);
+	}
+
+	public TokenizedReferringExpressionWriter(final Path outDir, final String outfileName,
+			final EventDialogueTransformer diagTransformer,
+			final Predicate<? super Utterance> transformedUttRowFilter) {
+		this.outDir = outDir;
+		this.outfileName = outfileName;
+		this.diagTransformer = diagTransformer;
+		this.transformedUttRowFilter = transformedUttRowFilter;
+	}
+
+	public void accept(final Future<Map<SessionDataManager, Path>> sessionDataFuture)
+			throws InterruptedException, ExecutionException, IOException, JAXBException {
+		final Map<SessionDataManager, Path> allSessionData = sessionDataFuture.get();
+		final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
+		LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
+
+		final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
+				new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10));
+		for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
+			final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
+			final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
+			final Path sessionDir = sessionPropsFilePath.getParent();
+			assert sessionDir != null;
+			final Path relativeSessionDir = sessionPrefixPath.relativize(sessionDir);
+			final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
+
+			final Stream<Utterance> utts = readUtterances(sessionDataMgr);
+			final Map<String, Utterance> uttsBySegmentId = utts
+					.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity()));
+
+			final SessionGameManager sessionGameMgr = sessionGameMgrFactory.apply(sessionDataMgr);
+			final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
+			final BiMap<PlayerRole, String> playerRoles = sessionGame.getHistory().getInitialState().getPlayerRoles();
+			final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
+			final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
+			final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds,
+					playerRoles.inverse(), uttsBySegmentId, transformedUttRowFilter).apply(evtDiags);
+			final Path outfile = sessionOutputDir.resolve(outfileName);
+			LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
+			Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
+					StandardOpenOption.TRUNCATE_EXISTING);
+		}
+		LOGGER.info("Finished writing data for {} session(s).", allSessionData.size());
 	}
 
 }
