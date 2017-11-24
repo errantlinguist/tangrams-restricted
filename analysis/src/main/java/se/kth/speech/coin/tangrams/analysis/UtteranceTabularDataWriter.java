@@ -245,7 +245,7 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	}
 
-	private static final String DEFAULT_OUTFILE_NAME = "extracted-referring-tokens.tsv";
+	private static final String DEFAULT_OUTFILE_NAME = "utts.tsv";
 
 	/**
 	 * Print all utts by default
