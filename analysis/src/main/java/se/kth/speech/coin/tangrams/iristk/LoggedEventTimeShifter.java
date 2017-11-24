@@ -103,18 +103,7 @@ final class LoggedEventTimeShifter { // NO_UCD (use default)
 
 	private static final BigDecimal SECS_TO_MILLS_FACTOR = new BigDecimal(1000);
 
-	public static void main(final String[] args) throws IOException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
-		}
-	}
-
-	private static void main(final CommandLine cl) throws IOException, ParseException {
+	public static void main(final CommandLine cl) throws IOException, ParseException {
 		final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
 				.map(Paths::get).toArray(Path[]::new);
 		switch (inpaths.length) {
@@ -140,6 +129,17 @@ final class LoggedEventTimeShifter { // NO_UCD (use default)
 		default: {
 			throw new IllegalArgumentException("No support for multiple inpaths (yet).");
 		}
+		}
+	}
+
+	public static void main(final String[] args) throws IOException {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
 		}
 	}
 

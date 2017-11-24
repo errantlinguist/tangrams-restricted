@@ -463,7 +463,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private static void main(final CommandLine cl)
+	public static void main(final CommandLine cl)
 			throws ParseException, URISyntaxException, IOException, JAXBException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();

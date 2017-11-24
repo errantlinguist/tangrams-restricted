@@ -161,33 +161,7 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> TAB_ROW_CELL_JOINER = Collectors.joining("\t");
 
-	public static void main(final String[] args) throws JAXBException, IOException, ParseException {
-		final CommandLineParser parser = new DefaultParser();
-		final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-		main(cl);
-	}
-
-	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData,
-			final SessionGameManager.Factory sessionGameMgrFactory) throws JAXBException, IOException {
-		final SessionGameManager sessionDiagMgr = sessionGameMgrFactory.apply(sessionData);
-		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
-		final GameSummary summary = new GameSummary(canonicalGame.getHistory(), canonicalGame.getEventDialogues());
-		final NavigableMap<String, GameSummary> result = new TreeMap<>();
-		result.put(canonicalGame.getGameId(), summary);
-		return result;
-	}
-
-	private static String formatDurationSeconds(final Duration duration) {
-		final BigDecimal durationInSecs = TimestampArithmetic.toDecimalSeconds(duration);
-		return durationInSecs.toString();
-	}
-
-	private static Stream<GameSummary> getGameSummaries(
-			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
-		return sessionSummaries.stream().map(Entry::getValue).map(Map::values).flatMap(Collection::stream);
-	}
-
-	private static void main(final CommandLine cl) throws JAXBException, IOException {
+	public static void main(final CommandLine cl) throws JAXBException, IOException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -215,6 +189,32 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 				}
 			}
 		}
+	}
+
+	public static void main(final String[] args) throws JAXBException, IOException, ParseException {
+		final CommandLineParser parser = new DefaultParser();
+		final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+		main(cl);
+	}
+
+	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData,
+			final SessionGameManager.Factory sessionGameMgrFactory) throws JAXBException, IOException {
+		final SessionGameManager sessionDiagMgr = sessionGameMgrFactory.apply(sessionData);
+		final SessionGame canonicalGame = sessionDiagMgr.getCanonicalGame();
+		final GameSummary summary = new GameSummary(canonicalGame.getHistory(), canonicalGame.getEventDialogues());
+		final NavigableMap<String, GameSummary> result = new TreeMap<>();
+		result.put(canonicalGame.getGameId(), summary);
+		return result;
+	}
+
+	private static String formatDurationSeconds(final Duration duration) {
+		final BigDecimal durationInSecs = TimestampArithmetic.toDecimalSeconds(duration);
+		return durationInSecs.toString();
+	}
+
+	private static Stream<GameSummary> getGameSummaries(
+			final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
+		return sessionSummaries.stream().map(Entry::getValue).map(Map::values).flatMap(Collection::stream);
 	}
 
 	private static Function<Duration, String> parseDurationFormatter() {

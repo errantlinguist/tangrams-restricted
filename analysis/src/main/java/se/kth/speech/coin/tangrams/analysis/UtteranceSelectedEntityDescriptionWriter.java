@@ -180,6 +180,28 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 				.resolve(UtteranceSelectedEntityDescriptionWriter.class.getName() + ".properties");
 	}
 
+	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
+		final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+				.map(Paths::get).toArray(Path[]::new);
+		if (inpaths.length < 1) {
+			throw new MissingOptionException("No input path(s) specified.");
+
+		} else {
+			final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
+			LOGGER.info("Will write data to \"{}\".", outpath);
+			final boolean strict = cl.hasOption(Parameter.STRICT.optName);
+			final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();
+			for (final Path inpath : inpaths) {
+				LOGGER.info("Will read batch job data from \"{}\".", inpath);
+				final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
+				LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath, outfileNamePrefix);
+				final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath, outfileNamePrefix,
+						strict);
+				writer.accept(inpath, sessionGameMgrFactory);
+			}
+		}
+	}
+
 	public static void main(final String[] args) throws IOException, JAXBException {
 		if (args.length < 1) {
 			runInteractively();
@@ -248,28 +270,6 @@ final class UtteranceSelectedEntityDescriptionWriter { // NO_UCD (use default)
 		Files.createDirectories(SETTINGS_DIR);
 		try (InputStream classSettingsPropsInstream = Files.newInputStream(CLASS_SETTINGS_INFILE_PATH)) {
 			props.load(classSettingsPropsInstream);
-		}
-	}
-
-	private static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
-		final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
-				.map(Paths::get).toArray(Path[]::new);
-		if (inpaths.length < 1) {
-			throw new MissingOptionException("No input path(s) specified.");
-
-		} else {
-			final Path outpath = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath();
-			LOGGER.info("Will write data to \"{}\".", outpath);
-			final boolean strict = cl.hasOption(Parameter.STRICT.optName);
-			final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();
-			for (final Path inpath : inpaths) {
-				LOGGER.info("Will read batch job data from \"{}\".", inpath);
-				final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
-				LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath, outfileNamePrefix);
-				final UtteranceSelectedEntityDescriptionWriter writer = createWriter(outpath, outfileNamePrefix,
-						strict);
-				writer.accept(inpath, sessionGameMgrFactory);
-			}
 		}
 	}
 

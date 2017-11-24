@@ -146,13 +146,13 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			}
 		};
 
-		private static final Tokenization DEFAULT_TOKENIZATION_METHOD = Tokenization.STANFORD_NPS_WITHOUT_PPS;
-
-		private static final TokenType DEFAULT_TOKEN_TYPE = TokenType.INFLECTED;
-
 		private static final Set<Cleaning> DEFAULT_CLEANING_METHOD_SET = EnumSet.allOf(Cleaning.class);
 
 		private static final TokenFiltering DEFAULT_TOKEN_FILTER = TokenFiltering.STOPWORDS;
+
+		private static final TokenType DEFAULT_TOKEN_TYPE = TokenType.INFLECTED;
+
+		private static final Tokenization DEFAULT_TOKENIZATION_METHOD = Tokenization.STANFORD_NPS_WITHOUT_PPS;
 
 		private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
 
@@ -316,40 +316,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		OUTFILE_HEADER = colHeaders.stream().collect(ROW_CELL_JOINER);
 	}
 
-	public static void main(final String[] args)
-			throws IOException, JAXBException, InterruptedException, ExecutionException {
-		final CommandLineParser parser = new DefaultParser();
-		try {
-			final CommandLine cl = parser.parse(OPTIONS, args);
-			main(cl);
-		} catch (final ParseException e) {
-			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			printHelp();
-		}
-	}
-
-	private static Options createOptions() {
-		final Options result = new Options();
-		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static String getPlayerRoleDesc(final PlayerRole role) {
-		final String result;
-		switch (role) {
-		case MOVE_SUBMISSION:
-			result = "INSTRUCTOR";
-			break;
-		case WAITING_FOR_NEXT_MOVE:
-			result = "MANIPULATOR";
-			break;
-		default:
-			throw new IllegalArgumentException(String.format("No description for player role %d.", role));
-		}
-		return result;
-	}
-
-	private static void main(final CommandLine cl)
+	public static void main(final CommandLine cl)
 			throws ParseException, IOException, JAXBException, InterruptedException, ExecutionException {
 		final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
 				.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
@@ -411,6 +378,39 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			}
 			LOGGER.info("Finished tokenizing {} session(s).", allSessionData.size());
 		}
+	}
+
+	public static void main(final String[] args)
+			throws IOException, JAXBException, InterruptedException, ExecutionException {
+		final CommandLineParser parser = new DefaultParser();
+		try {
+			final CommandLine cl = parser.parse(OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			printHelp();
+		}
+	}
+
+	private static Options createOptions() {
+		final Options result = new Options();
+		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
+		return result;
+	}
+
+	private static String getPlayerRoleDesc(final PlayerRole role) {
+		final String result;
+		switch (role) {
+		case MOVE_SUBMISSION:
+			result = "INSTRUCTOR";
+			break;
+		case WAITING_FOR_NEXT_MOVE:
+			result = "MANIPULATOR";
+			break;
+		default:
+			throw new IllegalArgumentException(String.format("No description for player role %d.", role));
+		}
+		return result;
 	}
 
 	private static void printHelp() {
