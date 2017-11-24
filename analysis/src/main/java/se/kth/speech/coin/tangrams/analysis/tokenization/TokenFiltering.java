@@ -18,9 +18,9 @@ package se.kth.speech.coin.tangrams.analysis.tokenization;
 
 import java.util.function.Supplier;
 
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.DummyEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.TokenFilteringEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.DummyEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
 public enum TokenFiltering implements Supplier<EventDialogueTransformer> {

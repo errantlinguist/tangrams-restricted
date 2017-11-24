@@ -14,7 +14,7 @@
  *  You should have received a copy of the GNU General Public License
  *  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
-package se.kth.speech.coin.tangrams.analysis.tokenization;
+package se.kth.speech.coin.tangrams.analysis;
 
 import java.io.File;
 import java.io.IOException;
@@ -27,23 +27,19 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.regex.Pattern;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -64,18 +60,11 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Maps;
 
-import edu.stanford.nlp.trees.Tree;
-import edu.stanford.nlp.util.CoreMap;
 import se.kth.speech.CommonPaths;
 import se.kth.speech.MapCollectors;
-import se.kth.speech.coin.tangrams.analysis.SegmentUtteranceFactory;
-import se.kth.speech.coin.tangrams.analysis.SessionGame;
-import se.kth.speech.coin.tangrams.analysis.SessionGameManager;
-import se.kth.speech.coin.tangrams.analysis.UtteranceSpeakerParticipantIdMapFactory;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.ChainedEventDialogueTransformer;
-import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.EventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.DummyEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -83,27 +72,15 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
 import se.kth.speech.higgins.io.HatIO;
-import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
- * @since 12 Nov 2017
+ * @since 24 Nov 2017
  *
  */
-final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
+final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	private enum Parameter implements Supplier<Option> {
-		CLEANING("c") {
-			@Override
-			public Option get() {
-				final Cleaning[] possibleVals = Cleaning.values();
-				return Option.builder(optName).longOpt("cleaning")
-						.desc(String.format(
-								"A list of cleaning method(s) to use. Possible values: %s; Default values: %s",
-								Arrays.toString(possibleVals), DEFAULT_CLEANING_METHOD_SET))
-						.hasArg().argName("names").build();
-			}
-		},
 		OUTFILE_NAME("n") {
 			@Override
 			public Option get() {
@@ -118,75 +95,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				return Option.builder(optName).longOpt("outpath").desc("The directory to write the extracted data to.")
 						.hasArg().argName("path").type(File.class).required().build();
 			}
-		},
-		TOKEN_FILTER("tf") {
-			@Override
-			public Option get() {
-				final TokenFiltering[] possibleVals = TokenFiltering.values();
-				return Option.builder(optName).longOpt("token-filters")
-						.desc(String.format("The token filtering method to use. Possible values: %s; Default value: %s",
-								Arrays.toString(possibleVals), DEFAULT_TOKEN_FILTER))
-						.hasArg().argName("name").build();
-			}
-		},
-		TOKEN_TYPE("tt") {
-			@Override
-			public Option get() {
-				final TokenType[] possibleVals = TokenType.values();
-				return Option.builder(optName).longOpt("token-types")
-						.desc(String.format("The token type to use. Possible values: %s; Default value: %s",
-								Arrays.toString(possibleVals), DEFAULT_TOKEN_TYPE))
-						.hasArg().argName("name").build();
-			}
-		},
-		TOKENIZER("tok") {
-			@Override
-			public Option get() {
-				final Tokenization[] possibleVals = Tokenization.values();
-				return Option.builder(optName).longOpt("tokenizers")
-						.desc(String.format("The tokenization method to use. Possible values: %s; Default value: %s",
-								Arrays.toString(possibleVals), DEFAULT_TOKENIZATION_METHOD))
-						.hasArg().argName("name").build();
-			}
 		};
-
-		private static final Set<Cleaning> DEFAULT_CLEANING_METHOD_SET = EnumSet.allOf(Cleaning.class);
-
-		private static final TokenFiltering DEFAULT_TOKEN_FILTER = TokenFiltering.STOPWORDS;
-
-		private static final TokenType DEFAULT_TOKEN_TYPE = TokenType.INFLECTED;
-
-		private static final Tokenization DEFAULT_TOKENIZATION_METHOD = Tokenization.STANFORD_NPS_WITHOUT_PPS;
-
-		private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
-
-		private static Set<Cleaning> parseCleaningMethods(final CommandLine cl) {
-			final Set<Cleaning> result;
-			final String optValue = cl.getOptionValue(Parameter.CLEANING.optName);
-			if (optValue == null) {
-				result = DEFAULT_CLEANING_METHOD_SET;
-			} else {
-				result = EnumSet.noneOf(Cleaning.class);
-				final Stream<Cleaning> insts = MULTI_OPT_VALUE_DELIMITER.splitAsStream(optValue).map(Cleaning::valueOf);
-				insts.forEach(result::add);
-			}
-			return result;
-		}
-
-		private static TokenFiltering parseTokenFilteringMethod(final CommandLine cl) {
-			final String name = cl.getOptionValue(Parameter.TOKEN_FILTER.optName);
-			return name == null ? DEFAULT_TOKEN_FILTER : TokenFiltering.valueOf(name);
-		}
-
-		private static Tokenization parseTokenizationMethod(final CommandLine cl) {
-			final String name = cl.getOptionValue(Parameter.TOKENIZER.optName);
-			return name == null ? DEFAULT_TOKENIZATION_METHOD : Tokenization.valueOf(name);
-		}
-
-		private static TokenType parseTokenType(final CommandLine cl) {
-			final String name = cl.getOptionValue(Parameter.TOKEN_TYPE.optName);
-			return name == null ? DEFAULT_TOKEN_TYPE : TokenType.valueOf(name);
-		}
 
 		protected final String optName;
 
@@ -222,24 +131,34 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			}
 		}
 
-		private final EventDialogueTransformer diagTransformer;
+		private final Function<? super EventDialogue,EventDialogue> diagTransformer;
 
-		private final Map<String, Utterance> origUttsBySegmentId;
+		private final Map<? super String, Utterance> origUttsBySegmentId;
 
-		private final Map<String, PlayerRole> playerInitialRoles;
+		private final Map<? super String, PlayerRole> playerInitialRoles;
 
 		private final Map<? super String, String> playerParticipantIds;
 
 		private final Predicate<? super Utterance> transformedUttRowFilter;
+		
+		private TabularDataFactory(final Map<? super String, String> playerParticipantIds,
+				final Map<? super String, PlayerRole> playerInitialRoles, final Map<? super String, Utterance> origUttsBySegmentId) {
+			this(playerParticipantIds, playerInitialRoles, origUttsBySegmentId, DummyEventDialogueTransformer.getInstance(), DEFAULT_UTT_FILTER);
+		}
+		
+		/**
+		 * Print all utts by default
+		 */
+		private static final Predicate<Utterance> DEFAULT_UTT_FILTER = transformedUtt -> true;
 
-		private TabularDataFactory(final EventDialogueTransformer diagTransformer,
-				final Map<? super String, String> playerParticipantIds,
-				final Map<String, PlayerRole> playerInitialRoles, final Map<String, Utterance> origUttsBySegmentId,
+		private TabularDataFactory(final Map<? super String, String> playerParticipantIds,
+				final Map<? super String, PlayerRole> playerInitialRoles, final Map<? super String, Utterance> origUttsBySegmentId,
+				final Function<? super EventDialogue,EventDialogue> diagTransformer,
 				final Predicate<? super Utterance> transformedUttRowFilter) {
-			this.diagTransformer = diagTransformer;
 			this.playerParticipantIds = playerParticipantIds;
 			this.playerInitialRoles = playerInitialRoles;
 			this.origUttsBySegmentId = origUttsBySegmentId;
+			this.diagTransformer = diagTransformer;
 			this.transformedUttRowFilter = transformedUttRowFilter;
 		}
 
@@ -332,19 +251,9 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	}
 
-	/**
-	 * Parsing can take up huge amounts of memory, so it's single-threaded and
-	 * thus the caches are created designed for single-threaded operation.
-	 */
-	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
-
 	private static final String DEFAULT_OUTFILE_NAME = "extracted-referring-tokens.tsv";
 
-	private static final BiConsumer<CoreMap, List<Tree>> EXTRACTED_PHRASE_HANDLER = (sent, extractedPhrases) -> {
-		// Do nothing
-	};
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(TokenizedReferringExpressionWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
 
 	private static final Options OPTIONS = createOptions();
 
@@ -380,16 +289,6 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		} else {
 			final Future<Map<SessionDataManager, Path>> allSessionDataFuture = ForkJoinPool.commonPool()
 					.submit(() -> readTestSessionData(inpaths));
-			final Set<Cleaning> cleaningMethodSet = Parameter.parseCleaningMethods(cl);
-			LOGGER.info("Cleaning method set: {}", cleaningMethodSet);
-			final TokenFiltering tokenFilteringMethod = Parameter.parseTokenFilteringMethod(cl);
-			LOGGER.info("Token filtering method: {}", tokenFilteringMethod);
-			final Tokenization tokenizationMethod = Parameter.parseTokenizationMethod(cl);
-			LOGGER.info("Tokenization method: {}", tokenizationMethod);
-			final TokenType tokenType = Parameter.parseTokenType(cl);
-			LOGGER.info("Token type: {}", tokenType);
-
-			final EventDialogueTransformer tokenFilter = tokenFilteringMethod.get();
 			final Path outDir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath().toAbsolutePath();
 			LOGGER.info("Will write output underneath directory \"{}\".", outDir);
 			final String outfileName = cl.getOptionValue(Parameter.OUTFILE_NAME.optName, DEFAULT_OUTFILE_NAME);
@@ -409,11 +308,6 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final Path relativeSessionDir = sessionPrefixPath.relativize(sessionDir);
 				final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
 
-				final Tokenization.Context tokenizationContext = new Tokenization.Context(cleaningMethodSet, tokenType,
-						EXTRACTED_PHRASE_HANDLER, ANNOTATION_CACHE_FACTORY);
-				final ChainedEventDialogueTransformer diagTransformer = new ChainedEventDialogueTransformer(
-						Arrays.asList(tokenizationMethod.apply(tokenizationContext), tokenFilter));
-
 				final Stream<Utterance> utts = readUtterances(sessionDataMgr);
 				final Map<String, Utterance> uttsBySegmentId = utts
 						.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity()));
@@ -424,12 +318,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						.getPlayerRoles();
 				final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 				final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
-				final Predicate<Utterance> transformedUttRowFilter = transformedUtt -> true;
-				// final Predicate<Utterance> transformedUttRowFilter =
-				// transformedUtt -> !(transformedUtt == null ||
-				// transformedUtt.getTokens().isEmpty());
-				final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds,
-						playerRoles.inverse(), uttsBySegmentId, transformedUttRowFilter).apply(evtDiags);
+				final List<String> rows = new TabularDataFactory(playerParticipantIds,
+						playerRoles.inverse(), uttsBySegmentId).apply(evtDiags);
 				final Path outfile = sessionOutputDir.resolve(outfileName);
 				LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
 				Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
@@ -459,7 +349,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(TokenizedReferringExpressionWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+		formatter.printHelp(UtteranceTabularDataWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
 	}
 
 	private static Map<SessionDataManager, Path> readTestSessionData(final Iterable<Path> inpaths) throws IOException {
@@ -479,7 +369,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		return segs.stream().flatMap(seg -> SEG_UTT_FACTORY.create(seg).stream());
 	}
 
-	private TokenizedReferringExpressionWriter() {
+	private UtteranceTabularDataWriter() {
 	}
 
 }
