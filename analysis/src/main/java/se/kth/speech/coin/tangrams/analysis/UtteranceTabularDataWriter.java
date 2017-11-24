@@ -32,7 +32,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Objects;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.ExecutionException;
@@ -60,16 +59,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.BiMap;
-import com.google.common.collect.Maps;
 
 import se.kth.speech.CommonPaths;
 import se.kth.speech.MapCollectors;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
-import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
@@ -108,33 +104,12 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	private static class TabularDataFactory {
 
-		private enum DialogueRole {
-			INSTRUCTOR, MANIPULATOR;
+		private static final List<String> COL_NAMES = Arrays.asList("ROUND", "SPEAKER", "DIALOGUE_ROLE", "START_TIME",
+				"END_TIME", "TOKENS");
 
-			private static DialogueRole get(final PlayerRole role) {
-				final DialogueRole result;
-				switch (role) {
-				case MOVE_SUBMISSION:
-					result = INSTRUCTOR;
-					break;
-				case WAITING_FOR_NEXT_MOVE:
-					result = MANIPULATOR;
-					break;
-				default:
-					throw new IllegalArgumentException(String.format("No description for player role %d.", role));
-				}
-				return result;
-			}
+		private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
-			private static DialogueRole get(final Utterance utt, final EventDialogue evtDiag) {
-				final String speakerId = utt.getSpeakerId();
-				final String submitterId = (String) evtDiag.getFirstEvent().get().getGameAttrs()
-						.get(GameManagementEvent.Attribute.PLAYER_ID);
-				return Objects.equals(speakerId, submitterId) ? INSTRUCTOR : MANIPULATOR;
-			}
-		}
-
-		private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+		private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
 		private final Map<? super String, Utterance> origUttsBySegmentId;
 
@@ -142,18 +117,16 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 		private final Map<? super String, String> playerParticipantIds;
 
-		private final Predicate<? super Utterance> transformedUttRowFilter;
+		private final Predicate<? super Utterance> uttRowFilter;
 
 		private TabularDataFactory(final Map<? super String, String> playerParticipantIds,
 				final Map<? super String, PlayerRole> playerInitialRoles,
 				final Map<? super String, Utterance> origUttsBySegmentId,
-				final Function<? super EventDialogue, EventDialogue> diagTransformer,
-				final Predicate<? super Utterance> transformedUttRowFilter) {
+				final Predicate<? super Utterance> uttRowFilter) {
 			this.playerParticipantIds = playerParticipantIds;
 			this.playerInitialRoles = playerInitialRoles;
 			this.origUttsBySegmentId = origUttsBySegmentId;
-			this.diagTransformer = diagTransformer;
-			this.transformedUttRowFilter = transformedUttRowFilter;
+			this.uttRowFilter = uttRowFilter;
 		}
 
 		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
@@ -161,16 +134,10 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 				final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> uttDiagRoleFactory) {
 			final List<Utterance> origUtts = evtDiag.getUtterances();
 			LOGGER.debug("Writing rows for round ID {}.", roundId);
-			final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
-			final List<Utterance> tranformedUtts = transformedDiag.getUtterances();
-			final Map<String, Utterance> transformedUttsById = tranformedUtts.stream()
-					.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
-							MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(origUtts.size())));
 			for (final Utterance origUtt : origUtts) {
 				final String segId = origUtt.getSegmentId();
-				final Utterance transformedUtt = transformedUttsById.get(segId);
-				if (transformedUttRowFilter.test(transformedUtt)) {
-					final List<Object> rowCells = new ArrayList<>(6);
+				if (uttRowFilter.test(origUtt)) {
+					final List<Object> rowCells = new ArrayList<>(COL_NAMES.size());
 					rowCells.add(roundId);
 
 					final String speakerId = origUtt.getSpeakerId();
@@ -188,26 +155,16 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 					final String rawUttRepr = rawUtt.getTokens().stream().collect(TOKEN_JOINER);
 					rowCells.add(rawUttRepr);
 
-					final String refLangStr;
-					if (transformedUtt == null) {
-						refLangStr = "";
-					} else {
-						assert transformedUtt.getSpeakerId().equals(speakerId);
-						assert transformedUtt.getStartTime() == startTime;
-						assert transformedUtt.getEndTime() == endTime;
-						refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
-					}
-					rowCells.add(refLangStr);
 					LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", rawUttRepr,
-							origUtt.getTokens().stream().collect(TOKEN_JOINER), refLangStr);
+							origUtt.getTokens().stream().collect(TOKEN_JOINER));
 					uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 				}
 			}
 		}
 
 		private List<String> apply(final Iterator<EventDialogue> evtDiagsToPrint, final int expectedUtteranceCount) {
-			final List<String> result = new ArrayList<>(expectedUtteranceCount);
-			result.add(OUTFILE_HEADER);
+			final List<String> result = new ArrayList<>(expectedUtteranceCount + 1);
+			result.add(COL_NAMES.stream().collect(ROW_CELL_JOINER));
 
 			final EventDialogue firstDiag = evtDiagsToPrint.next();
 			int roundId;
@@ -256,28 +213,15 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	private static final Options OPTIONS = createOptions();
 
-	private static final String OUTFILE_HEADER;
-
 	private static final Charset OUTPUT_ENCODING = StandardCharsets.UTF_8;
 
 	private static final UtteranceSpeakerParticipantIdMapFactory PLAYER_PARTICIPANT_ID_MAPPER = new UtteranceSpeakerParticipantIdMapFactory();
-
-	private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER;
 
 	/**
 	 * A factory for creating unfiltered {@link Utterance} instances,
 	 * i.e.&nbsp;still containing possible metalanguage tokens.
 	 */
 	private static final SegmentUtteranceFactory SEG_UTT_FACTORY = new SegmentUtteranceFactory();
-
-	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
-
-	static {
-		ROW_CELL_JOINER = Collectors.joining("\t");
-		final List<String> colHeaders = Arrays.asList("ROUND", "SPEAKER", "DIALOGUE_ROLE", "START_TIME", "END_TIME",
-				"UTTERANCE", "REFERRING_TOKENS");
-		OUTFILE_HEADER = colHeaders.stream().collect(ROW_CELL_JOINER);
-	}
 
 	public static void main(final CommandLine cl)
 			throws ParseException, IOException, JAXBException, InterruptedException, ExecutionException {
@@ -338,30 +282,21 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 		return segs.stream().flatMap(seg -> SEG_UTT_FACTORY.create(seg).stream());
 	}
 
-	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
-
 	private final Path outDir;
 
 	private final String outfileName;
 
-	private final Predicate<? super Utterance> transformedUttRowFilter;
+	private final Predicate<? super Utterance> uttRowFilter;
 
 	public UtteranceTabularDataWriter(final Path outDir, final String outfileName) {
-		this(outDir, outfileName, EventDialogueTransformer.IDENTITY_TRANSFORMER);
+		this(outDir, outfileName, DEFAULT_UTT_FILTER);
 	}
 
 	public UtteranceTabularDataWriter(final Path outDir, final String outfileName,
-			final Function<? super EventDialogue, EventDialogue> diagTransformer) {
-		this(outDir, outfileName, diagTransformer, DEFAULT_UTT_FILTER);
-	}
-
-	public UtteranceTabularDataWriter(final Path outDir, final String outfileName,
-			final Function<? super EventDialogue, EventDialogue> diagTransformer,
-			final Predicate<? super Utterance> transformedUttRowFilter) {
+			final Predicate<? super Utterance> uttRowFilter) {
 		this.outDir = outDir;
 		this.outfileName = outfileName;
-		this.diagTransformer = diagTransformer;
-		this.transformedUttRowFilter = transformedUttRowFilter;
+		this.uttRowFilter = uttRowFilter;
 	}
 
 	public void accept(final Future<Map<SessionDataManager, Path>> sessionDataFuture)
@@ -390,7 +325,7 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 			final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 			final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
 			final List<String> rows = new TabularDataFactory(playerParticipantIds, playerRoles.inverse(),
-					uttsBySegmentId, diagTransformer, transformedUttRowFilter).apply(evtDiags);
+					uttsBySegmentId, uttRowFilter).apply(evtDiags);
 			final Path outfile = sessionOutputDir.resolve(outfileName);
 			LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
 			Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
