@@ -28,7 +28,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 public interface EventDialogueTransformer extends Function<EventDialogue, EventDialogue> {
 
 	/**
-	 * A {@code EventDialogueTransformer} that always returns its input
+	 * An {@code EventDialogueTransformer} that always returns its input
 	 * argument.
 	 */
 	public static final EventDialogueTransformer IDENTITY_TRANSFORMER = diag -> diag;
