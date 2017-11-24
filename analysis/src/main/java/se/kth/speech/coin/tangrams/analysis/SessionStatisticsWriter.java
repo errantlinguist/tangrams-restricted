@@ -195,7 +195,7 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 					.map(Paths::get).toArray(Path[]::new);
 			if (inpaths.length < 1) {
 				throw new IllegalArgumentException(
-						String.format("Usage: %s INPATHS...", SessionStatisticsWriter.class.getSimpleName()));
+						String.format("Usage: %s INPATHS...", SessionStatisticsWriter.class.getName()));
 			} else {
 				final NavigableMap<Path, NavigableMap<String, GameSummary>> sessionSummaries = new TreeMap<>();
 				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();

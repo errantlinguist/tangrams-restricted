@@ -64,7 +64,7 @@ final class SessionEventLogMinimumTimeWriter { // NO_UCD (unused code)
 				.toArray(Path[]::new);
 		if (inpaths.length < 1) {
 			throw new IllegalArgumentException(
-					String.format("Usage: %s INPATHS...", SessionEventLogMinimumTimeWriter.class.getSimpleName()));
+					String.format("Usage: %s INPATHS...", SessionEventLogMinimumTimeWriter.class.getName()));
 		} else {
 			final SessionEventLogMinimumTimeWriter writer = new SessionEventLogMinimumTimeWriter(
 					EXPECTED_AVERAGE_EVENT_COUNT);

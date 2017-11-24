@@ -65,7 +65,7 @@ public final class RNNParseAnnotationSegmentWriter { // NO_UCD (unused code)
 				.toArray(Path[]::new);
 		if (inpaths.length < 1) {
 			throw new IllegalArgumentException(
-					String.format("Usage: %s INPATHS...", RNNParseAnnotationSegmentWriter.class.getSimpleName()));
+					String.format("Usage: %s INPATHS...", RNNParseAnnotationSegmentWriter.class.getName()));
 		} else {
 			final StanfordCoreNLP pipeline = createPipeline();
 			System.out.println(Stream.of("INPUT", "LEAF_NODES").collect(ROW_CELL_JOINER));
