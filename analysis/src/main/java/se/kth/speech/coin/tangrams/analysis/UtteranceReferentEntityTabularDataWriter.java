@@ -93,7 +93,7 @@ import se.kth.speech.io.RuntimeJAXBException;
  * @since 4 May 2017
  *
  */
-final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
+final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use default)
 
 	private static class GameWriter {
 
@@ -638,7 +638,7 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(UtteranceSelectedEntityTabularDataWriter.class.getSimpleName() + " INPATHS...",
+			formatter.printHelp(UtteranceReferentEntityTabularDataWriter.class.getSimpleName() + " INPATHS...",
 					OPTIONS);
 		}
 
@@ -689,7 +689,7 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 
 	private static final List<FileNameExtensionFilter> FILE_FILTERS;
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceSelectedEntityTabularDataWriter.class);
+	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceReferentEntityTabularDataWriter.class);
 
 	private static final String NULL_VALUE_REPR = "?";
 
@@ -705,7 +705,7 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 	static {
 		SETTINGS_DIR = Paths.get(".settings");
 		CLASS_SETTINGS_INFILE_PATH = SETTINGS_DIR
-				.resolve(UtteranceSelectedEntityTabularDataWriter.class.getName() + ".properties");
+				.resolve(UtteranceReferentEntityTabularDataWriter.class.getName() + ".properties");
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
@@ -723,7 +723,7 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 				LOGGER.info("Will read batch job data from \"{}\".", inpath);
 				final String outfileNamePrefix = Parameter.parseOutfilePrefix(cl, inpath);
 				LOGGER.info("Will prefix each output file for input \"{}\" with \"{}\".", inpath, outfileNamePrefix);
-				final UtteranceSelectedEntityTabularDataWriter writer = createWriter(outpath, outfileNamePrefix,
+				final UtteranceReferentEntityTabularDataWriter writer = createWriter(outpath, outfileNamePrefix,
 						strict);
 				writer.accept(inpath, sessionGameMgrFactory);
 			}
@@ -771,14 +771,14 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 		return parentDirName + "-" + fileBaseName;
 	}
 
-	private static UtteranceSelectedEntityTabularDataWriter createWriter(final Path outpath,
+	private static UtteranceReferentEntityTabularDataWriter createWriter(final Path outpath,
 			final String outfileNamePrefix, final boolean strict) {
 		final Set<EntityFeature> featuresToDescribe = EnumSet.of(EntityFeature.EDGE_COUNT, EntityFeature.POSITION_X,
 				EntityFeature.POSITION_Y);
 		final List<EntityFeature> orderedFeaturesToDescribe = Arrays.asList(EntityFeature.getCanonicalOrdering()
 				.stream().filter(featuresToDescribe::contains).toArray(EntityFeature[]::new));
 		final UtteranceDialogueRepresentationStringFactory uttDiagReprFactory = new UtteranceDialogueRepresentationStringFactory();
-		return new UtteranceSelectedEntityTabularDataWriter(new EntityFeature.Extractor(), orderedFeaturesToDescribe,
+		return new UtteranceReferentEntityTabularDataWriter(new EntityFeature.Extractor(), orderedFeaturesToDescribe,
 				uttDiagReprFactory, outpath, outfileNamePrefix, strict);
 	}
 
@@ -824,7 +824,7 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 						.ifPresent(outfileNamePrefix -> {
 							LOGGER.info("Will prefix each output file with \"{}\".", outfileNamePrefix);
 							final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();
-							final UtteranceSelectedEntityTabularDataWriter writer = createWriter(outpath,
+							final UtteranceReferentEntityTabularDataWriter writer = createWriter(outpath,
 									outfileNamePrefix, false);
 							try {
 								writer.accept(inpath, sessionGameMgrFactory);
@@ -841,7 +841,7 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 		try (OutputStream settingsOutStream = Files.newOutputStream(CLASS_SETTINGS_INFILE_PATH,
 				StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
 			settings.getProperties().store(settingsOutStream, String.format("Persisted settings for class \"%s\".",
-					UtteranceSelectedEntityTabularDataWriter.class.getName()));
+					UtteranceReferentEntityTabularDataWriter.class.getName()));
 		}
 
 	}
@@ -858,7 +858,7 @@ final class UtteranceSelectedEntityTabularDataWriter { // NO_UCD (use default)
 
 	private final Function<? super Iterator<Utterance>, String> uttDiagReprFactory;
 
-	private UtteranceSelectedEntityTabularDataWriter(final EntityFeature.Extractor extractor,
+	private UtteranceReferentEntityTabularDataWriter(final EntityFeature.Extractor extractor,
 			final List<EntityFeature> featuresToDescribe,
 			final Function<? super Iterator<Utterance>, String> uttDiagReprFactory, final Path outdir,
 			final String outfileNamePrefix, final boolean strict) {
