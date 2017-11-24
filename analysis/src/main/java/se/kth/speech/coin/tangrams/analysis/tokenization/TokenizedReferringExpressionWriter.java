@@ -201,7 +201,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
 		private final List<String> COL_NAMES = Arrays.asList("ROUND", "SPEAKER", "DIALOGUE_ROLE", "START_TIME",
-				"END_TIME", "UTTERANCE", "REFERRING_TOKENS");
+				"END_TIME", "TOKENS", "REFERRING_TOKENS");
 
 		private final EventDialogueTransformer diagTransformer;
 
