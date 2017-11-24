@@ -33,8 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.SortedSet;
-import java.util.TreeSet;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
@@ -281,20 +280,15 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	public static void main(final CommandLine cl)
 			throws ParseException, IOException, JAXBException, InterruptedException, ExecutionException {
-		final SortedSet<Path> inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
-				.map(Paths::get).collect(Collectors.toCollection(() -> new TreeSet<>()));
+		final Set<Path> inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+				.map(Paths::get).collect(Collectors.toSet());
 		if (inpaths.isEmpty()) {
 			throw new MissingOptionException("No input path(s) specified.");
 		} else {
-			LOGGER.info("Reading session data underneath {}.", inpaths);
-			final Future<Map<SessionDataManager, Path>> sessionDataFuture = ForkJoinPool.commonPool()
-					.submit(() -> readTestSessionData(inpaths));
 			final Path outDir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath().toAbsolutePath();
-			LOGGER.info("Will write output underneath directory \"{}\".", outDir);
 			final String outfileName = cl.getOptionValue(Parameter.OUTFILE_NAME.optName, DEFAULT_OUTFILE_NAME);
-			LOGGER.info("Will name output files \"{}\".", outfileName);
-			final UtteranceTabularDataWriter writer = new UtteranceTabularDataWriter(outDir, outfileName);
-			writer.accept(sessionDataFuture);
+			final UtteranceTabularDataWriter writer = new UtteranceTabularDataWriter(inpaths, outDir, outfileName);
+			writer.run();
 		}
 	}
 
@@ -340,33 +334,35 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
 
+	private final Set<Path> inpaths;
+
 	private final Path outDir;
 
 	private final String outfileName;
 
 	private final Predicate<? super Utterance> transformedUttRowFilter;
 
-	public UtteranceTabularDataWriter(final Path outDir, final String outfileName) {
-		this(outDir, outfileName, EventDialogueTransformer.IDENTITY_TRANSFORMER);
+	public UtteranceTabularDataWriter(final Set<Path> inpaths, final Path outDir, final String outfileName) {
+		this(inpaths, outDir, outfileName, EventDialogueTransformer.IDENTITY_TRANSFORMER, DEFAULT_UTT_FILTER);
 	}
 
-	public UtteranceTabularDataWriter(final Path outDir, final String outfileName,
-			final Function<? super EventDialogue, EventDialogue> diagTransformer) {
-		this(outDir, outfileName, diagTransformer, DEFAULT_UTT_FILTER);
-	}
-
-	public UtteranceTabularDataWriter(final Path outDir, final String outfileName,
+	public UtteranceTabularDataWriter(final Set<Path> inpaths, final Path outDir, final String outfileName,
 			final Function<? super EventDialogue, EventDialogue> diagTransformer,
 			final Predicate<? super Utterance> transformedUttRowFilter) {
+		this.inpaths = inpaths;
 		this.outDir = outDir;
 		this.outfileName = outfileName;
 		this.diagTransformer = diagTransformer;
 		this.transformedUttRowFilter = transformedUttRowFilter;
 	}
 
-	public void accept(final Future<Map<SessionDataManager, Path>> sessionDataFuture)
-			throws InterruptedException, ExecutionException, IOException, JAXBException {
-		final Map<SessionDataManager, Path> allSessionData = sessionDataFuture.get();
+	public void run() throws InterruptedException, ExecutionException, IOException, JAXBException {
+		final Future<Map<SessionDataManager, Path>> allSessionDataFuture = ForkJoinPool.commonPool()
+				.submit(() -> readTestSessionData(inpaths));
+		LOGGER.info("Will write output underneath directory \"{}\".", outDir);
+		LOGGER.info("Will name output files \"{}\".", outfileName);
+
+		final Map<SessionDataManager, Path> allSessionData = allSessionDataFuture.get();
 		final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
 		LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
 
@@ -396,6 +392,6 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 			Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
 					StandardOpenOption.TRUNCATE_EXISTING);
 		}
-		LOGGER.info("Finished writing data for {} session(s).", allSessionData.size());
+		LOGGER.info("Finished tokenizing {} session(s).", allSessionData.size());
 	}
 }
