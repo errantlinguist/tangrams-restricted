@@ -298,22 +298,22 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 			final EventDialogue firstDiag = evtDiagsToPrint.next();
 			int roundId;
-			final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> uttDiagRoleFactory;
+			final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> firstUttDiagRoleFactory;
 			if (firstDiag.getFirstEvent().isPresent()) {
 				// The first event dialogue represents a round in the game
 				// session
 				roundId = 1;
-				uttDiagRoleFactory = DialogueRole::get;
+				firstUttDiagRoleFactory = DialogueRole::get;
 			} else {
 				// Use 0 index for pre-game dialogue, i.e. an EventDialogue with
 				// no actual game event(s)
 				roundId = 0;
-				uttDiagRoleFactory = this::getInitialPlayerDiagRole;
+				firstUttDiagRoleFactory = this::getInitialPlayerDiagRole;
 			}
-			addUtteranceDataRows(roundId, firstDiag, result, uttDiagRoleFactory);
+			addUtteranceDataRows(roundId, firstDiag, result, firstUttDiagRoleFactory);
 			while (evtDiagsToPrint.hasNext()) {
 				final EventDialogue evtDiag = evtDiagsToPrint.next();
-				addUtteranceDataRows(++roundId, evtDiag, result, uttDiagRoleFactory);
+				addUtteranceDataRows(++roundId, evtDiag, result, DialogueRole::get);
 			}
 			return result;
 		}
