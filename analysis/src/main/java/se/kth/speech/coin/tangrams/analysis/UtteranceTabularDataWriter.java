@@ -64,7 +64,7 @@ import se.kth.speech.CommonPaths;
 import se.kth.speech.MapCollectors;
 import se.kth.speech.coin.tangrams.analysis.dialogues.EventDialogue;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
-import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.DummyEventDialogueTransformer;
+import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
 import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
@@ -143,7 +143,7 @@ final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 		
 		private TabularDataFactory(final Map<? super String, String> playerParticipantIds,
 				final Map<? super String, PlayerRole> playerInitialRoles, final Map<? super String, Utterance> origUttsBySegmentId) {
-			this(playerParticipantIds, playerInitialRoles, origUttsBySegmentId, DummyEventDialogueTransformer.getInstance(), DEFAULT_UTT_FILTER);
+			this(playerParticipantIds, playerInitialRoles, origUttsBySegmentId, EventDialogueTransformer.IDENTITY_TRANSFORMER, DEFAULT_UTT_FILTER);
 		}
 		
 		/**

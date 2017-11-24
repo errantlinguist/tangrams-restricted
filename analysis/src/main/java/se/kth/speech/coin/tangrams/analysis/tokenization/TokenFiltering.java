@@ -18,13 +18,12 @@ package se.kth.speech.coin.tangrams.analysis.tokenization;
 
 import java.util.function.Supplier;
 
-import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.DummyEventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
 public enum TokenFiltering implements Supplier<EventDialogueTransformer> {
-	NO_FILTER(DummyEventDialogueTransformer.getInstance()), STOPWORDS(
+	NO_FILTER(EventDialogueTransformer.IDENTITY_TRANSFORMER), STOPWORDS(
 			new TokenFilteringEventDialogueTransformer(SnowballPorter2EnglishStopwords.Variant.CANONICAL.get()));
 
 	private final EventDialogueTransformer held;
