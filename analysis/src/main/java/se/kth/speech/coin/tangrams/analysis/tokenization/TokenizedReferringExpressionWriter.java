@@ -33,11 +33,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
@@ -76,6 +78,7 @@ import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialog
 import se.kth.speech.coin.tangrams.analysis.features.words_as_classifiers.dialogues.EventDialogueTransformer;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
 import se.kth.speech.coin.tangrams.game.PlayerRole;
+import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.higgins._2005.annotation.Annotation.Segments.Segment;
@@ -194,29 +197,55 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static class TabularDataFactory {
 
+		private enum DialogueRole {
+			INSTRUCTOR, MANIPULATOR;
+
+			private static DialogueRole get(final PlayerRole role) {
+				final DialogueRole result;
+				switch (role) {
+				case MOVE_SUBMISSION:
+					result = INSTRUCTOR;
+					break;
+				case WAITING_FOR_NEXT_MOVE:
+					result = MANIPULATOR;
+					break;
+				default:
+					throw new IllegalArgumentException(String.format("No description for player role %d.", role));
+				}
+				return result;
+			}
+
+			private static DialogueRole get(final Utterance utt, final EventDialogue evtDiag) {
+				final String speakerId = utt.getSpeakerId();
+				final String submitterId = (String) evtDiag.getFirstEvent().get().getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID);
+				return Objects.equals(speakerId, submitterId) ? INSTRUCTOR : MANIPULATOR;
+			}
+		}
+
 		private final EventDialogueTransformer diagTransformer;
 
 		private final Map<String, Utterance> origUttsBySegmentId;
 
-		private final Map<? super String, String> playerParticipantIds;
+		private final Map<String, PlayerRole> playerInitialRoles;
 
-		private final Map<String, PlayerRole> playerRoles;
+		private final Map<? super String, String> playerParticipantIds;
 
 		private final Predicate<? super Utterance> transformedUttRowFilter;
 
 		private TabularDataFactory(final EventDialogueTransformer diagTransformer,
-				final Map<? super String, String> playerParticipantIds, final Map<String, PlayerRole> playerRoles,
-				final Map<String, Utterance> origUttsBySegmentId,
-				Predicate<? super Utterance> transformedUttRowFilter) {
+				final Map<? super String, String> playerParticipantIds,
+				final Map<String, PlayerRole> playerInitialRoles, final Map<String, Utterance> origUttsBySegmentId,
+				final Predicate<? super Utterance> transformedUttRowFilter) {
 			this.diagTransformer = diagTransformer;
 			this.playerParticipantIds = playerParticipantIds;
-			this.playerRoles = playerRoles;
+			this.playerInitialRoles = playerInitialRoles;
 			this.origUttsBySegmentId = origUttsBySegmentId;
 			this.transformedUttRowFilter = transformedUttRowFilter;
 		}
 
 		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
-				final Collection<? super String> uttRows) {
+				final Collection<? super String> uttRows,
+				final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> uttDiagRoleFactory) {
 			final List<Utterance> origUtts = evtDiag.getUtterances();
 			LOGGER.debug("Writing rows for round ID {}.", roundId);
 			final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
@@ -234,9 +263,8 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 					final String speakerId = origUtt.getSpeakerId();
 					final String participantId = playerParticipantIds.get(speakerId);
 					rowCells.add(participantId);
-					final PlayerRole role = playerRoles.get(speakerId);
-					final String roleDesc = getPlayerRoleDesc(role);
-					rowCells.add(roleDesc);
+					final DialogueRole diagRole = uttDiagRoleFactory.apply(origUtt, evtDiag);
+					rowCells.add(diagRole);
 
 					final float startTime = origUtt.getStartTime();
 					rowCells.add(startTime);
@@ -269,12 +297,23 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			result.add(OUTFILE_HEADER);
 
 			final EventDialogue firstDiag = evtDiagsToPrint.next();
-			// Use 0 index for pre-game dialogue
-			int roundId = firstDiag.getFirstEvent().isPresent() ? 1 : 0;
-			addUtteranceDataRows(roundId, firstDiag, result);
+			int roundId;
+			final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> uttDiagRoleFactory;
+			if (firstDiag.getFirstEvent().isPresent()) {
+				// The first event dialogue represents a round in the game
+				// session
+				roundId = 1;
+				uttDiagRoleFactory = DialogueRole::get;
+			} else {
+				// Use 0 index for pre-game dialogue, i.e. an EventDialogue with
+				// no actual game event(s)
+				roundId = 0;
+				uttDiagRoleFactory = this::getInitialPlayerDiagRole;
+			}
+			addUtteranceDataRows(roundId, firstDiag, result, uttDiagRoleFactory);
 			while (evtDiagsToPrint.hasNext()) {
 				final EventDialogue evtDiag = evtDiagsToPrint.next();
-				addUtteranceDataRows(++roundId, evtDiag, result);
+				addUtteranceDataRows(++roundId, evtDiag, result, uttDiagRoleFactory);
 			}
 			return result;
 		}
@@ -282,6 +321,15 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		private List<String> apply(final List<EventDialogue> evtDiagsToPrint) {
 			return apply(evtDiagsToPrint.iterator(), evtDiagsToPrint.size() * 4 + 1);
 		}
+
+		private DialogueRole getInitialPlayerDiagRole(final String playerId) {
+			return DialogueRole.get(playerInitialRoles.get(playerId));
+		}
+
+		private DialogueRole getInitialPlayerDiagRole(final Utterance utt, final EventDialogue evtDiag) {
+			return getInitialPlayerDiagRole(utt.getSpeakerId());
+		}
+
 	}
 
 	/**
@@ -377,7 +425,9 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 				final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 				final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
 				final Predicate<Utterance> transformedUttRowFilter = transformedUtt -> true;
-//				final Predicate<Utterance> transformedUttRowFilter = transformedUtt -> !(transformedUtt == null || transformedUtt.getTokens().isEmpty());
+				// final Predicate<Utterance> transformedUttRowFilter =
+				// transformedUtt -> !(transformedUtt == null ||
+				// transformedUtt.getTokens().isEmpty());
 				final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds,
 						playerRoles.inverse(), uttsBySegmentId, transformedUttRowFilter).apply(evtDiags);
 				final Path outfile = sessionOutputDir.resolve(outfileName);
@@ -404,21 +454,6 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 	private static Options createOptions() {
 		final Options result = new Options();
 		Arrays.stream(Parameter.values()).map(Parameter::get).forEach(result::addOption);
-		return result;
-	}
-
-	private static String getPlayerRoleDesc(final PlayerRole role) {
-		final String result;
-		switch (role) {
-		case MOVE_SUBMISSION:
-			result = "INSTRUCTOR";
-			break;
-		case WAITING_FOR_NEXT_MOVE:
-			result = "MANIPULATOR";
-			break;
-		default:
-			throw new IllegalArgumentException(String.format("No description for player role %d.", role));
-		}
 		return result;
 	}
 
