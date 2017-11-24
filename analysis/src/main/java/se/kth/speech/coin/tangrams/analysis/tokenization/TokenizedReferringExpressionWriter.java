@@ -39,6 +39,7 @@ import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collector;
@@ -201,13 +202,17 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private final Map<String, PlayerRole> playerRoles;
 
+		private final Predicate<? super Utterance> transformedUttRowFilter;
+
 		private TabularDataFactory(final EventDialogueTransformer diagTransformer,
 				final Map<? super String, String> playerParticipantIds, final Map<String, PlayerRole> playerRoles,
-				final Map<String, Utterance> origUttsBySegmentId) {
+				final Map<String, Utterance> origUttsBySegmentId,
+				Predicate<? super Utterance> transformedUttRowFilter) {
 			this.diagTransformer = diagTransformer;
 			this.playerParticipantIds = playerParticipantIds;
 			this.playerRoles = playerRoles;
 			this.origUttsBySegmentId = origUttsBySegmentId;
+			this.transformedUttRowFilter = transformedUttRowFilter;
 		}
 
 		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
@@ -220,40 +225,42 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 					.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
 							MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(origUtts.size())));
 			for (final Utterance origUtt : origUtts) {
-				final List<Object> rowCells = new ArrayList<>(6);
-				rowCells.add(roundId);
-
 				final String segId = origUtt.getSegmentId();
-				final String speakerId = origUtt.getSpeakerId();
-				final String participantId = playerParticipantIds.get(speakerId);
-				rowCells.add(participantId);
-				final PlayerRole role = playerRoles.get(speakerId);
-				final String roleDesc = getPlayerRoleDesc(role);
-				rowCells.add(roleDesc);
-
-				final float startTime = origUtt.getStartTime();
-				rowCells.add(startTime);
-				final float endTime = origUtt.getEndTime();
-				rowCells.add(endTime);
-
-				final Utterance rawUtt = origUttsBySegmentId.get(segId);
-				final String rawUttRepr = rawUtt.getTokens().stream().collect(TOKEN_JOINER);
-				rowCells.add(rawUttRepr);
-
 				final Utterance transformedUtt = transformedUttsById.get(segId);
-				final String refLangStr;
-				if (transformedUtt == null) {
-					refLangStr = "";
-				} else {
-					assert transformedUtt.getSpeakerId().equals(speakerId);
-					assert transformedUtt.getStartTime() == startTime;
-					assert transformedUtt.getEndTime() == endTime;
-					refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
+				if (transformedUttRowFilter.test(transformedUtt)) {
+					final List<Object> rowCells = new ArrayList<>(6);
+					rowCells.add(roundId);
+
+					final String speakerId = origUtt.getSpeakerId();
+					final String participantId = playerParticipantIds.get(speakerId);
+					rowCells.add(participantId);
+					final PlayerRole role = playerRoles.get(speakerId);
+					final String roleDesc = getPlayerRoleDesc(role);
+					rowCells.add(roleDesc);
+
+					final float startTime = origUtt.getStartTime();
+					rowCells.add(startTime);
+					final float endTime = origUtt.getEndTime();
+					rowCells.add(endTime);
+
+					final Utterance rawUtt = origUttsBySegmentId.get(segId);
+					final String rawUttRepr = rawUtt.getTokens().stream().collect(TOKEN_JOINER);
+					rowCells.add(rawUttRepr);
+
+					final String refLangStr;
+					if (transformedUtt == null) {
+						refLangStr = "";
+					} else {
+						assert transformedUtt.getSpeakerId().equals(speakerId);
+						assert transformedUtt.getStartTime() == startTime;
+						assert transformedUtt.getEndTime() == endTime;
+						refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
+					}
+					rowCells.add(refLangStr);
+					LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", rawUttRepr,
+							origUtt.getTokens().stream().collect(TOKEN_JOINER), refLangStr);
+					uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 				}
-				rowCells.add(refLangStr);
-				LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", rawUttRepr,
-						origUtt.getTokens().stream().collect(TOKEN_JOINER), refLangStr);
-				uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 			}
 		}
 
@@ -369,8 +376,10 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						.getPlayerRoles();
 				final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
 				final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
+				final Predicate<Utterance> transformedUttRowFilter = transformedUtt -> true;
+//				final Predicate<Utterance> transformedUttRowFilter = transformedUtt -> !(transformedUtt == null || transformedUtt.getTokens().isEmpty());
 				final List<String> rows = new TabularDataFactory(diagTransformer, playerParticipantIds,
-						playerRoles.inverse(), uttsBySegmentId).apply(evtDiags);
+						playerRoles.inverse(), uttsBySegmentId, transformedUttRowFilter).apply(evtDiags);
 				final Path outfile = sessionOutputDir.resolve(outfileName);
 				LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
 				Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
