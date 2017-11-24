@@ -102,7 +102,7 @@ final class LoggedEventTimeStretcher { // NO_UCD (use default)
 	private static final Logger LOGGER = LoggerFactory.getLogger(LoggedEventTimeStretcher.class);
 
 	public static void main(final CommandLine cl) throws IOException, ParseException {
-		final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+		final Path[] inpaths = cl.getArgList().stream()
 				.map(Paths::get).toArray(Path[]::new);
 		switch (inpaths.length) {
 		case 0: {

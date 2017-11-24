@@ -468,7 +468,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+			final Path[] inpaths = cl.getArgList().stream()
 					.map(Paths::get).toArray(Path[]::new);
 			if (inpaths.length < 1) {
 				throw new MissingOptionException("No input file(s) specified.");

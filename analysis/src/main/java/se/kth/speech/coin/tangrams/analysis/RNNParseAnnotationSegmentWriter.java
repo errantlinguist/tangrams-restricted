@@ -61,7 +61,7 @@ public final class RNNParseAnnotationSegmentWriter { // NO_UCD (unused code)
 	private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
 	public static void main(final String[] args) throws IOException, JAXBException {
-		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
+		final Path[] inpaths = Arrays.stream(args).map(Paths::get)
 				.toArray(Path[]::new);
 		if (inpaths.length < 1) {
 			throw new IllegalArgumentException(

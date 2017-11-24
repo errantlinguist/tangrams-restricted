@@ -709,7 +709,7 @@ final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use default)
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
-		final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+		final Path[] inpaths = cl.getArgList().stream()
 				.map(Paths::get).toArray(Path[]::new);
 		if (inpaths.length < 1) {
 			throw new MissingOptionException("No input path(s) specified.");

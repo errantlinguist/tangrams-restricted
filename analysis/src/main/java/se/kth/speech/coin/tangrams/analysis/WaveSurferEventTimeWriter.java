@@ -75,7 +75,7 @@ final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 	private static final String TURN_DELIMITING_EVENT_NAME = GameManagementEvent.NEXT_TURN_REQUEST.getEventName();
 
 	public static void main(final String[] args) throws IOException {
-		final Path[] inpaths = Arrays.stream(args).map(String::trim).filter(path -> !path.isEmpty()).map(Paths::get)
+		final Path[] inpaths = Arrays.stream(args).map(Paths::get)
 				.toArray(Path[]::new);
 		if (inpaths.length < 1) {
 			throw new IllegalArgumentException(

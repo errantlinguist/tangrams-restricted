@@ -104,7 +104,7 @@ final class LoggedEventTimeShifter { // NO_UCD (use default)
 	private static final BigDecimal SECS_TO_MILLS_FACTOR = new BigDecimal(1000);
 
 	public static void main(final CommandLine cl) throws IOException, ParseException {
-		final Path[] inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+		final Path[] inpaths = cl.getArgList().stream()
 				.map(Paths::get).toArray(Path[]::new);
 		switch (inpaths.length) {
 		case 0: {
