@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.Future;
@@ -78,7 +79,7 @@ import se.kth.speech.higgins.io.HatIO;
  * @since 24 Nov 2017
  *
  */
-final class UtteranceTabularDataWriter { // NO_UCD (unused code)
+public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	private enum Parameter implements Supplier<Option> {
 		OUTFILE_NAME("n") {
@@ -126,12 +127,13 @@ final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 			private static DialogueRole get(final Utterance utt, final EventDialogue evtDiag) {
 				final String speakerId = utt.getSpeakerId();
-				final String submitterId = (String) evtDiag.getFirstEvent().get().getGameAttrs().get(GameManagementEvent.Attribute.PLAYER_ID);
+				final String submitterId = (String) evtDiag.getFirstEvent().get().getGameAttrs()
+						.get(GameManagementEvent.Attribute.PLAYER_ID);
 				return Objects.equals(speakerId, submitterId) ? INSTRUCTOR : MANIPULATOR;
 			}
 		}
 
-		private final Function<? super EventDialogue,EventDialogue> diagTransformer;
+		private final Function<? super EventDialogue, EventDialogue> diagTransformer;
 
 		private final Map<? super String, Utterance> origUttsBySegmentId;
 
@@ -140,20 +142,11 @@ final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 		private final Map<? super String, String> playerParticipantIds;
 
 		private final Predicate<? super Utterance> transformedUttRowFilter;
-		
-		private TabularDataFactory(final Map<? super String, String> playerParticipantIds,
-				final Map<? super String, PlayerRole> playerInitialRoles, final Map<? super String, Utterance> origUttsBySegmentId) {
-			this(playerParticipantIds, playerInitialRoles, origUttsBySegmentId, EventDialogueTransformer.IDENTITY_TRANSFORMER, DEFAULT_UTT_FILTER);
-		}
-		
-		/**
-		 * Print all utts by default
-		 */
-		private static final Predicate<Utterance> DEFAULT_UTT_FILTER = transformedUtt -> true;
 
 		private TabularDataFactory(final Map<? super String, String> playerParticipantIds,
-				final Map<? super String, PlayerRole> playerInitialRoles, final Map<? super String, Utterance> origUttsBySegmentId,
-				final Function<? super EventDialogue,EventDialogue> diagTransformer,
+				final Map<? super String, PlayerRole> playerInitialRoles,
+				final Map<? super String, Utterance> origUttsBySegmentId,
+				final Function<? super EventDialogue, EventDialogue> diagTransformer,
 				final Predicate<? super Utterance> transformedUttRowFilter) {
 			this.playerParticipantIds = playerParticipantIds;
 			this.playerInitialRoles = playerInitialRoles;
@@ -253,6 +246,11 @@ final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	private static final String DEFAULT_OUTFILE_NAME = "extracted-referring-tokens.tsv";
 
+	/**
+	 * Print all utts by default
+	 */
+	private static final Predicate<Utterance> DEFAULT_UTT_FILTER = transformedUtt -> true;
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(UtteranceTabularDataWriter.class);
 
 	private static final Options OPTIONS = createOptions();
@@ -282,50 +280,15 @@ final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 	public static void main(final CommandLine cl)
 			throws ParseException, IOException, JAXBException, InterruptedException, ExecutionException {
-		final List<Path> inpaths = Arrays.asList(cl.getArgList().stream().map(String::trim)
-				.filter(path -> !path.isEmpty()).map(Paths::get).toArray(Path[]::new));
+		final Set<Path> inpaths = cl.getArgList().stream().map(String::trim).filter(path -> !path.isEmpty())
+				.map(Paths::get).collect(Collectors.toSet());
 		if (inpaths.isEmpty()) {
 			throw new MissingOptionException("No input path(s) specified.");
 		} else {
-			final Future<Map<SessionDataManager, Path>> allSessionDataFuture = ForkJoinPool.commonPool()
-					.submit(() -> readTestSessionData(inpaths));
 			final Path outDir = ((File) cl.getParsedOptionValue(Parameter.OUTPATH.optName)).toPath().toAbsolutePath();
-			LOGGER.info("Will write output underneath directory \"{}\".", outDir);
 			final String outfileName = cl.getOptionValue(Parameter.OUTFILE_NAME.optName, DEFAULT_OUTFILE_NAME);
-			LOGGER.info("Will name output files \"{}\".", outfileName);
-
-			final Map<SessionDataManager, Path> allSessionData = allSessionDataFuture.get();
-			final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
-			LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
-
-			final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
-					new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10));
-			for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
-				final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
-				final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
-				final Path sessionDir = sessionPropsFilePath.getParent();
-				assert sessionDir != null;
-				final Path relativeSessionDir = sessionPrefixPath.relativize(sessionDir);
-				final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
-
-				final Stream<Utterance> utts = readUtterances(sessionDataMgr);
-				final Map<String, Utterance> uttsBySegmentId = utts
-						.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity()));
-
-				final SessionGameManager sessionGameMgr = sessionGameMgrFactory.apply(sessionDataMgr);
-				final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
-				final BiMap<PlayerRole, String> playerRoles = sessionGame.getHistory().getInitialState()
-						.getPlayerRoles();
-				final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
-				final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
-				final List<String> rows = new TabularDataFactory(playerParticipantIds,
-						playerRoles.inverse(), uttsBySegmentId).apply(evtDiags);
-				final Path outfile = sessionOutputDir.resolve(outfileName);
-				LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
-				Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING);
-			}
-			LOGGER.info("Finished tokenizing {} session(s).", allSessionData.size());
+			final UtteranceTabularDataWriter writer = new UtteranceTabularDataWriter(inpaths, outDir, outfileName);
+			writer.run();
 		}
 	}
 
@@ -369,7 +332,66 @@ final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 		return segs.stream().flatMap(seg -> SEG_UTT_FACTORY.create(seg).stream());
 	}
 
-	private UtteranceTabularDataWriter() {
+	private final Function<? super EventDialogue, EventDialogue> diagTransformer;
+
+	private final Set<Path> inpaths;
+
+	private final Path outDir;
+
+	private final String outfileName;
+
+	private final Predicate<? super Utterance> transformedUttRowFilter;
+
+	public UtteranceTabularDataWriter(final Set<Path> inpaths, final Path outDir, final String outfileName) {
+		this(inpaths, outDir, outfileName, EventDialogueTransformer.IDENTITY_TRANSFORMER, DEFAULT_UTT_FILTER);
 	}
 
+	public UtteranceTabularDataWriter(final Set<Path> inpaths, final Path outDir, final String outfileName,
+			final Function<? super EventDialogue, EventDialogue> diagTransformer,
+			final Predicate<? super Utterance> transformedUttRowFilter) {
+		this.inpaths = inpaths;
+		this.outDir = outDir;
+		this.outfileName = outfileName;
+		this.diagTransformer = diagTransformer;
+		this.transformedUttRowFilter = transformedUttRowFilter;
+	}
+
+	public void run() throws InterruptedException, ExecutionException, IOException, JAXBException {
+		final Future<Map<SessionDataManager, Path>> allSessionDataFuture = ForkJoinPool.commonPool()
+				.submit(() -> readTestSessionData(inpaths));
+		LOGGER.info("Will write output underneath directory \"{}\".", outDir);
+		LOGGER.info("Will name output files \"{}\".", outfileName);
+
+		final Map<SessionDataManager, Path> allSessionData = allSessionDataFuture.get();
+		final Path sessionPrefixPath = CommonPaths.findCommonPrefixPath(allSessionData.values().stream());
+		LOGGER.info("Found a common path of \"{}\" for all input sessions.", sessionPrefixPath);
+
+		final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
+				new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10));
+		for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
+			final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
+			final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
+			final Path sessionDir = sessionPropsFilePath.getParent();
+			assert sessionDir != null;
+			final Path relativeSessionDir = sessionPrefixPath.relativize(sessionDir);
+			final Path sessionOutputDir = Files.createDirectories(outDir.resolve(relativeSessionDir));
+
+			final Stream<Utterance> utts = readUtterances(sessionDataMgr);
+			final Map<String, Utterance> uttsBySegmentId = utts
+					.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity()));
+
+			final SessionGameManager sessionGameMgr = sessionGameMgrFactory.apply(sessionDataMgr);
+			final SessionGame sessionGame = sessionGameMgr.getCanonicalGame();
+			final BiMap<PlayerRole, String> playerRoles = sessionGame.getHistory().getInitialState().getPlayerRoles();
+			final BiMap<String, String> playerParticipantIds = PLAYER_PARTICIPANT_ID_MAPPER.apply(playerRoles);
+			final List<EventDialogue> evtDiags = sessionGame.getEventDialogues();
+			final List<String> rows = new TabularDataFactory(playerParticipantIds, playerRoles.inverse(),
+					uttsBySegmentId, diagTransformer, transformedUttRowFilter).apply(evtDiags);
+			final Path outfile = sessionOutputDir.resolve(outfileName);
+			LOGGER.info("Writing data extracted from \"{}\" to \"{}\".", sessionPropsFilePath, outfile);
+			Files.write(outfile, rows, OUTPUT_ENCODING, StandardOpenOption.CREATE,
+					StandardOpenOption.TRUNCATE_EXISTING);
+		}
+		LOGGER.info("Finished tokenizing {} session(s).", allSessionData.size());
+	}
 }
