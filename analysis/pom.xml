@@ -14,7 +14,6 @@
 
 	<properties>
 		<stanford-corenlp.version>3.7.0</stanford-corenlp.version>
-		<spring.version>5.0.1.RELEASE</spring.version>
 	</properties>
 
 	<dependencies>
@@ -62,11 +61,6 @@
 			<groupId>nz.ac.waikato.cms.weka</groupId>
 			<artifactId>weka-stable</artifactId>
 			<version>3.8.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context</artifactId>
-			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.slf4j</groupId>

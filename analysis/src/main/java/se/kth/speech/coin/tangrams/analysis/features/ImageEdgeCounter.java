@@ -22,8 +22,6 @@ import java.io.UncheckedIOException;
 import java.util.Properties;
 import java.util.function.ToIntFunction;
 
-import javax.inject.Named;
-
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 
@@ -32,7 +30,6 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * @since Apr 17, 2017
  *
  */
-@Named
 public final class ImageEdgeCounter implements ToIntFunction<String> {
 
 	private static Object2IntMap<String> createPropValMap(final Properties props) {
