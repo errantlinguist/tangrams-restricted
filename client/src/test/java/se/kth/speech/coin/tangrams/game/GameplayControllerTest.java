@@ -49,7 +49,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  */
 public final class GameplayControllerTest {
 
-	public static final long[] TEST_SEEDS = new long[] { 1, 56, 3 };
+	public static final long[] TEST_SEEDS = new long[] { 1L, 56L, 3L };
 
 	private static final GameManagementClient CLIENT = Mockito.mock(GameManagementClient.class);
 
