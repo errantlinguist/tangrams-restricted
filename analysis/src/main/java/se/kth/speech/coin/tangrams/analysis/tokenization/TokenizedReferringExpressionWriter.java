@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -405,7 +404,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> result = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey, MapCollectors.throwingMerger(),
-						() -> new HashMap<>(infileSessionData.size())));
+						() -> Maps.newHashMapWithExpectedSize(infileSessionData.size())));
 		infileSessionData.forEach((infile, sessionData) -> result.put(sessionData, infile));
 		return result;
 	}

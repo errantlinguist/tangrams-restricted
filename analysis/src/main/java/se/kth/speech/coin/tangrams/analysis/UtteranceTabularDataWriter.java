@@ -27,7 +27,6 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +58,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.google.common.collect.BiMap;
+import com.google.common.collect.Maps;
 
 import se.kth.speech.CommonPaths;
 import se.kth.speech.MapCollectors;
@@ -269,7 +269,7 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> result = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey, MapCollectors.throwingMerger(),
-						() -> new HashMap<>(infileSessionData.size())));
+						() -> Maps.newHashMapWithExpectedSize(infileSessionData.size())));
 		infileSessionData.forEach((infile, sessionData) -> result.put(sessionData, infile));
 		return result;
 	}
