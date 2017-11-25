@@ -33,7 +33,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 public final class ImageEdgeCounter implements ToIntFunction<String> {
 
 	private static Object2IntMap<String> createPropValMap(final Properties props) {
-		final Object2IntOpenHashMap<String> result = new Object2IntOpenHashMap<>(props.size() + 1, 1.0f);
+		final Object2IntOpenHashMap<String> result = new Object2IntOpenHashMap<>(props.size());
 		result.defaultReturnValue(-1);
 		props.forEach((propName, propValue) -> {
 			result.put(propName.toString(), Integer.parseInt(propValue.toString()));

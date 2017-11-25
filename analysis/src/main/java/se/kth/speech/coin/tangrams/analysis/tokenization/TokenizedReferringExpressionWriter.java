@@ -405,7 +405,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		final Map<Path, SessionDataManager> infileSessionData = SessionDataManager.createFileSessionDataMap(inpaths);
 		final Map<SessionDataManager, Path> result = infileSessionData.entrySet().stream()
 				.collect(Collectors.toMap(Entry::getValue, Entry::getKey, MapCollectors.throwingMerger(),
-						() -> new HashMap<>(infileSessionData.size() + 1, 1.0f)));
+						() -> new HashMap<>(infileSessionData.size())));
 		infileSessionData.forEach((infile, sessionData) -> result.put(sessionData, infile));
 		return result;
 	}
