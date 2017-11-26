@@ -133,7 +133,9 @@ public final class PhraseExtractingParsingTokenizer extends AbstractTokenizer {
 
 			handleExtractedPhrases(sent, extractedPhrases, resultWords);
 		}
-		return Arrays.asList(resultWords.stream().map(labelTokenExtractor).toArray(String[]::new));
+		final List<String> result = Arrays.asList(resultWords.stream().map(labelTokenExtractor).toArray(String[]::new));
+		assert !result.isEmpty();
+		return result;
 	}
 
 }
