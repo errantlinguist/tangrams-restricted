@@ -161,15 +161,13 @@ final class SessionStatisticsWriter // NO_UCD (unused code)
 
 	private static final Collector<CharSequence, ?, String> TAB_ROW_CELL_JOINER = Collectors.joining("\t");
 
-	public static void main(final CommandLine cl) throws JAXBException, IOException {
+	public static void main(final CommandLine cl) throws JAXBException, IOException, ParseException {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
-			final Path[] inpaths = cl.getArgList().stream()
-					.map(Paths::get).toArray(Path[]::new);
+			final Path[] inpaths = cl.getArgList().stream().map(Paths::get).toArray(Path[]::new);
 			if (inpaths.length < 1) {
-				throw new IllegalArgumentException(
-						String.format("Usage: %s INPATHS...", SessionStatisticsWriter.class.getName()));
+				throw new ParseException("No input paths specified.");
 			} else {
 				final NavigableMap<Path, NavigableMap<String, GameSummary>> sessionSummaries = new TreeMap<>();
 				final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory();
