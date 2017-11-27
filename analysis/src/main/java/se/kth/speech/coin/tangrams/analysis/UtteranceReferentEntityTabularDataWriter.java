@@ -638,7 +638,7 @@ final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use default)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(UtteranceReferentEntityTabularDataWriter.class.getSimpleName() + " INPATHS...",
+			formatter.printHelp(UtteranceReferentEntityTabularDataWriter.class.getName() + " INPATHS...",
 					OPTIONS);
 		}
 

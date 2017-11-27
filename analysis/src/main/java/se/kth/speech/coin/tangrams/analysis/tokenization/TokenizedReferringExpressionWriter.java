@@ -397,7 +397,7 @@ final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static void printHelp() {
 		final HelpFormatter formatter = new HelpFormatter();
-		formatter.printHelp(TokenizedReferringExpressionWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+		formatter.printHelp(TokenizedReferringExpressionWriter.class.getName() + " INPATHS...", OPTIONS);
 	}
 
 	private static Map<SessionDataManager, Path> readTestSessionData(final Iterable<Path> inpaths) throws IOException {

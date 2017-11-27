@@ -87,7 +87,7 @@ final class LoggedEventTimeLatencySummaryWriter { // NO_UCD (use default)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(LoggedEventTimeLatencySummaryWriter.class.getSimpleName() + " INPATH", OPTIONS);
+			formatter.printHelp(LoggedEventTimeLatencySummaryWriter.class.getName() + " INPATH", OPTIONS);
 		}
 
 		protected final String optName;

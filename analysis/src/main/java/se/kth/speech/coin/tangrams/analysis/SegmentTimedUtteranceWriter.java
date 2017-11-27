@@ -106,7 +106,7 @@ final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(SegmentTimedUtteranceWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+			formatter.printHelp(SegmentTimedUtteranceWriter.class.getName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;

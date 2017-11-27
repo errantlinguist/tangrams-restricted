@@ -89,7 +89,7 @@ final class LoggedEventTimeStretcher { // NO_UCD (use default)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(LoggedEventTimeStretcher.class.getSimpleName() + " INPATH", OPTIONS);
+			formatter.printHelp(LoggedEventTimeStretcher.class.getName() + " INPATH", OPTIONS);
 		}
 
 		protected final String optName;

@@ -320,7 +320,7 @@ final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(SessionGameHistoryTabularDataWriter.class.getSimpleName() + " INPATHS...", OPTIONS);
+			formatter.printHelp(SessionGameHistoryTabularDataWriter.class.getName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;

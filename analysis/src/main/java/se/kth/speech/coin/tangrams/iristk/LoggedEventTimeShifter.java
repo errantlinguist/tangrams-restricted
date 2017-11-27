@@ -89,7 +89,7 @@ final class LoggedEventTimeShifter { // NO_UCD (use default)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(LoggedEventTimeShifter.class.getSimpleName() + " INPATH", OPTIONS);
+			formatter.printHelp(LoggedEventTimeShifter.class.getName() + " INPATH", OPTIONS);
 		}
 
 		protected final String optName;
