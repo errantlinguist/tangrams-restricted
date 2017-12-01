@@ -35,7 +35,7 @@ import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
  */
 public final class ImageVisualizationInfoDescription extends Record {
 
-	public static final class Datum extends Record {
+	public static final class Datum extends Record { // NO_UCD (use private)
 
 		@RecordField(name = "color")
 		private int color;
@@ -49,7 +49,7 @@ public final class ImageVisualizationInfoDescription extends Record {
 			// Default constructor is required for JSON (un-)marshalling
 		}
 
-		public Datum(final ImageVisualizationInfo.Datum imgVisualizationInfo) {
+		public Datum(final ImageVisualizationInfo.Datum imgVisualizationInfo) { // NO_UCD (use private)
 			setResourceName(imgVisualizationInfo.getResourceName());
 			setColor(imgVisualizationInfo.getColor());
 			setSize(imgVisualizationInfo.getSize());
