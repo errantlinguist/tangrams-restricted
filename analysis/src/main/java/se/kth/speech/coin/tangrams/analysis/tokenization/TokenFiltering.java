@@ -22,7 +22,7 @@ import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.EventDialog
 import se.kth.speech.coin.tangrams.analysis.dialogues.transformation.TokenFilteringEventDialogueTransformer;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
-public enum TokenFiltering implements Supplier<EventDialogueTransformer> {
+enum TokenFiltering implements Supplier<EventDialogueTransformer> {
 	NO_FILTER(EventDialogueTransformer.IDENTITY_TRANSFORMER), STOPWORDS(
 			new TokenFilteringEventDialogueTransformer(SnowballPorter2EnglishStopwords.Variant.CANONICAL.get()));
 

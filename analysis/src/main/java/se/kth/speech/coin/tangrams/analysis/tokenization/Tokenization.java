@@ -55,7 +55,7 @@ import se.kth.speech.nlp.stanford.PhraseExtractingParsingTokenizer;
 import se.kth.speech.nlp.stanford.StanfordCoreNLPConfigurationVariant;
 import se.kth.speech.nlp.stanford.Tokenizer;
 
-public enum Tokenization implements Function<Tokenization.Context, EventDialogueTransformer> {
+enum Tokenization implements Function<Tokenization.Context, EventDialogueTransformer> {
 	STANFORD_BASIC {
 
 		@Override
