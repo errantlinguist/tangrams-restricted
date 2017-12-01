@@ -54,6 +54,19 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
  */
 public final class TangramsServer implements Runnable { // NO_UCD (use default)
 
+	public static final class Exception extends RuntimeException { // NO_UCD (use private)
+
+		/**
+		 *
+		 */
+		private static final long serialVersionUID = 4642677256770391448L;
+
+		private Exception(final Throwable cause) {
+			super(cause);
+		}
+
+	}
+
 	private enum Parameter implements Supplier<Option> {
 		BROKER_HOST("h") {
 
@@ -115,40 +128,6 @@ public final class TangramsServer implements Runnable { // NO_UCD (use default)
 
 		private Parameter(final String optName) {
 			this.optName = optName;
-		}
-
-	}
-
-	// private static class FlagSettingUncaughtExceptionHandler implements
-	// UncaughtExceptionHandler {
-	//
-	// private final AtomicBoolean wasExceptionHandled = new
-	// AtomicBoolean(false);
-	//
-	// /*
-	// * (non-Javadoc)
-	// *
-	// * @see
-	// * java.lang.Thread.UncaughtExceptionHandler#uncaughtException(java.lang
-	// * .Thread, java.lang.Throwable)
-	// */
-	// @Override
-	// public void uncaughtException(final Thread t, final Throwable e) {
-	// wasExceptionHandled.set(true);
-	// Thread.getDefaultUncaughtExceptionHandler().uncaughtException(t, e);
-	// }
-	//
-	// }
-
-	static final class Exception extends RuntimeException {
-
-		/**
-		 *
-		 */
-		private static final long serialVersionUID = 4642677256770391448L;
-
-		private Exception(final Throwable cause) {
-			super(cause);
 		}
 
 	}
