@@ -15,12 +15,13 @@ import iristk.util.Record;
 
 public class Event extends Record {
 	
+	private static final Event REF_EVENT = new Event();
+	
 	private String name;
 	private String sender;
 	private String id;
 	private String time;
 	
-	public static final Event REF_EVENT = new Event();
 	
 	public Event() {
 	}
