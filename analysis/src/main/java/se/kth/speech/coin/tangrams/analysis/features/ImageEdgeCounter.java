@@ -30,7 +30,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
  * @since Apr 17, 2017
  *
  */
-public final class ImageEdgeCounter implements ToIntFunction<String> {
+final class ImageEdgeCounter implements ToIntFunction<String> {
 
 	private static Object2IntMap<String> createPropValMap(final Properties props) {
 		final Object2IntOpenHashMap<String> result = new Object2IntOpenHashMap<>(props.size());
@@ -54,13 +54,11 @@ public final class ImageEdgeCounter implements ToIntFunction<String> {
 
 	private final Object2IntMap<String> resourceEdgeCounts;
 
-	public ImageEdgeCounter() {
+	ImageEdgeCounter() {
 		this(createPropValMap(loadEdgeCountProps()));
 	}
 
-	public ImageEdgeCounter(final Object2IntMap<String> resourceEdgeCounts) { // NO_UCD
-																				// (use
-																				// private)
+	private ImageEdgeCounter(final Object2IntMap<String> resourceEdgeCounts) {
 		this.resourceEdgeCounts = resourceEdgeCounts;
 	}
 
