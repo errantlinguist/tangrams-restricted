@@ -51,7 +51,7 @@ import se.kth.speech.awt.ComponentResizedEventHookRunningComponentListener;
  * @since 2 Mar 2017
  *
  */
-public abstract class AbstractGameBoardPanel extends JPanel {
+public abstract class AbstractGameBoardPanel extends JPanel { // NO_UCD (use default)
 
 	private static final Stroke GRID_STROKE = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 1.0f,
 			new float[] { 1.0f }, 0);

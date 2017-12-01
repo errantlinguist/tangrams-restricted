@@ -39,7 +39,7 @@ import se.kth.speech.coin.tangrams.game.Controller;
  * @since 2 Mar 2017
  *
  */
-public class BasicGameViewFrame extends JFrame {
+public class BasicGameViewFrame extends JFrame { // NO_UCD (use default)
 
 	/**
 	 *
