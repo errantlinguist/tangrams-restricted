@@ -41,7 +41,7 @@ public enum DialogueRole {
 			result = MANIPULATOR;
 			break;
 		default:
-			throw new IllegalArgumentException(String.format("No description for player role %d.", role));
+			throw new IllegalArgumentException(String.format("No description for player role %s.", role));
 		}
 		return result;
 	}
