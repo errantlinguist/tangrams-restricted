@@ -21,7 +21,7 @@ import java.net.Socket;
 import java.util.HashSet;
 import java.util.Set;
 
-public class BrokerClient {
+public class BrokerClient { // NO_UCD (use default)
 
 	private static org.slf4j.Logger logger = IrisUtils.getLogger(BrokerClient.class);
 	
