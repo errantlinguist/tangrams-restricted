@@ -824,23 +824,6 @@ public class Record implements Cloneable {
 		return result;
 	}
 
-	/*
-	public static void main(String[] args) {
-		Record r = new Record();
-		r.put("test", 1);
-		r.put("asdaafaf", 2);
-		Record r2 = new Record();
-		r.put("kfjkf", r2);
-		r2.put("jsjs", 23);
-		r2.put("js", 2324);
-		List l1 = new ArrayList();
-		r2.put("list", l1);
-		l1.add(new Record("a", "b", "casd", "d"));
-		l1.add(3);
-		System.out.println(r.toStringIndent());
-	}
-	 */
-
 	/**
 	 * Converts the Record data to properties format.
 	 * 
