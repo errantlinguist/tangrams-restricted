@@ -30,9 +30,9 @@ import se.kth.speech.coin.tangrams.iristk.GameEvent;
  * @since Apr 17, 2017
  *
  */
-public final class TemporalGameContexts {
+final class TemporalGameContexts {
 
-	public static Stream<GameContext> create(final GameHistory history, final float startTime, final float endTime) {
+	static Stream<GameContext> create(final GameHistory history, final float startTime, final float endTime) {
 		final NavigableMap<LocalDateTime, List<GameEvent>> events = history.getEvents();
 		final LocalDateTime gameStartTime = history.getStartTime();
 		final LocalDateTime uttStartTimestamp = TimestampArithmetic.createOffsetTimestamp(gameStartTime, startTime);
