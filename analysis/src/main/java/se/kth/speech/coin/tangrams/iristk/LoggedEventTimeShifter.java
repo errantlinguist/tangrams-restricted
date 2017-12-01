@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
  * @since Apr 29, 2017
  *
  */
-final class LoggedEventTimeShifter { // NO_UCD (use default)
+public final class LoggedEventTimeShifter { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		ADDEND("a") {

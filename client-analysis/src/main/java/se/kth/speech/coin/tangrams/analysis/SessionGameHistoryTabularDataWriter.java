@@ -120,7 +120,7 @@ import se.kth.speech.coin.tangrams.view.InteractiveGameBoardPanel;
  * @since 23 Aug 2017
  *
  */
-final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
+public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private enum EventDatum implements BiFunction<EventContext, String, String> {
 		ENTITY {

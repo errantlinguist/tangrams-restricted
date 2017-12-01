@@ -61,7 +61,7 @@ import se.kth.speech.higgins.io.HatIO;
  * @since 5 May 2017
  *
  */
-final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
+public final class SegmentTimedUtteranceWriter { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		EVENT_LOG(EVENT_LOG_OPT_NAME) {

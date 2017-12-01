@@ -88,7 +88,7 @@ import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
  * @since 12 Nov 2017
  *
  */
-final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
+public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private enum Parameter implements Supplier<Option> {
 		CLEANING("c") {

@@ -77,7 +77,7 @@ import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
  * @since 2 Aug 2017
  *
  */
-final class SessionStatisticsWriter // NO_UCD (unused code)
+public final class SessionStatisticsWriter // NO_UCD (unused code)
 		implements Consumer<Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>>> {
 
 	private enum Parameter implements Supplier<Option> {

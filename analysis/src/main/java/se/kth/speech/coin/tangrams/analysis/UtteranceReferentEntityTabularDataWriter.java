@@ -93,7 +93,7 @@ import se.kth.speech.io.RuntimeJAXBException;
  * @since 4 May 2017
  *
  */
-final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use default)
+public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use default)
 
 	private static class GameWriter {
 

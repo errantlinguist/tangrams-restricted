@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
  * @since 7 Aug 2017
  *
  */
-final class SessionEventLogMinimumTimeWriter { // NO_UCD (unused code)
+public final class SessionEventLogMinimumTimeWriter { // NO_UCD (unused code)
 
 	private static final int EXPECTED_AVERAGE_EVENT_COUNT = 150;
 

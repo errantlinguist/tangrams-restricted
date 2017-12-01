@@ -52,7 +52,7 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
  * @since 10 Jan 2017
  *
  */
-final class TangramsServer implements Runnable { // NO_UCD (use default)
+public final class TangramsServer implements Runnable { // NO_UCD (use default)
 
 	private enum Parameter implements Supplier<Option> {
 		BROKER_HOST("h") {

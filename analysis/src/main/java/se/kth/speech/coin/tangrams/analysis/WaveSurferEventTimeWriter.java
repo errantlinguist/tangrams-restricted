@@ -58,7 +58,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
  * @see <a href="https://sourceforge.net/projects/wavesurfer/">WaveSurfer website</a>
  *
  */
-final class WaveSurferEventTimeWriter { // NO_UCD (use default)
+public final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 
 	private static final int ENTITY_ID_COL_IDX = 0;
 
