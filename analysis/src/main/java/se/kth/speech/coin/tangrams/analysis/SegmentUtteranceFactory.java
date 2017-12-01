@@ -92,11 +92,11 @@ public final class SegmentUtteranceFactory {
 		this(DEFAULT_SEG_SPEAKER_ID_FACTORY);
 	}
 
-	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) {
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory) { // NO_UCD (use private)
 		this(segmentSpeakerIdFactory, new TokenListSingletonFactory(EXPECTED_UNIQUE_TOKEN_SEQUENCES));
 	}
 
-	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory,
+	public SegmentUtteranceFactory(final Function<? super Segment, String> segmentSpeakerIdFactory, // NO_UCD (use default)
 			final Function<? super String[], List<String>> tokenListSingletonFactory) {
 		this.segmentSpeakerIdFactory = segmentSpeakerIdFactory;
 		this.tokenListSingletonFactory = tokenListSingletonFactory;

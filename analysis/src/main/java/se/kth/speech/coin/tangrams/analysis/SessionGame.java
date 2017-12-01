@@ -126,7 +126,7 @@ public final class SessionGame {
 	 *            combined with the history of the game session in which these
 	 *            utterances were made.
 	 */
-	public SessionGame(final List<Event> events, final List<Utterance> utts,
+	public SessionGame(final List<Event> events, final List<Utterance> utts, // NO_UCD (use private)
 			final BiFunction<? super ListIterator<Utterance>, ? super GameHistory, Stream<EventDialogue>> evtDiagFactory,
 			final LoggedEventReader eventReader) {
 		final Map<String, GameHistory> gameHistories = eventReader.createGameHistoryMap(events.stream());

@@ -38,10 +38,10 @@ import se.kth.speech.coin.tangrams.game.PlayerRole;
 public final class UtteranceSpeakerParticipantIdMapFactory
 		implements Function<Map<PlayerRole, String>, BiMap<String, String>> {
 
-	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections
+	public static final List<PlayerRole> DEFAULT_PLAYER_ROLE_ORDERING = Collections // NO_UCD (use private)
 			.unmodifiableList(createDefaultPlayerRoleOrderingList());
 
-	public static final List<String> DEFAULT_VALID_PARTICIPANT_IDS = Collections
+	public static final List<String> DEFAULT_VALID_PARTICIPANT_IDS = Collections // NO_UCD (use private)
 			.unmodifiableList(Arrays.asList("A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O",
 					"P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z"));
 
@@ -67,7 +67,7 @@ public final class UtteranceSpeakerParticipantIdMapFactory
 		this(DEFAULT_PLAYER_ROLE_ORDERING, DEFAULT_VALID_PARTICIPANT_IDS);
 	}
 
-	public UtteranceSpeakerParticipantIdMapFactory(final List<PlayerRole> playerRoleOrdering,
+	public UtteranceSpeakerParticipantIdMapFactory(final List<PlayerRole> playerRoleOrdering, // NO_UCD (use private)
 			final List<String> validParticipantIds) {
 		this.playerRoleOrdering = playerRoleOrdering;
 		this.validParticipantIds = validParticipantIds;

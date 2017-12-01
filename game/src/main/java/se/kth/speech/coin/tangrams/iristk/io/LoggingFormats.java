@@ -23,9 +23,9 @@ import java.text.SimpleDateFormat;
  * @since 29 Mar 2017
  *
  */
-public final class LoggingFormats {
+public final class LoggingFormats { // NO_UCD (use default)
 
-	public static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+	public static final ThreadLocal<SimpleDateFormat> DATE_FORMAT = new ThreadLocal<SimpleDateFormat>() { // NO_UCD (use default)
 
 		/*
 		 * (non-Javadoc)
@@ -39,7 +39,7 @@ public final class LoggingFormats {
 
 	};
 
-	public static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() {
+	public static final ThreadLocal<SimpleDateFormat> TIME_FORMAT = new ThreadLocal<SimpleDateFormat>() { // NO_UCD (use default)
 
 		/*
 		 * (non-Javadoc)

@@ -149,7 +149,7 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	 *            A mapping of icon names mapped to their corresponding image
 	 *            resource names.
 	 */
-	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors, // NO_UCD (unused code)
 			final Collection<String> imgResources) {
 		this(rnd, uniqueImgColors, DEFAULT_IMG_SIZES, imgResources);
 	}
@@ -169,7 +169,7 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	 *            the iteration order of image data is stable across
 	 *            invocations.
 	 */
-	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors, // NO_UCD (use private)
 			final List<ImageSize> sizes) {
 		this(rnd, uniqueImgColors, sizes, DEFAULT_IMG_RESOURCES);
 	}
@@ -192,7 +192,7 @@ public final class RandomImageVisualizationInfoFactory implements IntFunction<Im
 	 *            A mapping of icon names mapped to their corresponding image
 	 *            resource names.
 	 */
-	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors,
+	public RandomImageVisualizationInfoFactory(final Random rnd, final List<? extends Color> uniqueImgColors, // NO_UCD (use private)
 			final List<ImageSize> sizes, final Collection<String> imgResources) {
 		this.rnd = rnd;
 		createdInstanceCount = 0;

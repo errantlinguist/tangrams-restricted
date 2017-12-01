@@ -64,7 +64,7 @@ public final class UtteranceDialogueRepresentationStringFactory implements Funct
 		this(DataLanguageDefaults.getLocale(), DEFAULT_WORD_JOINER, DEFAULT_SENTENCE_JOINER);
 	}
 
-	public UtteranceDialogueRepresentationStringFactory(final Locale uttLocale) {
+	public UtteranceDialogueRepresentationStringFactory(final Locale uttLocale) { // NO_UCD (use default)
 		this(uttLocale, DEFAULT_WORD_JOINER, DEFAULT_SENTENCE_JOINER);
 	}
 

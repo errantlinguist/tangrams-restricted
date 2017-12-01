@@ -42,7 +42,7 @@ public final class ObservationOrderComparator<T> implements Comparator<T> {
 		this(createDefaultObservationOrderMap(expectedObservationCount));
 	}
 
-	public ObservationOrderComparator(final Object2IntMap<? super T> observationOrders) {
+	public ObservationOrderComparator(final Object2IntMap<? super T> observationOrders) { // NO_UCD (use private)
 		this.defaultReturnValue = observationOrders.defaultReturnValue();
 		if (this.defaultReturnValue >= 0) {
 			throw new IllegalArgumentException(String

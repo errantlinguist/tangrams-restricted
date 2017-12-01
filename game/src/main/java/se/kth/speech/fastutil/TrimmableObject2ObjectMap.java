@@ -74,7 +74,7 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 	 *            A {@link Trimmer} which trims (i.e.&nbsp;compacts) the
 	 *            decorated {@code Object2ObjectMap}.
 	 */
-	public TrimmableObject2ObjectMap(final Object2ObjectMap<K, V> decorated, final Trimmer trimmer) {
+	public TrimmableObject2ObjectMap(final Object2ObjectMap<K, V> decorated, final Trimmer trimmer) { // NO_UCD (use private)
 		this.decorated = decorated;
 		this.trimmer = trimmer;
 	}
@@ -83,7 +83,7 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 	 * @param decorated
 	 *            The {@link Object2ObjectOpenCustomHashMap} to decorate.
 	 */
-	public TrimmableObject2ObjectMap(final Object2ObjectOpenCustomHashMap<K, V> decorated) {
+	public TrimmableObject2ObjectMap(final Object2ObjectOpenCustomHashMap<K, V> decorated) { // NO_UCD (unused code)
 		this(decorated, decorated::trim);
 	}
 

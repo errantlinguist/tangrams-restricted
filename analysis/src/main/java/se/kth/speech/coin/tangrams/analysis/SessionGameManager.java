@@ -69,7 +69,7 @@ public final class SessionGameManager {
 			this(eventReader, ESTIMATED_UNIQUE_TOKEN_SEQ_COUNT);
 		}
 
-		public Factory(final LoggedEventReader eventReader, final int expectedUniqueTokenSeqCount) {
+		public Factory(final LoggedEventReader eventReader, final int expectedUniqueTokenSeqCount) { // NO_UCD (use default)
 			this.eventReader = eventReader;
 			final TokenListSingletonFactory tokenListFactory = new TokenListSingletonFactory(
 					expectedUniqueTokenSeqCount);

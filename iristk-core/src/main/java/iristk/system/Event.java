@@ -30,7 +30,7 @@ public class Event extends Record {
 		setName(name);
 	}
 	
-	public Event(String name, Record parameters) {
+	public Event(String name, Record parameters) { // NO_UCD (use default)
 		setName(name);
 		if (parameters instanceof Event)
 			copyParams((Event)parameters);
@@ -38,7 +38,7 @@ public class Event extends Record {
 			putAllExceptNull(parameters);
 	}
 	
-	public Event(String name, Object... params) {
+	public Event(String name, Object... params) { // NO_UCD (use default)
 		if (params.length % 2 != 0)
 			throw new IllegalArgumentException("Must pass an even number of parameters");
 		for (int i = 0; i < params.length; i += 2) {
@@ -47,7 +47,7 @@ public class Event extends Record {
 		setName(name);
 	}
 	
-	public Event(Event event) {
+	public Event(Event event) { // NO_UCD (use default)
 		this(event.getName(), event.getEventParams());
 	}
 	
