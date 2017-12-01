@@ -35,7 +35,7 @@ public final class IntArrays {
 	 *         both given arrays, with the values of <code>b</code> following
 	 *         those of <code>a</code>.
 	 */
-	public static int[] concatenate(final int[] a, final int[] b) {
+	public static int[] concatenate(final int[] a, final int[] b) { // NO_UCD (use default)
 		final int aLen = a.length;
 		final int bLen = b.length;
 		final int[] c = new int[aLen + bLen];
