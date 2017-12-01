@@ -95,7 +95,7 @@ public final class ImageVisualizationInfoTableRowCellFactory {
 
 	private final Collection<Attribute> vizInfoAttrsToWrite;
 
-	public ImageVisualizationInfoTableRowCellFactory(final String nullValueRepr) {
+	ImageVisualizationInfoTableRowCellFactory(final String nullValueRepr) {
 		this(nullValueRepr, Attribute.getCanonicalOrdering());
 	}
 
