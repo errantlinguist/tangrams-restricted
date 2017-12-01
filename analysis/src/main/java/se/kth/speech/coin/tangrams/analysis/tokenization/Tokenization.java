@@ -110,7 +110,7 @@ public enum Tokenization implements Function<Tokenization.Context, EventDialogue
 		}
 	};
 
-	public static final class Context {
+	static final class Context {
 
 		private final Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> annotationCacheFactory;
 
@@ -120,7 +120,7 @@ public enum Tokenization implements Function<Tokenization.Context, EventDialogue
 
 		private final TokenType tokenType;
 
-		public Context(final Set<Cleaning> cleaning, final TokenType tokenType,
+		Context(final Set<Cleaning> cleaning, final TokenType tokenType,
 				final BiConsumer<? super CoreMap, ? super List<Tree>> extractionResultsHook,
 				final Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> annotationCacheFactory) {
 			this.cleaning = cleaning;
@@ -132,28 +132,28 @@ public enum Tokenization implements Function<Tokenization.Context, EventDialogue
 		/**
 		 * @return the annotationCacheFactory
 		 */
-		Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> getAnnotationCacheFactory() {
+		private Function<? super StanfordCoreNLPConfigurationVariant, LoadingCache<String, Annotation>> getAnnotationCacheFactory() {
 			return annotationCacheFactory;
 		}
 
 		/**
 		 * @return the cleaning
 		 */
-		Set<Cleaning> getCleaning() {
+		private Set<Cleaning> getCleaning() {
 			return cleaning;
 		}
 
 		/**
 		 * @return the extractionResultsHook
 		 */
-		BiConsumer<? super CoreMap, ? super List<Tree>> getExtractionResultsHook() {
+		private BiConsumer<? super CoreMap, ? super List<Tree>> getExtractionResultsHook() {
 			return extractionResultsHook;
 		}
 
 		/**
 		 * @return the tokenType
 		 */
-		TokenType getTokenType() {
+		private TokenType getTokenType() {
 			return tokenType;
 		}
 	}
