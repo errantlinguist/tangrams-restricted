@@ -71,7 +71,7 @@ public final class HatIO {
 		}
 	}
 
-	public static JAXBContext fetchContext() {
+	public static JAXBContext fetchContext() { // NO_UCD (use private)
 		JAXBContext result = jc.get();
 		if (result == null) {
 			synchronized (HatIO.class) {
