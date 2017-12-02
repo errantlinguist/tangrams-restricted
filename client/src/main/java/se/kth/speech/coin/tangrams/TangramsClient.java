@@ -232,21 +232,7 @@ public final class TangramsClient implements Runnable {
 		}
 	}
 
-	public static void main(final String[] args) {
-		final CommandLineParser parser = new DefaultParser();
-		final PrintStream msgOutput = System.out;
-		try {
-			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			run(cl, msgOutput);
-		} catch (final ParseException e) {
-			msgOutput.println(String.format("An error occured while parsing the command-line arguments: %s", e));
-			Parameter.printHelp();
-		} finally {
-			msgOutput.close();
-		}
-	}
-
-	public static void run(final CommandLine cl, final PrintStream msgOutput) {
+	public static void main(final CommandLine cl, final PrintStream msgOutput) {
 		if (cl.hasOption(Parameter.HELP.optName)) {
 			Parameter.printHelp();
 		} else {
@@ -283,6 +269,20 @@ public final class TangramsClient implements Runnable {
 				msgOutput.println(String.format("Could not parse option: %s", e.getLocalizedMessage()));
 				Parameter.printHelp();
 			}
+		}
+	}
+
+	public static void main(final String[] args) {
+		final CommandLineParser parser = new DefaultParser();
+		final PrintStream msgOutput = System.out;
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl, msgOutput);
+		} catch (final ParseException e) {
+			msgOutput.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
+		} finally {
+			msgOutput.close();
 		}
 	}
 
