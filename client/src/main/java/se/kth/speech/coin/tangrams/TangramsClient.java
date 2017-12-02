@@ -204,7 +204,8 @@ public final class TangramsClient implements Runnable {
 
 	}
 
-	static final class Exception extends RuntimeException { // NO_UCD (use private)
+	static final class Exception extends RuntimeException { // NO_UCD (use
+															// private)
 
 		/**
 		 *
@@ -236,49 +237,52 @@ public final class TangramsClient implements Runnable {
 		final PrintStream msgOutput = System.out;
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			if (cl.hasOption(Parameter.HELP.optName)) {
-				Parameter.printHelp();
-			} else {
-				final boolean analysisEnabled = cl.hasOption(Parameter.ANALYSIS.optName);
-				final boolean recordingEnabled = !cl.hasOption(Parameter.RECORDING_DISABLED.optName);
-				final String brokerHost = Parameter.parseBrokerHost(cl);
-
-				try {
-					final int brokerPort = Parameter.parseBrokerPort(cl);
-					final File copyDir = (File) cl.getParsedOptionValue(Parameter.COPY_LOGS.optName);
-					final Consumer<Path> logArchiveCopier;
-					if (copyDir == null) {
-						LOGGER.info("No session log post-processing specified.");
-						logArchiveCopier = filePath -> {
-							// Do nothing
-						};
-					} else {
-						final Path copyDirPath = copyDir.toPath();
-						if (Files.isDirectory(copyDirPath)) {
-							LOGGER.info("Will copy session log archive to \"{}\" after ending the session.",
-									copyDirPath);
-						} else {
-							LOGGER.warn(
-									"Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.",
-									copyDirPath);
-						}
-						logArchiveCopier = new SessionLogArchiveCopier(copyDirPath, msgOutput);
-					}
-
-					final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
-							brokerPort, analysisEnabled, recordingEnabled, logArchiveCopier, msgOutput);
-					client.run();
-
-				} catch (final ParseException e) {
-					msgOutput.println(String.format("Could not parse option: %s", e.getLocalizedMessage()));
-					Parameter.printHelp();
-				}
-			}
+			run(cl, msgOutput);
 		} catch (final ParseException e) {
 			msgOutput.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			Parameter.printHelp();
 		} finally {
 			msgOutput.close();
+		}
+	}
+
+	public static void run(final CommandLine cl, final PrintStream msgOutput) {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final boolean analysisEnabled = cl.hasOption(Parameter.ANALYSIS.optName);
+			final boolean recordingEnabled = !cl.hasOption(Parameter.RECORDING_DISABLED.optName);
+			final String brokerHost = Parameter.parseBrokerHost(cl);
+
+			try {
+				final int brokerPort = Parameter.parseBrokerPort(cl);
+				final File copyDir = (File) cl.getParsedOptionValue(Parameter.COPY_LOGS.optName);
+				final Consumer<Path> logArchiveCopier;
+				if (copyDir == null) {
+					LOGGER.info("No session log post-processing specified.");
+					logArchiveCopier = filePath -> {
+						// Do nothing
+					};
+				} else {
+					final Path copyDirPath = copyDir.toPath();
+					if (Files.isDirectory(copyDirPath)) {
+						LOGGER.info("Will copy session log archive to \"{}\" after ending the session.", copyDirPath);
+					} else {
+						LOGGER.warn(
+								"Path \"{}\" was supplied for session log copy dir but it's not a valid directory (yet?); Will try copying after the session is over anyways.",
+								copyDirPath);
+					}
+					logArchiveCopier = new SessionLogArchiveCopier(copyDirPath, msgOutput);
+				}
+
+				final TangramsClient client = new TangramsClient(PROPS.getProperty("broker.ticket"), brokerHost,
+						brokerPort, analysisEnabled, recordingEnabled, logArchiveCopier, msgOutput);
+				client.run();
+
+			} catch (final ParseException e) {
+				msgOutput.println(String.format("Could not parse option: %s", e.getLocalizedMessage()));
+				Parameter.printHelp();
+			}
 		}
 	}
 
