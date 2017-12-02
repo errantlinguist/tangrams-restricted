@@ -54,7 +54,9 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
  */
 public final class TangramsServer implements Runnable { // NO_UCD (use default)
 
-	public static final class Exception extends RuntimeException { // NO_UCD (use private)
+	public static final class Exception extends RuntimeException { // NO_UCD
+																	// (use
+																	// private)
 
 		/**
 		 *
@@ -72,8 +74,8 @@ public final class TangramsServer implements Runnable { // NO_UCD (use default)
 
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("broker-host")
-						.desc("The hostname (or IP address) of the IrisTK broker system to use. If none is provided, a new broker system is started on the localhost listening to the provided port.")
+				return Option.builder(optName).longOpt("broker-host").desc(
+						"The hostname (or IP address) of the IrisTK broker system to use. If none is provided, a new broker system is started on the localhost listening to the provided port.")
 						.hasArg().argName("hostname").build();
 			}
 
@@ -134,50 +136,53 @@ public final class TangramsServer implements Runnable { // NO_UCD (use default)
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(TangramsServer.class);
 
+	public static void main(final CommandLine cl) {
+		if (cl.hasOption(Parameter.HELP.optName)) {
+			Parameter.printHelp();
+		} else {
+			final String brokerHost = cl.getOptionValue(Parameter.BROKER_HOST.optName);
+			try {
+				final Properties props = ClassProperties.load(TangramsServer.class);
+				final int brokerPort = Parameter.parseBrokerPort(cl,
+						Integer.parseInt(props.getProperty("broker.port")));
+				// final FlagSettingUncaughtExceptionHandler
+				// brokerExceptionHandler = new
+				// FlagSettingUncaughtExceptionHandler();
+				if (brokerHost == null) {
+					LOGGER.info("No broker hostname provided; Starting local IrisTK broker.");
+					final Broker broker = new Broker(brokerPort);
+					// broker.setUncaughtExceptionHandler(brokerExceptionHandler);
+					// TODO: This is copied from
+					// "Broker.main(String[])";
+					// Ensure that this thread is killed gracefully when
+					// this
+					// program is ended
+					broker.start();
+
+				} else {
+					LOGGER.info("Using broker hostname \"{}\".", brokerHost);
+				}
+
+				// if (!brokerExceptionHandler.wasExceptionHandled.get()) {
+				final TangramsServer server = new TangramsServer(props.getProperty("broker.ticket"), brokerHost,
+						brokerPort);
+				server.run();
+				// }
+
+			} catch (final ParseException e) {
+				System.out.println(String.format("Could not parse port: %s", e.getLocalizedMessage()));
+				Parameter.printHelp();
+			} catch (final IOException e) {
+				throw new UncheckedIOException(e);
+			}
+		}
+	}
+
 	public static void main(final String[] args) {
 		final CommandLineParser parser = new DefaultParser();
 		try {
 			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-			if (cl.hasOption(Parameter.HELP.optName)) {
-				Parameter.printHelp();
-			} else {
-				final String brokerHost = cl.getOptionValue(Parameter.BROKER_HOST.optName);
-				try {
-					final Properties props = ClassProperties.load(TangramsServer.class);
-					final int brokerPort = Parameter.parseBrokerPort(cl,
-							Integer.parseInt(props.getProperty("broker.port")));
-					// final FlagSettingUncaughtExceptionHandler
-					// brokerExceptionHandler = new
-					// FlagSettingUncaughtExceptionHandler();
-					if (brokerHost == null) {
-						LOGGER.info("No broker hostname provided; Starting local IrisTK broker.");
-						final Broker broker = new Broker(brokerPort);
-						// broker.setUncaughtExceptionHandler(brokerExceptionHandler);
-						// TODO: This is copied from
-						// "Broker.main(String[])";
-						// Ensure that this thread is killed gracefully when
-						// this
-						// program is ended
-						broker.start();
-
-					} else {
-						LOGGER.info("Using broker hostname \"{}\".", brokerHost);
-					}
-
-					// if (!brokerExceptionHandler.wasExceptionHandled.get()) {
-					final TangramsServer server = new TangramsServer(props.getProperty("broker.ticket"), brokerHost,
-							brokerPort);
-					server.run();
-					// }
-
-				} catch (final ParseException e) {
-					System.out.println(String.format("Could not parse port: %s", e.getLocalizedMessage()));
-					Parameter.printHelp();
-				} catch (final IOException e) {
-					throw new UncheckedIOException(e);
-				}
-			}
-
+			main(cl);
 		} catch (final ParseException e) {
 			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			Parameter.printHelp();
