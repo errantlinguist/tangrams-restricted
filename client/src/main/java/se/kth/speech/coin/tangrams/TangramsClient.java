@@ -277,6 +277,8 @@ public final class TangramsClient implements Runnable {
 		} catch (final ParseException e) {
 			msgOutput.println(String.format("An error occured while parsing the command-line arguments: %s", e));
 			Parameter.printHelp();
+		} finally {
+			msgOutput.close();
 		}
 	}
 
