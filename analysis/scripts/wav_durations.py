@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+A script for aggregating statistics on WAV file duration underneath a given directory or directories.
+"""
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 import mimetypes
 import os.path
 import re
