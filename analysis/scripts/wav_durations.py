@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-A script for aggregating statistics on WAV file duration underneath a given directory or directories.
+A script for aggregating statistics on the duration of WAV files found underneath a given directory or directories.
 """
 
 __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
