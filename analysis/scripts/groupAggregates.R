@@ -1,5 +1,26 @@
 #!/usr/bin/env Rscript
 
+# Prints aggregate statistics for the results of cross-validation on reference resolution for the game "tangrams-restricted", comparing the training methods "ONE_NEG", "ALL_NEG" and "DIALOGIC".
+#
+# See Shore, T. Skantze, G. (2017) "Enhancing Reference Resolution in Dialogue Using Participant Feedback" <http://dx.doi.org/10.21437/GLU.2017-16> in Salvi, G. and Dupont, S. (eds.) Proceedings of the GLU2017 International Workshop on Grounding Language Understanding <http://dx.doi.org/10.21437/GLU.2017>, pp. 78--82.
+#
+#
+# This file is part of tangrams-restricted.
+#
+# Tangrams-restricted is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
 args <- commandArgs(trailingOnly=TRUE)
 if(length(args) < 1)
 {
