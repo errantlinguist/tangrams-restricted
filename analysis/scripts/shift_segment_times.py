@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-A script for shifting the time of each segment found for the given parameters in a given Hat Annotation Tool XML annotation file.
+A script for shifting the time of each segment found for the given parameters in a given Higgins Annotation Tool (HAT) XML annotation file <http://www.speech.kth.se/hat/>.
 
 Created on Apr 3, 2017.
 """
