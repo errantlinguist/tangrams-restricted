@@ -7,7 +7,7 @@ from decimal import Decimal
 from typing import Iterable, Tuple, Set
 from xml.etree.ElementTree import parse as parse_etree
 
-import utterances
+import annotations
 from xml_files import walk_xml_files
 
 COL_DELIM = "\t"
@@ -49,7 +49,7 @@ def walk_audio_files(inpaths: Iterable[str]) -> Set[str]:
 	for infile_path in infile_paths:
 		print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 		doc_tree = parse_etree(infile_path)
-		sources = doc_tree.iterfind(".//hat:source", utterances.ANNOTATION_NAMESPACES)
+		sources = doc_tree.iterfind(".//hat:source", annotations.ANNOTATION_NAMESPACES)
 		source_file_urls = frozenset(source.get("href") for source in sources)
 		indir = parent_dir(infile_path)
 		resolved_source_file_paths = (os.path.join(indir, url) for url in source_file_urls)
