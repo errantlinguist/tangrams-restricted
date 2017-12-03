@@ -1,3 +1,11 @@
+"""
+Utilities for manipulating Java-style "*.properties" files.
+"""
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 import os
 import re
 
