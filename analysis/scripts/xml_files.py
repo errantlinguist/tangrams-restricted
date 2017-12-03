@@ -2,7 +2,7 @@
 Utilities for manipulating XML files.
 """
 
-__author__ = "Todd Shore <tcshore@kth.se>"
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
