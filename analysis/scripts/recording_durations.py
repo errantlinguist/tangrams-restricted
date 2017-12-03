@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+A script for aggregating statistics on the duration of audio files which have corresponding Higgins Annotation Tool (HAT) <http://www.speech.kth.se/hat/> XML annotation files found underneath a given directory or directories.
+"""
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 import os.path
 import statistics
 import wave
