@@ -3,7 +3,7 @@ from collections import defaultdict
 from typing import Any, Callable, DefaultDict, Iterable, Iterator, List, Sequence, Tuple
 from xml.etree.ElementTree import Element, parse as parse_etree
 
-from annotations import ANNOTATION_NAMESPACES
+import annotations
 
 """
 NOTE: See "../src/main/resources/se/kth/speech/nlp/fillers.txt"
@@ -38,7 +38,7 @@ class SegmentUtteranceFactory(object):
 				yield utt
 
 	def __create(self, segment: Element) -> "Utterance":
-		token_elems = segment.iterfind(".//hat:t", ANNOTATION_NAMESPACES)
+		token_elems = segment.iterfind(".//hat:t", annotations.ANNOTATION_NAMESPACES)
 		token_text = (elem.text for elem in token_elems)
 		content = self.token_seq_factory(token_text)
 		if content:
@@ -156,7 +156,7 @@ def join_utt_sentence_reprs(utts: Iterable[Utterance]) -> str:
 def read_segments(infile_path: str) -> Iterator[Element]:
 	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 	doc_tree = parse_etree(infile_path)
-	return doc_tree.iterfind(".//hat:segment", ANNOTATION_NAMESPACES)
+	return doc_tree.iterfind(".//hat:segment", annotations.ANNOTATION_NAMESPACES)
 
 
 def token_seq_repr(tokens: Iterable[str]) -> str:
