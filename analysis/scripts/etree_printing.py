@@ -1,3 +1,13 @@
+"""
+Utilities for printing  instances to file-like objects in a manner agnostic to the actual ElementTree implementation used, e.g. standard Python's xml.etree.ElementTree.ElementTree vs lxml's lxml.etree.
+
+see https://docs.python.org/3/library/xml.etree.elementtree.html
+"""
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 import os
 import tempfile
 
