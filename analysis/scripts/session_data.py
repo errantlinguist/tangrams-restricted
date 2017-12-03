@@ -4,10 +4,14 @@ from decimal import Decimal
 from enum import Enum, unique
 from typing import Any, Callable, Dict, Iterator, List, Iterable, Tuple
 
+import pandas as pd
+
 DECIMAL_VALUE_TYPE = Decimal
 ENCODING = 'utf-8'
+EVENTS_METADATA_CSV_DIALECT = csv.excel_tab
 
 _DECIMAL_INFINITY = DECIMAL_VALUE_TYPE('Infinity')
+_EVENT_FILE_DTYPES = {"NAME": "category", "SHAPE": "category", "SUBMITTER": "category"}
 _PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID"
 
 __DECIMAL_VALUE_POOL = {}
@@ -106,9 +110,14 @@ class SessionData(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
+	def read_events(self) -> pd.DataFrame:
+		return pd.read_csv(self.events, sep=csv.excel_tab.delimiter, dialect=csv.excel_tab,
+						   float_precision="round_trip",
+						   encoding=ENCODING, memory_map=True, dtype=_EVENT_FILE_DTYPES)
+
 	def read_events_metadata(self) -> Dict[str, str]:
 		with open(self.events_metadata, 'r', encoding=ENCODING) as infile:
-			rows = csv.reader(infile, dialect=csv.excel_tab)
+			rows = csv.reader(infile, dialect=EVENTS_METADATA_CSV_DIALECT)
 			return dict(rows)
 
 	def read_metadata_entity_count(self) -> int:
