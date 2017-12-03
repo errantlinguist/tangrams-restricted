@@ -16,9 +16,6 @@
 */
 package se.kth.speech.nlp.stanford;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.util.Properties;
@@ -98,21 +95,62 @@ public enum StanfordCoreNLPConfigurationVariant implements Supplier<StanfordCore
 		}
 	};
 
-	private static final Properties DEFAULT_PROPS = loadDefaultPipelineProperties();
+	private static final Properties DEFAULT_PROPS = createDefaultPipelineProperties();
 
 	private static final ConcurrentMap<StanfordCoreNLPConfigurationVariant, Reference<StanfordCoreNLP>> INSTANCES = new ConcurrentHashMap<>(
 			StanfordCoreNLPConfigurationVariant.values().length);
 
 	private static final Collector<CharSequence, ?, String> OPTION_MULTIVALUE_DELIMITER = Collectors.joining(",");
 
-	private static Properties loadDefaultPipelineProperties() {
+	// private static Properties loadDefaultPipelineProperties() {
+	// final Properties result = new Properties();
+	// try (InputStream is = StanfordCoreNLPConfigurationVariant.class
+	// .getResourceAsStream("corenlp-defaults.properties")) {
+	// result.load(is);
+	// } catch (final IOException e) {
+	// throw new UncheckedIOException(e);
+	// }
+	// return result;
+	// }
+
+	/**
+	 * <strong>NOTE:</strong> This method is used because of problems reading a
+	 * properties file for doing so when running unit tests with Maven.
+	 *
+	 * @return A new {@link Properties} instance creating default CoreNLP
+	 *         configuration properties.
+	 */
+	private static Properties createDefaultPipelineProperties() {
+		// https://stanfordnlp.github.io/CoreNLP/api.html
 		final Properties result = new Properties();
-		try (InputStream is = StanfordCoreNLPConfigurationVariant.class
-				.getResourceAsStream("corenlp-defaults.properties")) {
-			result.load(is);
-		} catch (final IOException e) {
-			throw new UncheckedIOException(e);
-		}
+		// https://stanfordnlp.github.io/CoreNLP/parse.html
+		// Sentiment analyzer requires parser to output binary trees
+		result.put("parse.binaryTrees", "true");
+		// This is the greedy SR model used in Todd Shore and Gabriel Skantze
+		// (2017) "Enhancing reference resolution in dialogue using participant
+		// feedback". First International Workshop on Grounding Language
+		// Understanding (GLU 2017)
+		// parse.model = edu/stanford/nlp/models/srparser/englishSR.ser.gz
+		// This SR model is supposedly much more accurate than the greedy SR
+		// version while still being very fast
+		result.put("parse.model", "edu/stanford/nlp/models/srparser/englishSR.beam.ser.gz");
+		// Supposedly slightly more accurate than SR beam-search model but is
+		// very slow and has huge memory footprint
+		// parse.model = edu/stanford/nlp/models/lexparser/englishRNN.ser.gz
+
+		// https://stanfordnlp.github.io/CoreNLP/pos.html
+		// pos.model =
+		// edu/stanford/nlp/models/pos-tagger/english-left3words/english-left3words-distsim.tagger
+		// pos.model =
+		// edu/stanford/nlp/models/pos-tagger/english-caseless-left3words-distsim.tagger
+		result.put("pos.model",
+				"edu/stanford/nlp/models/pos-tagger/english-bidirectional/english-bidirectional-distsim.tagger");
+
+		// https://stanfordnlp.github.io/CoreNLP/ssplit.html
+		// ssplit.isOneSentence = true
+
+		// https://stanfordnlp.github.io/CoreNLP/tokenize.html
+		result.put("tokenize.language", "en");
 		return result;
 	}
 
