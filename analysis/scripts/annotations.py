@@ -216,7 +216,7 @@ def is_blank_or_none(string: str):
 def natural_keys(text):
 	"""
 	alist.sort(key=natural_keys) sorts in human order
-	
+
 	:see: http://nedbatchelder.com/blog/200712/human_sorting.html
 	:see: http://stackoverflow.com/a/5967539/1391325
 	"""
