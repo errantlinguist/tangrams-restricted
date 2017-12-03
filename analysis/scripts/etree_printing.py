@@ -1,5 +1,5 @@
 """
-Utilities for printing  instances to file-like objects in a manner agnostic to the actual ElementTree implementation used, e.g. standard Python's xml.etree.ElementTree.ElementTree vs lxml's lxml.etree.
+Utilities for printing ElementTree instances to file-like objects in a manner agnostic to the actual ElementTree implementation used, e.g. standard Python's xml.etree.ElementTree.ElementTree vs lxml's lxml.etree.
 
 see https://docs.python.org/3/library/xml.etree.elementtree.html
 """
