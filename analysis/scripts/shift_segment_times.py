@@ -1,9 +1,13 @@
 #!/usr/bin/env python3
 """
-Created on Apr 3, 2017
+A script for shifting the time of each segment found for the given parameters in a given Hat Annotation Tool XML annotation file.
 
-@author: tshore
+Created on Apr 3, 2017.
 """
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
 
 import argparse
 import re
@@ -29,8 +33,9 @@ def shift_segment_times(segments, addend):
 		segment.set("end", str(new_end))
 
 
-def __create_argparser(name: str) -> argparse.ArgumentParser:
-	result = argparse.ArgumentParser(description=name)
+def __create_argparser() -> argparse.ArgumentParser:
+	result = argparse.ArgumentParser(
+		description="Shifts the time of each segment found for the given parameters in a given Hat Annotation Tool XML annotation file.")
 	result.add_argument("infile", metavar='PATH', help='The file to read.')
 	result.add_argument("-p", '--source-id-pattern', metavar='REGEX', type=re.compile, required=True,
 						help='A regular expression matching the source ID of the segments to change.')
@@ -73,4 +78,4 @@ def __main(args, outfile, err_outfile):
 if __name__ == '__main__':
 	import sys
 
-	__main(__create_argparser(sys.argv[0]).parse_args(), sys.stdout, sys.stderr)
+	__main(__create_argparser().parse_args(), sys.stdout, sys.stderr)
