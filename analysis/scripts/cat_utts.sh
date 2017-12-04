@@ -37,8 +37,6 @@ else
 		find "${inpaths}" -type f -name "utts.tsv" -exec tail -n+2 {} \;
 		exit_code=$?
 	fi
-	
-
 fi
 
 exit ${exit_code}
