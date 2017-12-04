@@ -22,6 +22,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.function.BiConsumer;
 
+import javax.annotation.concurrent.NotThreadSafe;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -37,6 +39,7 @@ import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
  * @since Dec 4, 2017
  *
  */
+@NotThreadSafe
 public final class TokenizationTest {
 
 	private static final BiConsumer<CoreMap, List<Tree>> EXTRACTED_PHRASE_HANDLER = (sent, extractedPhrases) -> {
