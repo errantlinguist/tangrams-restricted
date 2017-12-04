@@ -35,6 +35,7 @@ else
 	else
 		echo "${header}"
 		find "${inpaths}" -type f -name "utts.tsv" -exec tail -n+2 {} \;
+		exit_code=$?
 	fi
 	
 
