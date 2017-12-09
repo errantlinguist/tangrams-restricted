@@ -41,6 +41,8 @@ def print_statistics(file_durations: Iterable[Tuple[str, Decimal]], outfile):
 	print(COL_DELIM.join(("MAX", str(max_duration))))
 	mean_duration = statistics.mean(duration for (_, duration) in sorted_durations)
 	print(COL_DELIM.join(("MEAN", str(mean_duration))))
+	summed_duration = sum(duration for (_, duration) in sorted_durations)
+	print(COL_DELIM.join(("SUM", str(summed_duration))))
 
 
 def read_audio_file_duration(infile_path: str) -> Decimal:
