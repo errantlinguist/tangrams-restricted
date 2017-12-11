@@ -15,7 +15,6 @@ import xml.etree.ElementTree
 from typing import Set
 
 HAT_DATA_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
-HAT_DATA_SCHEMA_LOCATION = "http://www.speech.kth.se/higgins/2005/annotation/annotation.xsd"
 ANNOTATION_NAMESPACES = {"hat": HAT_DATA_NAMESPACE,
 						 "xsi": "http://www.w3.org/2001/XMLSchema-instance"}
 
