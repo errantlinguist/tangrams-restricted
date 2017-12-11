@@ -2,7 +2,7 @@
 """
 Writes all unique Higgins Annotation Tool (HAT) XML annotation segments <http://www.speech.kth.se/hat/> to the standard output stream.
 
-Use with e.g. "find ~/Documents/Projects/Tangrams/Data/Derived/ -iname "*.xml" -exec ./write_utterance_referring_tokens.py {} +"
+Use with e.g. "find ~/Documents/Projects/Tangrams/Data/Ready/ -iname "*.xml" -exec ./write_utterance_referring_tokens.py {} +"
 """
 
 __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
