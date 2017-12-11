@@ -202,21 +202,6 @@ class TrackDatum(object):
 					pass
 
 
-def create_skeleton_annnotation_elem(audio_file_path: str):
-	"""
-	FIXME: Buggy!!!
-	:param audio_file_path: The audio file to create an empty annotation file for.
-	:return: A new XML element.
-	"""
-	root = ELEMENT_MAKER.Element("hat:annotation", ANNOTATION_NAMESPACES)
-	xml_files.add_xml_schema_location(root, HAT_DATA_SCHEMA_LOCATION)
-	tracks = ELEMENT_MAKER.SubElement(root, "hat:tracks")
-	__create_track_source_elem(tracks, "source1", "0", audio_file_path)
-	__create_track_source_elem(tracks, "source2", "1", audio_file_path)
-	ELEMENT_MAKER.SubElement(root, "hat:segments")
-	return root
-
-
 def is_blank_or_none(string: str):
 	return string is None or len(string) < 1 or string.isspace()
 
