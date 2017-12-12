@@ -127,12 +127,14 @@ final class ParticipantMetadataTabularDataWriter { // NO_UCD (unused code)
 			playerRoles.forEach((playerId, role) -> {
 				final String sourceId = playerSourceIds.get(playerId);
 				final String participantId = sourceParticipantIds.get(sourceId);
-				result.put(ParticipantMetadatum.INITIAL_ROLE, participantId, role.toString());
+				final String oldRole = result.put(ParticipantMetadatum.INITIAL_ROLE, participantId, role.toString());
+				assert oldRole == null;
 			});
 		}
 
 		for (final Entry<String, String> participantSourceId : participantSourceIds.entrySet()) {
-			result.put(ParticipantMetadatum.SOURCE_ID, participantSourceId.getKey(), participantSourceId.getValue());
+			final String oldSourceId = result.put(ParticipantMetadatum.SOURCE_ID, participantSourceId.getKey(), participantSourceId.getValue());
+			assert oldSourceId == null;
 		}
 		assert result.rowKeySet().size() == ParticipantMetadatum.values().length;
 		assert result.columnKeySet().size() == sortedParticipantIds.size();
@@ -202,7 +204,8 @@ final class ParticipantMetadataTabularDataWriter { // NO_UCD (unused code)
 			while (extantParticipantIdIter.hasNext()) {
 				final String extantParticipantId = extantParticipantIdIter.next();
 				final String participantValue = participantValueIter.next();
-				result.put(metadatumName, extantParticipantId, participantValue);
+				final String oldParticipantValue = result.put(metadatumName, extantParticipantId, participantValue);
+				assert oldParticipantValue == null;
 			}
 		});
 		return result;
@@ -217,7 +220,8 @@ final class ParticipantMetadataTabularDataWriter { // NO_UCD (unused code)
 				.rowMap().entrySet()) {
 			final String metadatumName = metadatumParticipantValues.getKey().toString();
 			for (final Entry<String, String> participantValue : metadatumParticipantValues.getValue().entrySet()) {
-				unifiedMetadata.put(metadatumName, participantValue.getKey(), participantValue.getValue());
+				final String oldParticipantValue = unifiedMetadata.put(metadatumName, participantValue.getKey(), participantValue.getValue());
+				assert oldParticipantValue == null;
 			}
 		}
 
