@@ -2,7 +2,7 @@
 """
 Reads tabular utterance files and creates a single map of unique utterances to the canonical referring tokens in that utterance.
 
-Use with e.g. "find ~/Documents/Projects/Tangrams/Data/Derived/ -iname "*utt-referring-tokens-inflected.tsv" -exec ./write_utterance_referring_tokens.py {} +"
+Use with e.g. "find ~/Documents/Projects/Tangrams/Data/Derived/ -iname "*utt-referring-tokens-basic-inflected.tsv" -exec ./write_utterance_referring_tokens.py {} +"
 """
 
 __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
