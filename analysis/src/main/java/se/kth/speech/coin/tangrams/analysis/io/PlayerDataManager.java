@@ -58,15 +58,18 @@ public final class PlayerDataManager {
 				case "eventLog": {
 					final Path eventLogPath = RelativePaths.resolveIfNotAbsolute(Paths.get(prop.getValue().toString()),
 							baseDir);
-					eventLogPaths.put(tupleId, eventLogPath);
+					final Path oldPath = eventLogPaths.put(tupleId, eventLogPath);
+					assert oldPath == null;
 					break;
 				}
 				case "id": {
-					playerIds.put(tupleId, prop.getValue().toString());
+					final String oldValue = playerIds.put(tupleId, prop.getValue().toString());
+					assert oldValue == null;
 					break;
 				}
 				case "source": {
-					sourceIds.put(tupleId, prop.getValue().toString());
+					final String oldValue = sourceIds.put(tupleId, prop.getValue().toString());
+					assert oldValue == null;
 					break;
 				}
 				default: {

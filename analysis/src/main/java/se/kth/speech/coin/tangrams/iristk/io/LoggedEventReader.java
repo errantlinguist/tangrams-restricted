@@ -492,7 +492,8 @@ public final class LoggedEventReader {
 			try (final Stream<String> lines = readLines(eventLogFile)) {
 				final Map<String, GameHistory> gameHistories = parseGameHistories(lines, eventFilter);
 				gameHistories.forEach((gameId, history) -> {
-					playerGameHistories.put(gameId, playerId, history);
+					final GameHistory oldHistory = playerGameHistories.put(gameId, playerId, history);
+					assert oldHistory == null;
 				});
 			}
 		}

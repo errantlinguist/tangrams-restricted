@@ -90,7 +90,8 @@ public final class UtteranceSpeakerParticipantIdMapFactory
 			if (rolePlayerId != null) {
 				try {
 					final String nextParticipantId = newParticipantIdIter.next();
-					result.put(rolePlayerId, nextParticipantId);
+					final String oldParticipantId = result.put(rolePlayerId, nextParticipantId);
+					assert oldParticipantId == null;
 				} catch (final NoSuchElementException e) {
 					final String msg = String.format(
 							"There are more player roles to assign participant IDs for (%d) than possible participant IDs (%d).",

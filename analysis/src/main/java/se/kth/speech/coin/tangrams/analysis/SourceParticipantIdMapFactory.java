@@ -111,7 +111,8 @@ final class SourceParticipantIdMapFactory
 				final String sourceId = playerSourceIds.get(rolePlayerId);
 				try {
 					final String nextParticipantId = newParticipantIdIter.next();
-					result.put(sourceId, nextParticipantId);
+					final String oldParticipantId = result.put(sourceId, nextParticipantId);
+					assert oldParticipantId == null;
 				} catch (final NoSuchElementException e) {
 					final String msg = String.format(
 							"There are more player roles to assign participant IDs for (%d) than possible participant IDs (%d).",
