@@ -94,7 +94,8 @@ public final class PlayerDataManager {
 			final String tupleId = tuplePlayerId.getKey();
 			final String playerId = tuplePlayerId.getValue();
 			final String playerSourceId = sourceIds.get(tupleId);
-			playerSourceIds.put(playerId, playerSourceId);
+			final String oldSourceId = playerSourceIds.put(playerId, playerSourceId);
+			assert oldSourceId == null;
 			final Path playerEventLogPath = eventLogPaths.get(tupleId);
 			playerEventLogPaths.put(playerId, playerEventLogPath);
 		}

@@ -95,7 +95,8 @@ public final class GameStateDescription extends Record {
 		final BiMap<PlayerRole, String> result = HashBiMap.create(jsonPlayerRoles.size());
 		jsonPlayerRoles.forEach(jsonPlayerRole -> {
 			final Iterator<String> valIter = jsonPlayerRole.iterator();
-			result.put(PlayerRole.valueOf(valIter.next()), valIter.next());
+			final String oldPlayerId = result.put(PlayerRole.valueOf(valIter.next()), valIter.next());
+			assert oldPlayerId == null;
 		});
 		return result;
 	}

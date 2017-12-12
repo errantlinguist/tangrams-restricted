@@ -219,7 +219,8 @@ public final class SpatialMatrix<E> {
 							final int setSize = calculateSubRegionCount(xLength, yLength);
 							regions = regionSetFactory.apply(setSize);
 							LOGGER.debug("Adding new set for size {}*{}", xLength, yLength);
-							result.put(xLength, yLength, regions);
+							final C oldRegions = result.put(xLength, yLength, regions);
+							assert oldRegions == null;
 						}
 						final SpatialRegion region = getRegion(xLowerBound, xUpperBound, yLowerBound, yUpperBound);
 						regions.add(region);
