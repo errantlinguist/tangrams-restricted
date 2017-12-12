@@ -140,29 +140,6 @@ public class AudioRecorder {
 			tmpFile.delete();
 		}
 	}
-	
-	public static void fixUncompletedLogs(String[] args) {
-		if (args.length == 0)
-			fixUncompletedLogs(new File(System.getProperty("user.dir")));
-		else
-			fixUncompletedLogs(new File(args[0]));
-	}
-	
-	public static void fixUncompletedLogs(File dir) {
-		if (dir.isDirectory() && dir.exists()) {
-			for (File file : dir.listFiles()) {
-				if (file.getAbsolutePath().endsWith(".tmp")) {
-					try {
-						makeWavFile(file);
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		} else {
-			System.err.println(dir + " is not a directory");
-		}
-	}
 
 	public Object getAudioPort() {
 		return audioPort;
