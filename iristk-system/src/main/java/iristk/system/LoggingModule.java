@@ -50,7 +50,7 @@ public class LoggingModule extends IrisModule {
 		if (!logDir.exists()) {
 			logDir.mkdirs();
 		}
-		AudioRecorder.fixUncompletedLogs(logDir);
+//		AudioRecorder.fixUncompletedLogs(logDir);
 
 		Runtime.getRuntime().addShutdownHook(
 				new Thread() {
