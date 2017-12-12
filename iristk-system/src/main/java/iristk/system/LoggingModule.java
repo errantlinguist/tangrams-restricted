@@ -14,7 +14,6 @@ import org.apache.log4j.Level;
 import org.apache.log4j.PatternLayout;
 
 import iristk.audio.AudioLogger;
-import iristk.audio.AudioRecorder;
 import iristk.util.NameFilter;
 
 public class LoggingModule extends IrisModule {
