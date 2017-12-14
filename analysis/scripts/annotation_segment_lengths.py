@@ -8,13 +8,14 @@ __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
-import sys
-import xml.etree.ElementTree
 from collections import Counter
+import sys
 from typing import List, Tuple
+import xml.etree.ElementTree
 
 from annotations import ANNOTATION_NAMESPACES
 from xml_files import walk_xml_files
+
 
 COL_DELIM = '\t'
 
@@ -49,7 +50,6 @@ if __name__ == "__main__":
 		col_headers = ("FILE", "SEGMENT_ID", "TOKENS")
 		print(COL_DELIM.join(col_headers))
 		for seg in segments:
-			print(seg)
 			filename = seg[0]
 			seg_id = seg[1]
 			tokens = seg[2]
