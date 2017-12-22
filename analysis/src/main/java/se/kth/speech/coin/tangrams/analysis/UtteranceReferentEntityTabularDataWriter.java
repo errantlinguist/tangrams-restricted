@@ -427,7 +427,7 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 					final float contextStartTime;
 					final float contextEndTime;
 					if (diagUtts.isEmpty()) {
-						if (strict) {
+						if (strict && eventDiagIter.hasNext()) {
 							throw new IllegalArgumentException(
 									String.format("No utterances for event \"%s\".", firstDiagEvent));
 						} else {
