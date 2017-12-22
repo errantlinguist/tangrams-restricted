@@ -49,6 +49,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
@@ -86,13 +87,17 @@ import se.kth.speech.coin.tangrams.iristk.GameManagementEvent;
 import se.kth.speech.coin.tangrams.view.UserPrompts;
 import se.kth.speech.io.FileNames;
 import se.kth.speech.io.RuntimeJAXBException;
+import se.kth.speech.nlp.Disfluencies;
+import se.kth.speech.nlp.MetaLanguage;
+import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
 /**
  * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
  * @since 4 May 2017
  *
  */
-public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use default)
+public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use
+																// default)
 
 	private static class GameWriter {
 
@@ -304,6 +309,8 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 
 		private static final Function<BigDecimal, String> SECS_FORMATTER = BigDecimal::toString;
 
+		private static final Predicate<String> SEMANTICALLY_RELEVANT_TOKEN_FILTER = createSemanticallyRelevantTokenPredicate();
+
 		private static final Collector<CharSequence, ?, String> TABLE_ROW_CELL_JOINER;
 
 		private static final Collector<CharSequence, ?, String> TABLE_ROW_JOINER;
@@ -333,6 +340,14 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 				final GameEvent nextEvt) {
 			final LocalDateTime nextTime = nextEvt.getTime();
 			return TimestampArithmetic.calculateDecimalSecondDifference(firstTime, nextTime, EVT_TIME_DIFF_CTX);
+		}
+
+		private static Predicate<String> createSemanticallyRelevantTokenPredicate() {
+			final Predicate<String> disfluencyFilter = token -> !Disfluencies.isDisfluency(token);
+			final Set<String> fillerWords = SnowballPorter2EnglishStopwords.Variant.FILLERS.get();
+			final Predicate<String> fillerFilter = token -> !fillerWords.contains(token);
+			final Predicate<String> metalanguageFilter = token -> !MetaLanguage.isMetaLanguageToken(token);
+			return disfluencyFilter.and(fillerFilter).and(metalanguageFilter);
 		}
 
 		private static String createTimeDifferenceRepr(final LocalDateTime firstTime, final GameEvent nextEvt) {
@@ -428,8 +443,8 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 					final float contextEndTime;
 					if (diagUtts.isEmpty()) {
 						if (strict && eventDiagIter.hasNext()) {
-							throw new IllegalArgumentException(
-									String.format("No utterances for event \"%s\".", firstDiagEvent));
+							throw new IllegalArgumentException(String.format("No utterances for event ID \"%s\": %s",
+									firstDiagEvent.getId(), firstDiagEvent));
 						} else {
 							final String msg = createNoEventUtterancesMsg(firstDiagEvent, eventDiags,
 									eventDiagIter.nextIndex() - 1);
@@ -440,6 +455,18 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 							contextEndTime = offset;
 						}
 					} else {
+						final boolean diagHasSemanticallyRelevantTokens = diagUtts.stream().map(Utterance::getTokens)
+								.flatMap(List::stream).anyMatch(SEMANTICALLY_RELEVANT_TOKEN_FILTER);
+						if (!diagHasSemanticallyRelevantTokens) {
+							if (strict) {
+								throw new IllegalArgumentException(
+										String.format("No semantically-relevant language for event ID \"%s\": %s",
+												firstDiagEvent.getId(), firstDiagEvent));
+							} else {
+								LOGGER.warn("No semantically-relevant language for event ID \"{}\": {}",
+										firstDiagEvent.getId(), firstDiagEvent);
+							}
+						}
 						// Just use the context of the first utterance
 						final Utterance firstUtt = diagUtts.iterator().next();
 						contextStartTime = firstUtt.getStartTime();
@@ -637,8 +664,7 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(UtteranceReferentEntityTabularDataWriter.class.getName() + " INPATHS...",
-					OPTIONS);
+			formatter.printHelp(UtteranceReferentEntityTabularDataWriter.class.getName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;
@@ -708,8 +734,7 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 	}
 
 	public static void main(final CommandLine cl) throws IOException, JAXBException, ParseException {
-		final Path[] inpaths = cl.getArgList().stream()
-				.map(Paths::get).toArray(Path[]::new);
+		final Path[] inpaths = cl.getArgList().stream().map(Paths::get).toArray(Path[]::new);
 		if (inpaths.length < 1) {
 			throw new MissingOptionException("No input path(s) specified.");
 
@@ -891,19 +916,24 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 				NULL_VALUE_REPR, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
-//		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
-//				.createPlayerPerspectiveGameMap(sessionGameMgrFactory.getEventReader()).entrySet()) {
-//			final SessionGame sessionGame = playerPerspectiveGame.getValue();
-//			final String playerId = playerPerspectiveGame.getKey();
-//			final String gameId = sessionGame.getGameId();
-//			final Path outfilePath = extantOutdir
-//					.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
-//			LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
-//			try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, OUTPUT_ENCODING,
-//					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-//				gameWriter.accept(sessionGame, writer);
-//			}
-//		}
+		// for (final Entry<String, SessionGame> playerPerspectiveGame :
+		// sessionEvtDiagMgr
+		// .createPlayerPerspectiveGameMap(sessionGameMgrFactory.getEventReader()).entrySet())
+		// {
+		// final SessionGame sessionGame = playerPerspectiveGame.getValue();
+		// final String playerId = playerPerspectiveGame.getKey();
+		// final String gameId = sessionGame.getGameId();
+		// final Path outfilePath = extantOutdir
+		// .resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId +
+		// ".tsv");
+		// LOGGER.info("Writing utterances from perspective of \"{}\" to
+		// \"{}\".", playerId, outfilePath);
+		// try (BufferedWriter writer = Files.newBufferedWriter(outfilePath,
+		// OUTPUT_ENCODING,
+		// StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+		// gameWriter.accept(sessionGame, writer);
+		// }
+		// }
 
 		final SessionGame canonicalSessionGame = sessionEvtDiagMgr.getCanonicalGame();
 		final Path outfilePath = extantOutdir
