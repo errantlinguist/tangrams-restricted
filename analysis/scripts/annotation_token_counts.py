@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+Reads Higgins Annotation Tool (HAT) XML annotation files <http://www.speech.kth.se/hat/> and prints out each token type (i.e. unique word) found and the number of times each thereof was found.
+"""
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 from collections import Counter
 import csv
 import sys
