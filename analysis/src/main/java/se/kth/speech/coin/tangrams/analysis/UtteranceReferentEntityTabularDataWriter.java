@@ -44,7 +44,6 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
@@ -892,19 +891,19 @@ public final class UtteranceReferentEntityTabularDataWriter { // NO_UCD (use def
 				NULL_VALUE_REPR, strict);
 
 		final Path extantOutdir = ensureExtantOutdir();
-		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
-				.createPlayerPerspectiveGameMap(sessionGameMgrFactory.getEventReader()).entrySet()) {
-			final SessionGame sessionGame = playerPerspectiveGame.getValue();
-			final String playerId = playerPerspectiveGame.getKey();
-			final String gameId = sessionGame.getGameId();
-			final Path outfilePath = extantOutdir
-					.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
-			LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
-			try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, OUTPUT_ENCODING,
-					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
-				gameWriter.accept(sessionGame, writer);
-			}
-		}
+//		for (final Entry<String, SessionGame> playerPerspectiveGame : sessionEvtDiagMgr
+//				.createPlayerPerspectiveGameMap(sessionGameMgrFactory.getEventReader()).entrySet()) {
+//			final SessionGame sessionGame = playerPerspectiveGame.getValue();
+//			final String playerId = playerPerspectiveGame.getKey();
+//			final String gameId = sessionGame.getGameId();
+//			final Path outfilePath = extantOutdir
+//					.resolve(outfileNamePrefix + "_GAME-" + gameId + "_LOG-" + playerId + ".tsv");
+//			LOGGER.info("Writing utterances from perspective of \"{}\" to \"{}\".", playerId, outfilePath);
+//			try (BufferedWriter writer = Files.newBufferedWriter(outfilePath, OUTPUT_ENCODING,
+//					StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
+//				gameWriter.accept(sessionGame, writer);
+//			}
+//		}
 
 		final SessionGame canonicalSessionGame = sessionEvtDiagMgr.getCanonicalGame();
 		final Path outfilePath = extantOutdir
