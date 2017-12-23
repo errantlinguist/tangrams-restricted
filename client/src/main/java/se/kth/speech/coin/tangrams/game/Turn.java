@@ -31,12 +31,12 @@ public final class Turn {
 
 	private final String playerId;
 
-	private final int sequenceNumber;
+	private final int sequenceOrdinality;
 
-	Turn(final String playerId, final Entry<SpatialRegion, SpatialRegion> move, final int sequenceNumber) {
+	Turn(final String playerId, final Entry<SpatialRegion, SpatialRegion> move, final int sequenceOrdinality) {
 		this.playerId = playerId;
 		this.move = move;
-		this.sequenceNumber = sequenceNumber;
+		this.sequenceOrdinality = sequenceOrdinality;
 	}
 
 	/**
@@ -54,10 +54,10 @@ public final class Turn {
 	}
 
 	/**
-	 * @return the sequenceNumber
+	 * @return the sequenceOrdinality
 	 */
-	public int getSequenceNumber() {
-		return sequenceNumber;
+	public int getSequenceOrdinality() {
+		return sequenceOrdinality;
 	}
 
 }

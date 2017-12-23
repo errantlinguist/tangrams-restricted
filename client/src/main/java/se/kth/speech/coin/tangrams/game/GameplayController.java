@@ -297,7 +297,9 @@ public final class GameplayController implements Controller {
 		updatePiecePositions(move);
 
 		final Entry<SpatialRegion, SpatialRegion> regionMove = createRegionMovePair(move);
-		final Turn turn = new Turn(submittingPlayerId, regionMove, turnCount);
+		// The turn (game round) ID is 1-indexed
+		final int turnSeqOrdinality = turnCount + 1;
+		final Turn turn = new Turn(submittingPlayerId, regionMove, turnSeqOrdinality);
 		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
 		nextMove = null;
 

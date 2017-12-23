@@ -49,11 +49,13 @@ final class TimestampingCompletedTurnLogger implements BiConsumer<Component, Tur
 	 */
 	@Override
 	public void accept(final Component view, final Turn turn) {
-		final int turnNo = turn.getSequenceNumber();
+		final int seqOrdinality = turn.getSequenceOrdinality();
+		// The screenshot is actually of the next round in the game
+		final int nextRoundId = seqOrdinality + 1;
 		// Get the exact time of the screenshot because it's possible the OS
 		// puts a slightly-different creation date on the file saved
 		final String timestamp = dateFormatSupplier.get().format(new Date());
-		final String filenamePrefix = "turn-" + Integer.toString(turnNo) + "-" + timestamp;
+		final String filenamePrefix = "round-" + Integer.toString(nextRoundId) + "-" + timestamp;
 		screenshotLogger.accept(view, filenamePrefix);
 	}
 
