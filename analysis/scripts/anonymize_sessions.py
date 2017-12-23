@@ -48,11 +48,11 @@ RegexReplacementFormatter = namedtuple("RegexReplacementFormatter", "format_str 
 
 @unique
 class ScreenshotFilenameFormatter(Enum):
-	GAME_START = RegexReplacementFormatter("game-start-{}-{}.png",
+	GAME_START = RegexReplacementFormatter("round-1-{}-{}.png",
 										   re.compile("game-start-([^-]+)-([^.]+?)\\.png"))
-	SELECTION = RegexReplacementFormatter("selection-piece-id{}-{}-{}.png",
+	SELECTION = RegexReplacementFormatter("selection-entity-id{}-{}-{}.png",
 										  re.compile("selection-piece-id([^-]+)-([^-]+)-([^.]+?)\\.png"))
-	TURN = RegexReplacementFormatter("turn-{}-{}-{}.png",
+	TURN = RegexReplacementFormatter("round-{}-{}-{}.png",
 									 re.compile("turn-([^-]+)-([^-]+)-([^.]+?)\\.png"))
 
 
@@ -92,14 +92,16 @@ class SessionAnonymizer(object):
 		return format_str.format(timestamp, anonymized_participant_id)
 
 	def __anonymize_selection_screenshot_filename(self, match: Match, format_str: str) -> str:
-		img_id = match.group(1)
+		# Entity IDs are 1-indexed
+		img_id = int(match.group(1)) + 1
 		timestamp = match.group(2)
 		player_id = match.group(3)
 		anonymized_participant_id = self.__anonymize_player_id(player_id)
 		return format_str.format(img_id, timestamp, anonymized_participant_id)
 
 	def __anonymize_turn_screenshot_filename(self, match: Match, format_str: str) -> str:
-		round_id = match.group(1)
+		# Round IDs are 1-indexed; Each individual screenshot is actually of the next turn, so add 1 to each ID
+		round_id = int(match.group(1)) + 2
 		timestamp = match.group(2)
 		player_id = match.group(3)
 		anonymized_participant_id = self.__anonymize_player_id(player_id)
