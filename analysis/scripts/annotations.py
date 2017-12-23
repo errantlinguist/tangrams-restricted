@@ -8,7 +8,7 @@ __license__ = "GNU General Public License, Version 3"
 
 import re
 from collections import defaultdict
-from typing import Callable, TypeVar
+from typing import Callable, Tuple, TypeVar
 from xml.sax.saxutils import escape
 
 import lxml.builder
@@ -206,26 +206,26 @@ class TrackDatum(object):
 					pass
 
 
-def is_blank_or_none(string: str):
+def is_blank_or_none(string: str) -> bool:
 	return string is None or len(string) < 1 or string.isspace()
 
 
-def natural_keys(text):
+def natural_keys(text) -> Tuple[int, ...]:
 	"""
 	alist.sort(key=natural_keys) sorts in human order
 
 	:see: http://nedbatchelder.com/blog/200712/human_sorting.html
 	:see: http://stackoverflow.com/a/5967539/1391325
 	"""
-	return [__atoi(c) for c in __DIGITS_PATTERN.split(text)]
+	return tuple(__atoi(c) for c in __DIGITS_PATTERN.split(text))
 
 
-def sanitize_dom_id(string: str):
+def sanitize_dom_id(string: str) -> str:
 	result = __WHITESPACE_PATTERN.sub('-', string)
 	return escape(result)
 
 
-def __atoi(text: str):
+def __atoi(text: str) -> int:
 	"""
 	:see: http://stackoverflow.com/a/5967539/1391325
 	"""
