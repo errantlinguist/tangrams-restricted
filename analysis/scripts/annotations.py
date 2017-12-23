@@ -54,7 +54,7 @@ class AnnotationData(object):
 
 		self.segment_data.add(other.segment_data)
 
-	def create_xml_element(self):
+	def create_xml_element(self) -> etree.Element:
 		# http://stackoverflow.com/a/22902367/1391325
 		result = self.element_maker("annotation")
 		tracks_elem = etree.SubElement(result, self.__qname_factory("tracks"))
@@ -79,7 +79,7 @@ class AnnotationParser(object):
 		self.__tag_parsers = {self.__qname_factory("tracks"): self.__parse_tracks,
 							  self.__qname_factory("segments"): self.__parse_segments}
 
-	def __call__(self, doc_tree):
+	def __call__(self, doc_tree) -> AnnotationData:
 		result = AnnotationData(self.__qname_factory, self.element_maker, doc_tree.docinfo.encoding)
 		tag_name = self.__qname_factory("annotation")
 		for child in doc_tree.iter(tag_name):
@@ -154,7 +154,7 @@ class SegmentData(object):
 				self.track_segments.update(other.track_segments)
 				self.source_segments.update(other.source_segments)
 
-	def create_xml_element(self):
+	def create_xml_element(self) -> etree.Element:
 		result = etree.Element(self.__qname_factory("segments"))
 		for segment in sorted(self.segments_by_id.values(), key=lambda elem: natural_keys(elem.get("id"))):
 			result.append(segment)
@@ -191,7 +191,7 @@ class TrackDatum(object):
 		if not is_blank_or_none(href):
 			del self.sources_by_href[href]
 
-	def remove_attr(self, attr):
+	def remove_attr(self, attr: str):
 		if attr == "id":
 			raise ValueError("Cannot remove ID attribute: This is absolutely necessary.")
 		else:
