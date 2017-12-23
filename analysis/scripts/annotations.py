@@ -8,6 +8,7 @@ __license__ = "GNU General Public License, Version 3"
 
 import re
 from collections import defaultdict
+from typing import Callable, TypeVar
 from xml.sax.saxutils import escape
 
 import lxml.builder
@@ -26,9 +27,12 @@ ELEMENT_MAKER = lxml.builder.ElementMaker(
 __DIGITS_PATTERN = re.compile('(\d+)')
 __WHITESPACE_PATTERN = re.compile('\s+')
 
+QNameFactory = TypeVar("QNameFactory", bound=Callable[[str], str], contravariant=True)
+
 
 class AnnotationData(object):
-	def __init__(self, qname_factory, element_maker: lxml.builder.ElementMaker, encoding: str):
+
+	def __init__(self, qname_factory: QNameFactory, element_maker: lxml.builder.ElementMaker, encoding: str):
 		self.__qname_factory = qname_factory
 		self.element_maker = element_maker
 		self.encoding = encoding
@@ -70,7 +74,7 @@ class AnnotationData(object):
 
 
 class AnnotationParser(object):
-	def __init__(self, qname_factory, nsmap=None, id_prefix: str = ""):
+	def __init__(self, qname_factory: QNameFactory, nsmap=None, id_prefix: str = ""):
 		self.__qname_factory = qname_factory
 		self.element_maker = ELEMENT_MAKER if nsmap is None else lxml.builder.ElementMaker(nsmap)
 		self.id_prefix = id_prefix
@@ -121,11 +125,11 @@ class AnnotationParser(object):
 
 
 class QNameStringFactory(object):
-	def __init__(self, namespace):
+	def __init__(self, namespace: str):
 		self.tag_qnames = {}
 		self.__tag_prefix = "{" + namespace + "}"
 
-	def __call__(self, tag_name: str):
+	def __call__(self, tag_name: str) -> str:
 		result = self.tag_qnames.get(tag_name)
 		if not result:
 			result = self.__tag_prefix + tag_name
@@ -134,7 +138,7 @@ class QNameStringFactory(object):
 
 
 class SegmentData(object):
-	def __init__(self, qname_factory):
+	def __init__(self, qname_factory: QNameFactory):
 		self.__qname_factory = qname_factory
 		self.segments_by_id = {}
 		self.track_segments = defaultdict(list)
