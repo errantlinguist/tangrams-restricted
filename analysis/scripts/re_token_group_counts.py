@@ -7,8 +7,9 @@ NOTE: This script counts all tokens which occur in a session RECORDING, not just
 import argparse
 import itertools
 import sys
+import xml
 from collections import Counter
-from typing import Dict, Iterable
+from typing import Callable, Dict, Iterable
 
 import utterances
 from token_groups import TokenGroupMapping, read_token_group_dict
@@ -49,7 +50,8 @@ def print_tabular_counts(infile_token_group_counts, group_count_sums, outfile):
 
 
 def read_utt_token_group_counts(infile: str, token_groups: TokenGroupMapping,
-								seg_utt_factory: utterances.SegmentUtteranceFactory):
+								seg_utt_factory: Callable[
+									[Iterable[xml.etree.Element], Iterable[utterances.Utterance]]]):
 	"""
 	NOTE: This function counts all tokens which occur in a session RECORDING, not just the utterances made during a valid game state; For example, utterances before the game start are counted.
 	:param infile: The path to the annotations file to read.
