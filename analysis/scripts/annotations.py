@@ -8,7 +8,7 @@ __license__ = "GNU General Public License, Version 3"
 
 import re
 from collections import defaultdict
-from typing import Optional, Mapping, Tuple
+from typing import Optional, Mapping, Tuple, Union
 from xml.sax.saxutils import escape
 
 import lxml.builder
@@ -208,7 +208,7 @@ def is_blank_or_none(string: str) -> bool:
 	return string is None or len(string) < 1 or string.isspace()
 
 
-def natural_keys(text) -> Tuple[Optional[int, str], ...]:
+def natural_keys(text) -> Tuple[Union[int, str], ...]:
 	"""
 	alist.sort(key=natural_keys) sorts in human order
 
@@ -223,7 +223,7 @@ def sanitize_dom_id(string: str) -> str:
 	return escape(result)
 
 
-def __atoi(text: str) -> Optional[int, str]:
+def __atoi(text: str) -> Union[int, str]:
 	"""
 	:see: http://stackoverflow.com/a/5967539/1391325
 	"""
