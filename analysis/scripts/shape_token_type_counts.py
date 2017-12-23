@@ -27,7 +27,7 @@ class ShapeTokenCounter(object):
 		self.token_seq_factory = token_seq_factory
 		self.filtering_token_counter = filtering_token_counter
 
-	def __call__(self, named_sessions: Mapping[T, SessionData]) -> Dict[
+	def __call__(self, named_sessions: Iterable[Tuple[T, SessionData]]) -> Dict[
 		T, Dict[str, "referent_token_type_counts.CoreferenceChainTokenCountDatum"]]:
 		result = {}
 		for dyad_id, session in named_sessions:
