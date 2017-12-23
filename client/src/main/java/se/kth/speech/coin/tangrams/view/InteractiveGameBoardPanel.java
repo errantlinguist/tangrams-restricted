@@ -217,7 +217,8 @@ public final class InteractiveGameBoardPanel extends AbstractGameBoardPanel impl
 
 			@Override
 			public void ancestorAdded(final AncestorEvent event) {
-				viewLogger.accept(InteractiveGameBoardPanel.this, "game-start-");
+				final String filenamePrefix = "round-1-";
+				viewLogger.accept(InteractiveGameBoardPanel.this, filenamePrefix);
 				InteractiveGameBoardPanel.this.removeAncestorListener(this);
 			}
 
