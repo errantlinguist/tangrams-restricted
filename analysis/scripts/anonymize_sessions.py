@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-A script for anonymizing recorded sessions of the game "tangrams-restricted". WARNING: Not yet finished/tested!
+A script for anonymizing recorded sessions of the game "tangrams-restricted".
 """
 
 __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
@@ -21,6 +21,8 @@ import iristk
 import java_properties_files
 import session_data as sd
 
+ANONYMIZED_PARTICIPANT_IDS = ("A", "B")
+
 PROPERTIES_FILENAME = "desc.properties"
 PROPERTIES_FILE_ENCODING = "utf-8"
 
@@ -33,6 +35,8 @@ EVENT_LOG_PLAYER_A_INITIAL_ROLE_FORMAT_STRING = '"playerRoles":[["MOVE_SUBMISSIO
 EVENT_LOG_PLAYER_B_INITIAL_ROLE_FORMAT_STRING = '],["WAITING_FOR_NEXT_MOVE","{}"]]'
 EVENT_LOG_PLAYER_INITIAL_ROLE_PATTERN = re.compile(r'.*?\"playerRoles\":\[\["MOVE_SUBMISSION\",\"([^\"]+)"\].*')
 EVENT_LOG_PLAYER_ID_FORMAT_STRING = "\"PLAYER_ID\":\"{}\""
+
+
 
 SESSION_DIR_FILENAME_FORMAT_STRINGS = ("events-{}.txt", "img-info-{}.txt", "system-{}.log")
 
@@ -121,10 +125,10 @@ class SessionAnonymizer(object):
 				"Could not find attribute \"{}\" in \"{}\".".format(sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value,
 																	session_data.events_metadata))
 		else:
-			events_metadata[sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value] = self.initial_player_id
+			events_metadata[sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value] = ANONYMIZED_PARTICIPANT_IDS[0]
 			with open(session_data.events_metadata, 'w', encoding=sd.ENCODING) as outf:
 				writer = csv.writer(outf, dialect=sd.EVENTS_METADATA_CSV_DIALECT)
-				writer.writerows(sorted(events_metadata, key=lambda item: item[0]))
+				writer.writerows(sorted(events_metadata.items(), key=lambda item: item[0]))
 
 	def anonymize_player_event_log_files(self, player_event_log_filenames: Mapping[str, str], session_dir: str):
 		for player_event_log_filename in player_event_log_filenames.values():
@@ -258,7 +262,7 @@ class SessionAnonymizer(object):
 										  filename_replacement)
 
 	def __anonymize_player_id(self, player_id: str) -> str:
-		return "A" if player_id == self.initial_player_id else "B"
+		return ANONYMIZED_PARTICIPANT_IDS[0] if player_id == self.initial_player_id else ANONYMIZED_PARTICIPANT_IDS[1]
 
 
 def parse_initial_player_id(event_log_file: str) -> str:
