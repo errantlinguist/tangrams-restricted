@@ -11,13 +11,13 @@ __license__ = "GNU General Public License, Version 3"
 import csv
 import sys
 import xml.etree.ElementTree
-from typing import List, Tuple
+from typing import Iterable, List, Tuple
 
 from annotations import ANNOTATION_NAMESPACES
 from xml_files import walk_xml_files
 
 
-def read_segments(infile_paths: str) -> List[Tuple[str, str, Tuple[str, ...]]]:
+def read_segments(infile_paths: Iterable[str]) -> List[Tuple[str, str, Tuple[str, ...]]]:
 	result = []
 	for infile_path in infile_paths:
 		print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
@@ -35,20 +35,23 @@ def __token_length(row: Tuple[str, str, Tuple[str, ...]]) -> int:
 	return len(tokens)
 
 
+def __main(inpaths: Iterable[str]):
+	infiles = walk_xml_files(*inpaths)
+	segments = read_segments(infiles)
+	print("Found {} segment(s).".format(len(segments)), file=sys.stderr)
+	segments.sort(key=__token_length)
+	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+	writer.writerow(("FILE", "SEGMENT_ID", "TOKENS"))
+	for seg in segments:
+		filename = seg[0]
+		seg_id = seg[1]
+		tokens = seg[2]
+		row = (filename, seg_id, " ".join(tokens))
+		writer.writerow(row)
+
+
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
 	else:
-		inpaths = sys.argv[1:]
-		infiles = walk_xml_files(*inpaths)
-		segments = read_segments(infiles)
-		print("Found {} segment(s).".format(len(segments)), file=sys.stderr)
-		segments.sort(key=__token_length)
-		writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
-		writer.writerow(("FILE", "SEGMENT_ID", "TOKENS"))
-		for seg in segments:
-			filename = seg[0]
-			seg_id = seg[1]
-			tokens = seg[2]
-			row = (filename, seg_id, " ".join(tokens))
-			writer.writerow(row)
+		__main(sys.argv[1:])
