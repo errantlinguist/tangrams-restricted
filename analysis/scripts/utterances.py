@@ -8,7 +8,7 @@ __license__ = "GNU General Public License, Version 3"
 
 import sys
 from collections import defaultdict
-from typing import Any, Callable, DefaultDict, Iterable, Iterator, List, Sequence, Tuple
+from typing import Any, Callable, DefaultDict, Iterable, Iterator, List, Optional, Sequence, Tuple
 from xml.etree.ElementTree import Element, parse as parse_etree
 
 import annotations
@@ -45,7 +45,7 @@ class SegmentUtteranceFactory(object):
 			if utt:
 				yield utt
 
-	def __create(self, segment: Element) -> "Utterance":
+	def __create(self, segment: Element) -> Optional["Utterance"]:
 		token_elems = segment.iterfind(".//hat:t", annotations.ANNOTATION_NAMESPACES)
 		token_text = (elem.text for elem in token_elems)
 		content = self.token_seq_factory(token_text)
