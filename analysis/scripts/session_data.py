@@ -2,7 +2,7 @@ import csv
 import os
 from decimal import Decimal
 from enum import Enum, unique
-from typing import Any, Callable, Dict, Iterator, List, Iterable, Tuple
+from typing import Dict, Iterator, List, Iterable, Tuple
 
 import pandas as pd
 
@@ -18,7 +18,7 @@ __DECIMAL_VALUE_POOL = {}
 
 
 class DataColumnProperties(object):
-	def __init__(self, name: str, value_transformer: Callable[[str], Any]):
+	def __init__(self, name: str, value_transformer):
 		self.name = name
 		self.value_transformer = value_transformer
 
