@@ -8,7 +8,7 @@ __license__ = "GNU General Public License, Version 3"
 
 import re
 from collections import defaultdict
-from typing import Optional, Mapping, Tuple, Union
+from typing import Iterable, Optional, Mapping, Tuple, Union
 from xml.sax.saxutils import escape
 
 import lxml.builder
@@ -40,7 +40,7 @@ class AnnotationData(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def add(self, other):
+	def add(self, other: "AnnotationData"):
 		old_track_count = len(self.track_data)
 		for track_id, other_track in other.track_data.items():
 			if track_id in self.track_data:
@@ -79,7 +79,7 @@ class AnnotationParser(object):
 		self.__tag_parsers = {self.__qname_factory("tracks"): self.__parse_tracks,
 							  self.__qname_factory("segments"): self.__parse_segments}
 
-	def __call__(self, doc_tree) -> AnnotationData:
+	def __call__(self, doc_tree: etree.ElementTree) -> AnnotationData:
 		result = AnnotationData(self.__qname_factory, self.element_maker, doc_tree.docinfo.encoding)
 		tag_name = self.__qname_factory("annotation")
 		for child in doc_tree.iter(tag_name):
@@ -87,13 +87,13 @@ class AnnotationParser(object):
 
 		return result
 
-	def __parse_annotation(self, annot, result):
+	def __parse_annotation(self, annot: Iterable[etree.Element], result: AnnotationData):
 		for child in annot:
 			tag_name = child.tag
 			parser = self.__tag_parsers[tag_name]
 			parser(child, result)
 
-	def __parse_segments(self, segments, result):
+	def __parse_segments(self, segments: Iterable[etree.Element], result: AnnotationData):
 		segment_data = result.segment_data
 		for segment in segments:
 			attrs = segment.attrib
@@ -107,7 +107,7 @@ class AnnotationParser(object):
 			segment_data.source_segments[source_id].append(segment)
 			attrs["source"] = source_id
 
-	def __parse_tracks(self, tracks, result):
+	def __parse_tracks(self, tracks: Iterable[etree.Element], result: AnnotationData):
 		source_tag_name = self.__qname_factory("source")
 		track_data = result.track_data
 		for track in track_data:
@@ -145,7 +145,7 @@ class SegmentData(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def add(self, other):
+	def add(self, other: "SegmentData"):
 		for segment_id, segment in other.segments_by_id.items():
 			if segment_id in self.segments_by_id:
 				raise ValueError("Segment ID \"%s\" already in dict." % segment_id)
@@ -171,7 +171,7 @@ class TrackDatum(object):
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
 
-	def add(self, source):
+	def add(self, source: etree.Element):
 		source_id = source.get("id")
 		self.sources_by_id[source_id] = source
 		channel = source.get("channel")
@@ -181,7 +181,7 @@ class TrackDatum(object):
 		if not is_blank_or_none(href):
 			self.sources_by_href[href] = source
 
-	def remove(self, source):
+	def remove(self, source: etree.Element):
 		source_id = source.get("id")
 		del self.sources_by_id[source_id]
 		channel = source.get("channel")
@@ -204,7 +204,7 @@ class TrackDatum(object):
 					pass
 
 
-def is_blank_or_none(string: str) -> bool:
+def is_blank_or_none(string: Optional[str]) -> bool:
 	return string is None or len(string) < 1 or string.isspace()
 
 
