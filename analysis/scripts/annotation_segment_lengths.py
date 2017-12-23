@@ -8,16 +8,13 @@ __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
-from collections import Counter
+import csv
 import sys
-from typing import List, Tuple
 import xml.etree.ElementTree
+from typing import List, Tuple
 
 from annotations import ANNOTATION_NAMESPACES
 from xml_files import walk_xml_files
-
-
-COL_DELIM = '\t'
 
 
 def read_segments(infile_paths: str) -> List[Tuple[str, str, Tuple[str, ...]]]:
@@ -47,11 +44,11 @@ if __name__ == "__main__":
 		segments = read_segments(infiles)
 		print("Found {} segment(s).".format(len(segments)), file=sys.stderr)
 		segments.sort(key=__token_length)
-		col_headers = ("FILE", "SEGMENT_ID", "TOKENS")
-		print(COL_DELIM.join(col_headers))
+		writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+		writer.writerow(("FILE", "SEGMENT_ID", "TOKENS"))
 		for seg in segments:
 			filename = seg[0]
 			seg_id = seg[1]
 			tokens = seg[2]
 			row = (filename, seg_id, " ".join(tokens))
-			print(COL_DELIM.join(row))
+			writer.writerow(row)
