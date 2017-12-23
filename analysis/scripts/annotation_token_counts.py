@@ -8,10 +8,11 @@ __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
-from collections import Counter
 import csv
 import sys
 import xml.etree.ElementTree
+from collections import Counter
+from typing import Iterable
 
 from annotations import ANNOTATION_NAMESPACES
 from xml_files import walk_xml_files
@@ -29,16 +30,19 @@ def count_tokens(infile_paths):
 	return result
 
 
+def __main(inpaths: Iterable[str]):
+	infiles = walk_xml_files(*inpaths)
+	token_counts = count_tokens(infiles)
+	print("Found {} unique token(s).".format(len(token_counts)), file=sys.stderr)
+	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+	writer.writerow(("TOKEN", "COUNT"))
+	alphabetic_token_counts = sorted(token_counts.items(), key=lambda item: item[0])
+	alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)
+	writer.writerows(alphabetic_count_desc_token_counts)
+
+
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
 	else:
-		inpaths = sys.argv[1:]
-		infiles = walk_xml_files(*inpaths)
-		token_counts = count_tokens(infiles)
-		print("Found {} unique token(s).".format(len(token_counts)), file=sys.stderr)
-		writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
-		writer.writerow(("TOKEN", "COUNT"))
-		alphabetic_token_counts = sorted(token_counts.items(), key=lambda item: item[0])
-		alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)
-		writer.writerows(alphabetic_count_desc_token_counts)
+		__main(sys.argv[1:])
