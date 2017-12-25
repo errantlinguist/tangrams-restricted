@@ -193,7 +193,7 @@ public final class TangramsClient implements Runnable {
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(TangramsClient.class.getSimpleName(), OPTIONS);
+			formatter.printHelp(TangramsClient.class.getName(), OPTIONS);
 		}
 
 		protected final String optName;

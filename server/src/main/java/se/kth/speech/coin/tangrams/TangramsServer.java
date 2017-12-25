@@ -123,7 +123,7 @@ public final class TangramsServer implements Runnable { // NO_UCD (use default)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(TangramsServer.class.getSimpleName(), OPTIONS);
+			formatter.printHelp(TangramsServer.class.getName(), OPTIONS);
 		}
 
 		protected final String optName;
