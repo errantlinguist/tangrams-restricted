@@ -127,7 +127,7 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 
 		private static void printHelp() {
 			final HelpFormatter formatter = new HelpFormatter();
-			formatter.printHelp(SegmentTimedUtteranceWriter.class.getName() + " INPATHS...", OPTIONS);
+			formatter.printHelp(SessionStatisticsWriter.class.getName() + " INPATHS...", OPTIONS);
 		}
 
 		protected final String optName;
@@ -189,10 +189,15 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 		}
 	}
 
-	public static void main(final String[] args) throws JAXBException, IOException, ParseException {
+	public static void main(final String[] args) throws JAXBException, IOException {
 		final CommandLineParser parser = new DefaultParser();
-		final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
-		main(cl);
+		try {
+			final CommandLine cl = parser.parse(Parameter.OPTIONS, args);
+			main(cl);
+		} catch (final ParseException e) {
+			System.out.println(String.format("An error occured while parsing the command-line arguments: %s", e));
+			Parameter.printHelp();
+		}
 	}
 
 	private static NavigableMap<String, GameSummary> createSessionGameSummaries(final SessionDataManager sessionData,
