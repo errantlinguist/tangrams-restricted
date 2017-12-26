@@ -141,13 +141,13 @@ public final class GameplayController implements Controller {
 	private int turnCount;
 
 	public GameplayController(final SpatialMatrix<Integer> model, final String playerId, final PlayerRole role,
-			final ClientRequestListener clientRequestLsitener) {
+			final ClientRequestListener clientRequestListener) {
 		this.model = model;
 		areaRegionFactory = new AreaSpatialRegionFactory(model);
 		piecePosUpdater = new SpatialMatrixRegionElementMover<>(model);
 		this.playerId = playerId;
 		this.role = role;
-		this.clientRequestListener = clientRequestLsitener;
+		this.clientRequestListener = clientRequestListener;
 
 		listeners = Collections.newSetFromMap(new IdentityHashMap<>());
 		history = new History();
