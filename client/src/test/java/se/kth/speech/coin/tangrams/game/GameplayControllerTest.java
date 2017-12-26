@@ -38,7 +38,7 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.MatrixTests;
 import se.kth.speech.coin.tangrams.SpatialMatrixTests;
-import se.kth.speech.coin.tangrams.iristk.GameManagementClient;
+import se.kth.speech.coin.tangrams.iristk.ClientRequestListener;
 import se.kth.speech.coin.tangrams.iristk.events.Area2D;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
@@ -51,7 +51,7 @@ public final class GameplayControllerTest {
 
 	public static final long[] TEST_SEEDS = new long[] { 1L, 56L, 3L };
 
-	private static final GameManagementClient CLIENT = Mockito.mock(GameManagementClient.class);
+	private static final ClientRequestListener CLIENT = Mockito.mock(ClientRequestListener.class);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameplayControllerTest.class);
 

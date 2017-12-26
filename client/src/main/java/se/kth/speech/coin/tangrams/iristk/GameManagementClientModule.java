@@ -41,7 +41,7 @@ import se.kth.speech.coin.tangrams.iristk.events.ModelDescription;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 import se.kth.speech.coin.tangrams.iristk.events.Selection;
 
-public final class GameManagementClientModule extends IrisModule implements GameManagementClient {
+public final class GameManagementClientModule extends IrisModule implements ClientRequestListener {
 
 	private static final ModelDescriptionSpatialMatrixFactory GAME_MODEL_MATRIX_UNMARSHALLER = new ModelDescriptionSpatialMatrixFactory(
 			SpatialMatrix.Factory.STABLE_ITER_ORDER);
