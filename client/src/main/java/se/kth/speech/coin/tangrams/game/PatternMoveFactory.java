@@ -25,6 +25,7 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +44,7 @@ import se.kth.speech.coin.tangrams.iristk.events.Move;
  *
  */
 public final class PatternMoveFactory
-		implements ControllerListeningMoveFactory {
+		implements Supplier<MapEntryRemapping<Integer, SpatialRegion>>, Controller.Listener {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PatternMoveFactory.class);
 
