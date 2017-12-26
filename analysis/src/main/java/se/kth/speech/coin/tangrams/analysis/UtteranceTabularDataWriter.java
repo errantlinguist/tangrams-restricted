@@ -168,7 +168,7 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 				final Utterance firstOrigUtt = filteredOrigUttIter.next();
 				final DialogueRole firstOrigUttDiagRole = uttDiagRoleFactory.apply(firstOrigUtt, evtDiag);
 				if (!DialogueRole.INSTRUCTOR.equals(firstOrigUttDiagRole)) {
-					LOGGER.warn("First utterance of round {} is not from the instructor: \"{}\"", roundId, firstOrigUtt.getTokens().stream().collect(TOKEN_JOINER));
+					LOGGER.warn("First utterance of round {} is not from the instructor: Start time: {}; \"{}\"", roundId, firstOrigUtt.getStartTime(), firstOrigUtt.getTokens().stream().collect(TOKEN_JOINER));
 				}
 				addUtt(firstOrigUtt, uttRows, roundId, evtDiag, uttDiagRoleFactory);
 				while (filteredOrigUttIter.hasNext()) {
