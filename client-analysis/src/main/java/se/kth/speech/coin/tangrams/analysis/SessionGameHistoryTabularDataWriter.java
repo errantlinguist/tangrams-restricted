@@ -122,7 +122,7 @@ import se.kth.speech.coin.tangrams.view.InteractiveGameBoardPanel;
  */
 public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
-	private enum EventDatum implements BiFunction<EventContext, String, String> {
+	public enum EventDatum implements BiFunction<EventContext, String, String> {
 		ENTITY {
 
 			@Override
@@ -330,6 +330,8 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 
 	}
+	
+	public static final Charset OUTPUT_CHARSET = LoggedEventReader.CHARSET;
 
 	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 8;
 
@@ -344,8 +346,6 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	private static final String NULL_VALUE_REPR = "?";
 
 	private static final ZoneId ORIGINAL_EXPERIMENT_TIMEZONE = ZoneId.of("Europe/Stockholm");
-
-	private static final Charset OUTPUT_CHARSET = LoggedEventReader.CHARSET;
 
 	private static final DateTimeFormatter OUTPUT_DATETIME_FORMATTER = DateTimeFormatter.ISO_OFFSET_DATE_TIME;
 
