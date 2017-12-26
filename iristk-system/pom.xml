@@ -61,7 +61,8 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-log4j12</artifactId>
-			<scope>runtime</scope>
+			<!-- NOTE: This dependency is required at compile time in order to build IrisTK's logging classes -->
+			<scope>compile</scope>
 		</dependency>
 
 
