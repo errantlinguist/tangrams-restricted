@@ -113,8 +113,9 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 		private static String formatMinutes(final double timeInSecs) {
 			final double fractionalMins = timeInSecs / 60;
-			final double remainingSecs = timeInSecs % 60;
-			return String.format("%02.0f:%02.3f", fractionalMins, remainingSecs);
+			final double wholeMins = Math.floor(fractionalMins);
+			final double remainingSecs = timeInSecs - (wholeMins * 60);
+			return String.format("%02.0f:%02.3f", wholeMins, remainingSecs);
 
 		}
 
