@@ -111,6 +111,13 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 		private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
 
+		private static String formatMinutes(final double timeInSecs) {
+			final double fractionalMins = timeInSecs / 60;
+			final double remainingSecs = timeInSecs % 60;
+			return String.format("%02.0f:%02.3f", fractionalMins, remainingSecs);
+
+		}
+
 		private final Map<? super String, Utterance> origUttsBySegmentId;
 
 		private final Map<? super String, PlayerRole> playerInitialRoles;
@@ -168,7 +175,9 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 				final Utterance firstOrigUtt = filteredOrigUttIter.next();
 				final DialogueRole firstOrigUttDiagRole = uttDiagRoleFactory.apply(firstOrigUtt, evtDiag);
 				if (!DialogueRole.INSTRUCTOR.equals(firstOrigUttDiagRole)) {
-					LOGGER.warn("First utterance of round {} is not from the instructor: Start time: {}; \"{}\"", roundId, firstOrigUtt.getStartTime(), firstOrigUtt.getTokens().stream().collect(TOKEN_JOINER));
+					LOGGER.warn("First utterance of round {} is not from the instructor: Start time: {}; \"{}\"",
+							roundId, formatMinutes(firstOrigUtt.getStartTime()),
+							firstOrigUtt.getTokens().stream().collect(TOKEN_JOINER));
 				}
 				addUtt(firstOrigUtt, uttRows, roundId, evtDiag, uttDiagRoleFactory);
 				while (filteredOrigUttIter.hasNext()) {
