@@ -27,6 +27,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -114,7 +115,7 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 		private static String formatMinutes(final double timeInSecs) {
 			final double fractionalMins = timeInSecs / 60;
 			final double wholeMins = Math.floor(fractionalMins);
-			final double remainingSecs = timeInSecs - (wholeMins * 60);
+			final double remainingSecs = timeInSecs - wholeMins * 60;
 			return String.format("%02.0f:%02.3f", wholeMins, remainingSecs);
 
 		}
@@ -333,7 +334,9 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 
 		final SessionGameManager.Factory sessionGameMgrFactory = new SessionGameManager.Factory(
 				new LoggedEventReader(allSessionData.size(), allSessionData.size() * 10));
-		for (final Entry<SessionDataManager, Path> sessionDataPath : allSessionData.entrySet()) {
+		for (final Iterator<Entry<SessionDataManager, Path>> sessionDataPathIter = allSessionData.entrySet().stream()
+				.sorted(Comparator.comparing(Entry::getValue)).iterator(); sessionDataPathIter.hasNext();) {
+			final Entry<SessionDataManager, Path> sessionDataPath = sessionDataPathIter.next();
 			final SessionDataManager sessionDataMgr = sessionDataPath.getKey();
 			final Path sessionPropsFilePath = sessionDataPath.getValue().toAbsolutePath();
 			final Path sessionDir = sessionPropsFilePath.getParent();
