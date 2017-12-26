@@ -16,7 +16,6 @@
 */
 package se.kth.speech.coin.tangrams.game;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Map.Entry;
@@ -43,67 +42,6 @@ import se.kth.speech.coin.tangrams.iristk.events.Selection;
  */
 public final class GameplayController implements Controller {
 
-	final class History {
-
-		private final int[] lastPieceMoveTurnsById;
-
-		private final int[] pieceMoveCounts;
-
-		private History() {
-			final int pieceCount = getModel().getUniqueElementCount();
-			lastPieceMoveTurnsById = new int[pieceCount];
-			Arrays.fill(lastPieceMoveTurnsById, -1);
-			pieceMoveCounts = new int[pieceCount];
-		}
-
-		public int getLastPieceMoveTurn(final int pieceId) {
-			return lastPieceMoveTurnsById[pieceId];
-		}
-
-		/**
-		 * @return the lastPieceMoveTurnsById
-		 */
-		public int[] getLastPieceMoveTurnsById() {
-			return lastPieceMoveTurnsById;
-		}
-
-		public int getPieceMoveCount(final int pieceId) {
-			return pieceMoveCounts[pieceId];
-		}
-
-		/**
-		 * @return the pieceMoveCounts
-		 */
-		public int[] getPieceMoveCounts() {
-			return pieceMoveCounts;
-		}
-
-		public int getTurnCount() {
-			return GameplayController.this.getTurnCount();
-		}
-
-		/*
-		 * (non-Javadoc)
-		 *
-		 * @see java.lang.Object#toString()
-		 */
-		@Override
-		public String toString() {
-			final StringBuilder builder = new StringBuilder(64 + 4 * lastPieceMoveTurnsById.length);
-			builder.append("History [lastPieceMoveTurnsById=");
-			builder.append(Arrays.toString(lastPieceMoveTurnsById));
-			builder.append(", pieceMoveCounts=");
-			builder.append(Arrays.toString(pieceMoveCounts));
-			builder.append(']');
-			return builder.toString();
-		}
-
-		private void updatePieceMovementInfo(final int pieceId) {
-			lastPieceMoveTurnsById[pieceId] = turnCount;
-			pieceMoveCounts[pieceId] += 1;
-		}
-	}
-
 	private enum ValidationStatus {
 		OK, SOURCE_EMPTY, SOURCE_TARGET_SAME, TARGET_OCCUPIED;
 	}
@@ -119,8 +57,6 @@ public final class GameplayController implements Controller {
 	private final AreaSpatialRegionFactory areaRegionFactory;
 
 	private final ClientRequestListener clientRequestListener;
-
-	private final History history;
 
 	private final Set<Listener> listeners;
 
@@ -150,14 +86,6 @@ public final class GameplayController implements Controller {
 		this.clientRequestListener = clientRequestListener;
 
 		listeners = Collections.newSetFromMap(new IdentityHashMap<>());
-		history = new History();
-	}
-
-	/**
-	 * @return the history
-	 */
-	public History getHistory() {
-		return history;
 	}
 
 	/**
@@ -303,8 +231,6 @@ public final class GameplayController implements Controller {
 		listeners.forEach(listener -> listener.updateTurnCompleted(turn));
 		nextMove = null;
 
-		history.updatePieceMovementInfo(move.getPieceId());
-
 		incrementTurnCount();
 		updateScore(GOOD_TURN_SCORE_DIFF);
 
@@ -379,7 +305,6 @@ public final class GameplayController implements Controller {
 		}
 		clientRequestListener.requestTurnCompletion(nextMove);
 		updatePiecePositions(nextMove);
-		history.updatePieceMovementInfo(nextMove.getPieceId());
 		nextMove = null;
 		selectedPiece = null;
 
