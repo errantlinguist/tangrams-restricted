@@ -129,35 +129,51 @@ public final class UtteranceTabularDataWriter { // NO_UCD (unused code)
 			this.uttRowFilter = uttRowFilter;
 		}
 
+		private void addUtt(final Utterance origUtt, final Collection<? super String> uttRows, final int roundId,
+				final EventDialogue evtDiag,
+				final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> uttDiagRoleFactory) {
+			final String segId = origUtt.getSegmentId();
+			final List<Object> rowCells = new ArrayList<>(COL_NAMES.size());
+			rowCells.add(roundId);
+
+			final String speakerId = origUtt.getSpeakerId();
+			final String participantId = playerParticipantIds.get(speakerId);
+			rowCells.add(participantId);
+			final DialogueRole diagRole = uttDiagRoleFactory.apply(origUtt, evtDiag);
+			rowCells.add(diagRole);
+
+			final float startTime = origUtt.getStartTime();
+			rowCells.add(startTime);
+			final float endTime = origUtt.getEndTime();
+			rowCells.add(endTime);
+
+			final Utterance rawUtt = origUttsBySegmentId.get(segId);
+			final String rawUttRepr = rawUtt.getTokens().stream().collect(TOKEN_JOINER);
+			rowCells.add(rawUttRepr);
+
+			LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", rawUttRepr,
+					origUtt.getTokens().stream().collect(TOKEN_JOINER));
+			uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+		}
+
 		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
 				final Collection<? super String> uttRows,
 				final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> uttDiagRoleFactory) {
 			final List<Utterance> origUtts = evtDiag.getUtterances();
 			LOGGER.debug("Writing rows for round ID {}.", roundId);
-			for (final Utterance origUtt : origUtts) {
-				final String segId = origUtt.getSegmentId();
-				if (uttRowFilter.test(origUtt)) {
-					final List<Object> rowCells = new ArrayList<>(COL_NAMES.size());
-					rowCells.add(roundId);
 
-					final String speakerId = origUtt.getSpeakerId();
-					final String participantId = playerParticipantIds.get(speakerId);
-					rowCells.add(participantId);
-					final DialogueRole diagRole = uttDiagRoleFactory.apply(origUtt, evtDiag);
-					rowCells.add(diagRole);
-
-					final float startTime = origUtt.getStartTime();
-					rowCells.add(startTime);
-					final float endTime = origUtt.getEndTime();
-					rowCells.add(endTime);
-
-					final Utterance rawUtt = origUttsBySegmentId.get(segId);
-					final String rawUttRepr = rawUtt.getTokens().stream().collect(TOKEN_JOINER);
-					rowCells.add(rawUttRepr);
-
-					LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", rawUttRepr,
-							origUtt.getTokens().stream().collect(TOKEN_JOINER));
-					uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
+			final Stream<Utterance> filteredOrigUtts = origUtts.stream().filter(uttRowFilter);
+			final Iterator<Utterance> filteredOrigUttIter = filteredOrigUtts.iterator();
+			if (filteredOrigUttIter.hasNext()) {
+				final Utterance firstOrigUtt = filteredOrigUttIter.next();
+				final DialogueRole firstOrigUttDiagRole = uttDiagRoleFactory.apply(firstOrigUtt, evtDiag);
+				if (!DialogueRole.INSTRUCTOR.equals(firstOrigUttDiagRole)) {
+					LOGGER.warn("First utterance of round {} is not from the instructor.", roundId);
+				}
+				addUtt(firstOrigUtt, uttRows, roundId, evtDiag, uttDiagRoleFactory);
+				while (filteredOrigUttIter.hasNext()) {
+					final Utterance nextOrigUtt = filteredOrigUttIter.next();
+					addUtt(nextOrigUtt, uttRows, roundId, evtDiag, uttDiagRoleFactory);
 				}
 			}
 		}
