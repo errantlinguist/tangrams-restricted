@@ -66,7 +66,7 @@ public final class WaveSurferEventTimeWriter { // NO_UCD (use default)
 
 	private static final String IMG_INFO_COL_DELIMITER = "\t";
 
-	private static final Pattern IMG_INFO_FILENAME_PATTERN = Pattern.compile(".*?img-info-(.+)\\.txt");
+	private static final Pattern IMG_INFO_FILENAME_PATTERN = Pattern.compile(".*?img-info-(.+)\\.tsv");
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(WaveSurferEventTimeWriter.class);
 

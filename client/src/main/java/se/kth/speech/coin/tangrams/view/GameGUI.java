@@ -47,7 +47,7 @@ import se.kth.speech.coin.tangrams.iristk.GameState;
  */
 public final class GameGUI implements Runnable {
 
-	private static final String IMAGE_INFO_LOGFILE_NAME = "img-info.txt";
+	private static final String IMAGE_INFO_LOGFILE_NAME = "img-info.tsv";
 
 	// private static JMenu createFileMenu(final Window view) {
 	// final JMenu result = new JMenu("File");
