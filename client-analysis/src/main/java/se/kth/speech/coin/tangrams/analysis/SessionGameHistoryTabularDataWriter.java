@@ -234,27 +234,27 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	}
 
-	private enum EventMetadatum {
+	private enum SessionMetadatum {
 		END_SCORE, ENTITY_COUNT, EVENT_COUNT, EXPERIMENT_VERSION, GAME_DURATION, GAME_ID, INITIAL_INSTRUCTOR_ID, MOVE_DELAY, ROUND_COUNT, START_TIME;
 
 	}
 
-	private static class EventMetadatumNameComparator implements Comparator<String> {
+	private static class SessionMetadatumNameComparator implements Comparator<String> {
 
-		private static EventMetadatum parseNullableMetadatum(final String name) {
-			EventMetadatum result = null;
+		private static SessionMetadatum parseNullableMetadatum(final String name) {
+			SessionMetadatum result = null;
 			try {
-				result = EventMetadatum.valueOf(name);
+				result = SessionMetadatum.valueOf(name);
 			} catch (final IllegalArgumentException e) {
 				LOGGER.debug(String.format("Unable to parse \"%s\" as an instance of %s; Returning null.", name,
-						EventMetadatum.class), e);
+						SessionMetadatum.class), e);
 			}
 			return result;
 		}
 
 		private final Comparator<String> rowObservationOrderComparator;
 
-		private EventMetadatumNameComparator(final int expectedRowCount) {
+		private SessionMetadatumNameComparator(final int expectedRowCount) {
 			rowObservationOrderComparator = new ObservationOrderComparator<>(expectedRowCount);
 		}
 
@@ -262,8 +262,8 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		public int compare(final String o1, final String o2) {
 			int result;
 
-			final EventMetadatum m1 = parseNullableMetadatum(o1);
-			final EventMetadatum m2 = parseNullableMetadatum(o2);
+			final SessionMetadatum m1 = parseNullableMetadatum(o1);
+			final SessionMetadatum m2 = parseNullableMetadatum(o2);
 			if (m1 == null) {
 				if (m2 == null) {
 					result = rowObservationOrderComparator.compare(o1, o2);
@@ -333,7 +333,7 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	
 	public static final Charset OUTPUT_CHARSET = LoggedEventReader.CHARSET;
 
-	private static final int ESTIMATED_EVENT_METADATUM_COUNT = EventMetadatum.values().length + 8;
+	private static final int ESTIMATED_EVENT_METADATUM_COUNT = SessionMetadatum.values().length + 8;
 
 	private static final long EXPECTED_MAXIMUM_UNIQUE_EXPERIMENT_VERSIONS = 24;
 
@@ -497,7 +497,7 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		}
 	}
 
-	private static void persistEventMetadata(final Map<EventMetadatum, String> metadataValues,
+	private static void persistSessionMetadata(final Map<SessionMetadatum, String> metadataValues,
 			final Comparator<? super String> metadatumNameComparator, final Path outfilePath) throws IOException {
 		// NOTE: This is not atomic: The OS could write to the file between its
 		// reading and rewriting
@@ -562,7 +562,7 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return result;
 	}
 
-	private final LoadingCache<RevCommit, Map<EventMetadatum, String>> commitMetadata;
+	private final LoadingCache<RevCommit, Map<SessionMetadatum, String>> commitMetadata;
 
 	private final LoadingCache<ZonedDateTime, RevCommit> dateLatestCommits;
 
@@ -570,12 +570,12 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private final List<EventDatum> eventDataToDescribe;
 
-	private final String eventOutfileNamePrefix;
+	private final String sessionOutfileNamePrefix;
 
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
 			final String nullCellValueRepr, final Git gitCommandFactory) {
 		this.eventDataToDescribe = eventDataToDescribe;
-		eventOutfileNamePrefix = "events";
+		sessionOutfileNamePrefix = "session";
 		final int concurrencyLevel = 1;
 		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel).initialCapacity(96)
 				.maximumSize(144).build(new CacheLoader<EventContext, String[]>() {
@@ -601,18 +601,18 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				});
 		commitMetadata = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel)
 				.maximumSize(EXPECTED_MAXIMUM_UNIQUE_EXPERIMENT_VERSIONS)
-				.build(new CacheLoader<RevCommit, Map<EventMetadatum, String>>() {
+				.build(new CacheLoader<RevCommit, Map<SessionMetadatum, String>>() {
 
 					@Override
-					public Map<EventMetadatum, String> load(final RevCommit commit) throws IOException {
-						final Map<EventMetadatum, String> result = new EnumMap<>(EventMetadatum.class);
+					public Map<SessionMetadatum, String> load(final RevCommit commit) throws IOException {
+						final Map<SessionMetadatum, String> result = new EnumMap<>(SessionMetadatum.class);
 						final String commitDesc = createCommitDesc(commit, gitCommandFactory);
-						result.put(EventMetadatum.EXPERIMENT_VERSION, commitDesc);
+						result.put(SessionMetadatum.EXPERIMENT_VERSION, commitDesc);
 
 						final int moveWaitTime = findMoveSubmissionWaitTime(commit, gitCommandFactory).orElse(0);
 						LOGGER.debug("Found a wait time of {}ms for experiment version \"{}\".", moveWaitTime,
 								commitDesc);
-						result.put(EventMetadatum.MOVE_DELAY, Integer.toString(moveWaitTime));
+						result.put(SessionMetadatum.MOVE_DELAY, Integer.toString(moveWaitTime));
 						return result;
 					}
 
@@ -676,15 +676,15 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		final Entry<BiMap<String, String>, String> sourceParticipantIds = new SourceParticipantIdMapFactory()
 				.apply(playerSourceIds, canonicalGame);
 		{
-			final Map<EventMetadatum, String> metadataValues = createEventMetadataReprMap(canonicalGame,
+			final Map<SessionMetadatum, String> metadataValues = createSessionMetadataReprMap(canonicalGame,
 					sourceParticipantIds.getValue(), gameScore, entityCount, eventId, gameRoundId,
 					history.getStartTime(), maxEventTime);
 			{
-				final String outfileName = createEventMetadataOutfileName();
+				final String outfileName = createSessionMetadataOutfileName();
 				final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 						: infileParentDir.resolve(outfileName);
 				LOGGER.info("Writing event metadata to \"{}\".", outfilePath);
-				persistEventMetadata(metadataValues, new EventMetadatumNameComparator(ESTIMATED_EVENT_METADATUM_COUNT),
+				persistSessionMetadata(metadataValues, new SessionMetadatumNameComparator(ESTIMATED_EVENT_METADATUM_COUNT),
 						outfilePath);
 			}
 		}
@@ -717,42 +717,42 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 		return resultBuilder.build();
 	}
 
-	private String createEventMetadataOutfileName() {
-		return eventOutfileNamePrefix + "-metadata.tsv";
+	private String createSessionMetadataOutfileName() {
+		return sessionOutfileNamePrefix + "-metadata.tsv";
 	}
 
-	private Map<EventMetadatum, String> createEventMetadataReprMap(final SessionGame canonicalGame,
+	private Map<SessionMetadatum, String> createSessionMetadataReprMap(final SessionGame canonicalGame,
 			final String initialInstructorId, final int gameScore, final int entityCount, final int eventCount,
 			final int roundCount, final LocalDateTime startTime, final LocalDateTime maxEventTime) {
 		assert roundCount <= eventCount;
 		assert startTime.isBefore(maxEventTime);
 
-		final Map<EventMetadatum, String> result = new EnumMap<>(EventMetadatum.class);
+		final Map<SessionMetadatum, String> result = new EnumMap<>(SessionMetadatum.class);
 
-		result.put(EventMetadatum.END_SCORE, Integer.toString(gameScore));
-		result.put(EventMetadatum.ENTITY_COUNT, Integer.toString(entityCount));
-		result.put(EventMetadatum.EVENT_COUNT, Integer.toString(eventCount));
+		result.put(SessionMetadatum.END_SCORE, Integer.toString(gameScore));
+		result.put(SessionMetadatum.ENTITY_COUNT, Integer.toString(entityCount));
+		result.put(SessionMetadatum.EVENT_COUNT, Integer.toString(eventCount));
 		{
 			final BigDecimal durationInSecs = TimestampArithmetic
 					.toDecimalSeconds(Duration.between(startTime, maxEventTime));
-			result.put(EventMetadatum.GAME_DURATION, durationInSecs.toString());
+			result.put(SessionMetadatum.GAME_DURATION, durationInSecs.toString());
 		}
-		result.put(EventMetadatum.GAME_ID, canonicalGame.getGameId());
-		result.put(EventMetadatum.INITIAL_INSTRUCTOR_ID, initialInstructorId);
-		result.put(EventMetadatum.ROUND_COUNT, Integer.toString(roundCount));
+		result.put(SessionMetadatum.GAME_ID, canonicalGame.getGameId());
+		result.put(SessionMetadatum.INITIAL_INSTRUCTOR_ID, initialInstructorId);
+		result.put(SessionMetadatum.ROUND_COUNT, Integer.toString(roundCount));
 		final ZonedDateTime zonedGameStart = startTime.atZone(ORIGINAL_EXPERIMENT_TIMEZONE);
-		result.put(EventMetadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
+		result.put(SessionMetadatum.START_TIME, OUTPUT_DATETIME_FORMATTER.format(zonedGameStart));
 
 		final RevCommit lastCommit = dateLatestCommits.getUnchecked(zonedGameStart);
-		final Map<EventMetadatum, String> commitMetadatumMap = commitMetadata.getUnchecked(lastCommit);
+		final Map<SessionMetadatum, String> commitMetadatumMap = commitMetadata.getUnchecked(lastCommit);
 		result.putAll(commitMetadatumMap);
 
-		assert result.size() == EventMetadatum.values().length;
+		assert result.size() == SessionMetadatum.values().length;
 		return result;
 	}
 
 	private String createEventOutfileName() {
-		return eventOutfileNamePrefix + ".tsv";
+		return sessionOutfileNamePrefix + ".tsv";
 	}
 
 	private String createParticipantMetadataOutfileName() {

@@ -129,7 +129,7 @@ class SessionAnonymizer(object):
 		else:
 			events_metadata[sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value] = ANONYMIZED_PARTICIPANT_IDS[0]
 			with open(session_data.events_metadata, 'w', encoding=sd.ENCODING) as outf:
-				writer = csv.writer(outf, dialect=sd.EVENTS_METADATA_CSV_DIALECT)
+				writer = csv.writer(outf, dialect=sd.SESSION_METADATA_CSV_DIALECT)
 				writer.writerows(sorted(events_metadata.items(), key=lambda item: item[0]))
 
 	def anonymize_player_event_log_files(self, player_event_log_filenames: Mapping[str, str], session_dir: str):
