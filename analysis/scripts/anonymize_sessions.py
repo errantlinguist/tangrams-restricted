@@ -119,7 +119,8 @@ class SessionAnonymizer(object):
 			events["SUBMITTER"] = events["SUBMITTER"].transform(self.__anonymize_player_id)
 			events.to_csv(session_data.events, index=False, sep=csv.excel_tab.delimiter, encoding=sd.ENCODING)
 
-	def anonymize_session_metadata(self, session_data: sd.SessionData):
+	@staticmethod
+	def anonymize_session_metadata(session_data: sd.SessionData):
 		print("Anonymizing event metadata at \"{}\".".format(session_data.session_metadata))
 		session_metadata = session_data.read_session_metadata()
 		if sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value not in session_metadata:
