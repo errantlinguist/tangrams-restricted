@@ -680,7 +680,7 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 				final String outfileName = createSessionMetadataOutfileName();
 				final Path outfilePath = infileParentDir == null ? Paths.get(outfileName)
 						: infileParentDir.resolve(outfileName);
-				LOGGER.info("Writing event metadata to \"{}\".", outfilePath);
+				LOGGER.info("Writing session metadata to \"{}\".", outfilePath);
 				persistSessionMetadata(metadataValues, new SessionMetadatumNameComparator(ESTIMATED_EVENT_METADATUM_COUNT),
 						outfilePath);
 			}
