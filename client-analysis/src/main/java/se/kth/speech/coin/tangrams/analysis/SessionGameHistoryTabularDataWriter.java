@@ -570,12 +570,9 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 
 	private final List<EventDatum> eventDataToDescribe;
 
-	private final String sessionOutfileNamePrefix;
-
 	private SessionGameHistoryTabularDataWriter(final List<EventDatum> eventDataToDescribe,
 			final String nullCellValueRepr, final Git gitCommandFactory) {
 		this.eventDataToDescribe = eventDataToDescribe;
-		sessionOutfileNamePrefix = "session";
 		final int concurrencyLevel = 1;
 		eventDataRowCellValues = CacheBuilder.newBuilder().concurrencyLevel(concurrencyLevel).initialCapacity(96)
 				.maximumSize(144).build(new CacheLoader<EventContext, String[]>() {
@@ -718,7 +715,7 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private String createSessionMetadataOutfileName() {
-		return sessionOutfileNamePrefix + "-metadata.tsv";
+		return "session-metadata.tsv";
 	}
 
 	private Map<SessionMetadatum, String> createSessionMetadataReprMap(final SessionGame canonicalGame,
@@ -752,7 +749,7 @@ public final class SessionGameHistoryTabularDataWriter { // NO_UCD (unused code)
 	}
 
 	private String createEventOutfileName() {
-		return sessionOutfileNamePrefix + ".tsv";
+		return "events.tsv";
 	}
 
 	private String createParticipantMetadataOutfileName() {
