@@ -242,10 +242,10 @@ def create_game_rounds(events: Iterable[Event]) -> Iterator[GameRound]:
 
 
 def read_events(session: session_data.SessionData) -> EventData:
-	events_metadata = session.read_events_metadata()
+	session_metadata = session.read_session_metadata()
 
-	event_count = int(events_metadata[session_data.EventMetadataRow.EVENT_COUNT.value])
-	entity_count = int(events_metadata[session_data.EventMetadataRow.ENTITY_COUNT.value])
+	event_count = int(session_metadata[session_data.EventMetadataRow.EVENT_COUNT.value])
+	entity_count = int(session_metadata[session_data.EventMetadataRow.ENTITY_COUNT.value])
 	event_entity_descs = __read_event_entity_desc_matrix(session.events, event_count, entity_count)
 	events = (Event(entity_descs) for entity_descs in event_entity_descs)
 
@@ -254,7 +254,7 @@ def read_events(session: session_data.SessionData) -> EventData:
 	interned_source_participant_ids = dict(
 		(sys.intern(source_id), sys.intern(participant_id)) for (participant_id, source_id) in
 		participant_source_ids.items())
-	initial_instructor_id = sys.intern(events_metadata[session_data.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value])
+	initial_instructor_id = sys.intern(session_metadata[session_data.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value])
 	return EventData(events, interned_source_participant_ids, initial_instructor_id)
 
 

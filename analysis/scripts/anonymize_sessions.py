@@ -76,7 +76,7 @@ class SessionAnonymizer(object):
 
 	def __call__(self, session_dir: str, session_data: sd.SessionData, player_event_log_filenames: Mapping[str, str]):
 		self.anonymize_events(session_data)
-		self.anonymize_events_metadata(session_data)
+		self.anonymize_session_metadata(session_data)
 		self.anonymize_player_event_log_files(player_event_log_filenames, session_dir)
 		self.anonymize_props_file(session_dir)
 		self.anonymize_system_logs(session_dir, player_event_log_filenames)
@@ -119,18 +119,18 @@ class SessionAnonymizer(object):
 			events["SUBMITTER"] = events["SUBMITTER"].transform(self.__anonymize_player_id)
 			events.to_csv(session_data.events, index=False, sep=csv.excel_tab.delimiter, encoding=sd.ENCODING)
 
-	def anonymize_events_metadata(self, session_data: sd.SessionData):
-		print("Anonymizing event metadata at \"{}\".".format(session_data.events_metadata))
-		events_metadata = session_data.read_events_metadata()
-		if sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value not in events_metadata:
+	def anonymize_session_metadata(self, session_data: sd.SessionData):
+		print("Anonymizing event metadata at \"{}\".".format(session_data.session_metadata))
+		session_metadata = session_data.read_session_metadata()
+		if sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value not in session_metadata:
 			raise ValueError(
 				"Could not find attribute \"{}\" in \"{}\".".format(sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value,
-																	session_data.events_metadata))
+																	session_data.session_metadata))
 		else:
-			events_metadata[sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value] = ANONYMIZED_PARTICIPANT_IDS[0]
-			with open(session_data.events_metadata, 'w', encoding=sd.ENCODING) as outf:
+			session_metadata[sd.EventMetadataRow.INITIAL_INSTRUCTOR_ID.value] = ANONYMIZED_PARTICIPANT_IDS[0]
+			with open(session_data.session_metadata, 'w', encoding=sd.ENCODING) as outf:
 				writer = csv.writer(outf, dialect=sd.SESSION_METADATA_CSV_DIALECT)
-				writer.writerows(sorted(events_metadata.items(), key=lambda item: item[0]))
+				writer.writerows(sorted(session_metadata.items(), key=lambda item: item[0]))
 
 	def anonymize_player_event_log_files(self, player_event_log_filenames: Mapping[str, str], session_dir: str):
 		for player_event_log_filename in player_event_log_filenames.values():

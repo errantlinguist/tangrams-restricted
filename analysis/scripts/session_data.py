@@ -92,7 +92,7 @@ __SESSION_DATA_FILENAMES = frozenset(datum.canonical_filename for datum in Sessi
 class SessionData(object):
 	def __init__(self, session_file_prefix: str):
 		self.events = os.path.join(session_file_prefix, SessionDatum.EVENTS.canonical_filename)
-		self.events_metadata = os.path.join(session_file_prefix, SessionDatum.SESSION_METADATA.canonical_filename)
+		self.session_metadata = os.path.join(session_file_prefix, SessionDatum.SESSION_METADATA.canonical_filename)
 		self.participant_metadata = os.path.join(session_file_prefix,
 												 SessionDatum.PARTICIPANT_METADATA.canonical_filename)
 		self.utts = os.path.join(session_file_prefix, SessionDatum.UTTERANCES.canonical_filename)
@@ -115,8 +115,8 @@ class SessionData(object):
 						   float_precision="round_trip",
 						   encoding=ENCODING, memory_map=True, dtype=_EVENT_FILE_DTYPES)
 
-	def read_events_metadata(self) -> Dict[str, str]:
-		with open(self.events_metadata, 'r', encoding=ENCODING) as infile:
+	def read_session_metadata(self) -> Dict[str, str]:
+		with open(self.session_metadata, 'r', encoding=ENCODING) as infile:
 			rows = csv.reader(infile, dialect=SESSION_METADATA_CSV_DIALECT)
 			return dict(rows)
 
@@ -130,8 +130,8 @@ class SessionData(object):
 		return int(self.read_metadatum_value(EventMetadataRow.ROUND_COUNT))
 
 	def read_metadatum_value(self, metadatum: EventMetadataRow):
-		events_metadata = self.read_events_metadata()
-		return events_metadata[metadatum.value]
+		session_metadata = self.read_session_metadata()
+		return session_metadata[metadatum.value]
 
 	def read_participant_metadata(self) -> Dict[str, Dict[str, str]]:
 		result = {}
@@ -170,7 +170,7 @@ class SessionData(object):
 
 	@property
 	def __key(self):
-		return self.events, self.events_metadata, self.utts
+		return self.events, self.session_metadata, self.utts
 
 
 def is_session_dir(filenames: Iterable[str]) -> bool:
