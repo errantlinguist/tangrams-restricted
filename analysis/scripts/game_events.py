@@ -161,23 +161,6 @@ class EventData(object):
 		return self.initial_instructor_id, self.source_participant_ids, self.events
 
 
-class EventParticipantIdFactory(object):
-	"""
-		This is a hack to map the non-anonymized usernames in the event logs to anonymized utterance speaker IDs.
-		TODO: Remove this after anonymizing all data
-	"""
-
-	def __init__(self, initial_instructor_id: str):
-		self.initial_instructor_id = initial_instructor_id
-
-	def __call__(self, event: Event) -> str:
-		"""
-		:param event: The event to get the participant ID for
-		:return: Either "A" or "B"
-		"""
-		return "A" if event.submitter == self.initial_instructor_id else "B"
-
-
 class GameRound(object):
 	@unique
 	class Attribute(Enum):
