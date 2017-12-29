@@ -12,7 +12,6 @@ import argparse
 import csv
 import logging
 import sys
-from decimal import Decimal
 from enum import Enum, unique
 from typing import FrozenSet, Iterable, Optional
 
@@ -22,8 +21,6 @@ import pandas as pd
 import alignment_metrics
 import session_data as sd
 import utterances
-
-ZERO_DECIMAL = Decimal("0")
 
 
 @unique
@@ -82,10 +79,10 @@ class TokenTypeOverlapColumn(Enum):
 class ReferentIndividualTokenTypeOverlapCalculator(object):
 
 	@staticmethod
-	def __token_type_overlap(utt: pd.Series) -> Decimal:
+	def __token_type_overlap(utt: pd.Series) -> np.longfloat:
 		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
 		if pd.isnull(preceding_token_types):
-			result = ZERO_DECIMAL
+			result = np.longfloat(0.0)
 		else:
 			token_types = utt[TokenTypeSetDataFrameColumn.TOKEN_TYPES.value]
 			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
@@ -110,7 +107,7 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
 			TokenTypeSetDataFrameColumn.TOKEN_TYPES.value].shift()
 		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
-																			   axis=1).transform(np.longfloat)
+																			   axis=1)
 		return result
 
 

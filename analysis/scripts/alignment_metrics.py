@@ -8,13 +8,14 @@ __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
-from decimal import Decimal
 from typing import FrozenSet
 
+import numpy as np
 
-def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> Decimal:
+
+def token_type_overlap_ratio(token_types: FrozenSet[str], preceding_token_types: FrozenSet[str]) -> np.longfloat:
 	unified_token_type_count = len(token_types.union(
 		preceding_token_types))
 	overlapping_token_type_count = len(token_types.intersection(
 		preceding_token_types))
-	return Decimal(overlapping_token_type_count) / Decimal(unified_token_type_count)
+	return np.longfloat(overlapping_token_type_count) / np.longfloat(unified_token_type_count)
