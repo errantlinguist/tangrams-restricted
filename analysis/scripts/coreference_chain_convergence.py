@@ -10,16 +10,13 @@ __license__ = "GNU General Public License, Version 3"
 
 import argparse
 import csv
+import logging
 import sys
-from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
-from numbers import Integral
-from typing import DefaultDict, FrozenSet, IO, Iterator, List, Mapping, Optional, Sequence, Tuple
+from typing import FrozenSet, Iterable, Optional
 
-import numpy as np
 import pandas as pd
-import scipy.stats
 
 import alignment_metrics
 import session_data as sd
@@ -29,19 +26,18 @@ ZERO_DECIMAL = Decimal("0")
 
 
 @unique
-class SessionRoundTokenTypeSetDataFrameColumn(Enum):
-	DYAD_ID = "DYAD"
-	TOKEN_SEQ = utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value
+class TokenTypeSetDataFrameColumn(Enum):
+	DYAD = "DYAD"
+	TOKEN_TYPES = "TOKEN_TYPES"
 
 
 class SessionRoundTokenTypeSetDataFrameFactory(object):
 
 	@staticmethod
-	def __create_token_type_set(df: pd.DataFrame) -> FrozenSet[str]:
-		# noinspection PyProtectedMember
-		row_dicts = (row._asdict() for row in df.itertuples(index=False))
-		token_seqs = (row_dict[utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value] for row_dict in row_dicts)
-		return frozenset(token for token_seq in token_seqs for token in token_seq)
+	def __create_token_type_set(token_seq: Iterable[str]) -> FrozenSet[str]:
+		result = frozenset(token_seq)
+		assert result
+		return result
 
 	def __init__(self, utt_reader: Optional[utterances.UtteranceTabularDataReader] = None):
 		self.utt_reader = utterances.UtteranceTabularDataReader() if utt_reader is None else utt_reader
@@ -49,97 +45,71 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 	def __call__(self, session_data: sd.SessionData) -> pd.DataFrame:
 		session_name = session_data.name
 		print("Reading events and utterances for \"{}\".".format(session_name), file=sys.stderr)
-		utts_df = self.utt_reader(session_data.utts)
-		round_utts = utts_df.groupby(utterances.UtteranceTabularDataColumn.ROUND_ID.value)
-		round_token_bags = dict((round_id, self.__create_token_type_set(group)) for round_id, group in round_utts)
+		events_df = session_data.read_events()
+		events_df[TokenTypeSetDataFrameColumn.DYAD.value] = session_name
 
-		result = session_data.read_events()
-		result[SessionRoundTokenTypeSetDataFrameColumn.DYAD_ID.value] = session_name
-		result[SessionRoundTokenTypeSetDataFrameColumn.TOKEN_SEQ.value] = result[
-			sd.EventDataColumn.ROUND_ID.value].transform(
-			lambda round_id: round_token_bags[round_id])
+		orig_event_row_count = events_df.shape[0]
+		events_df = events_df.loc[(events_df[sd.EventDataColumn.REFERENT_ENTITY.value] == True) & (
+				events_df[sd.EventDataColumn.EVENT_NAME.value] == "nextturn.request")]
+		events_df_shape = events_df.shape
+		logging.debug("Removed %d non-referent, non new-turn-request entity rows; New shape is %s.",
+					  orig_event_row_count - events_df_shape[0], events_df_shape)
+		utts_df = self.utt_reader(session_data.utts)
+		orig_utts_df_row_count = utts_df.shape[0]
+		utts_df = utts_df.loc[utts_df[utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value].str.len() > 0]
+		utts_df_shape = utts_df.shape
+		logging.debug("Removed %s empty utterances; New shape is %s.", orig_utts_df_row_count - utts_df_shape[0],
+					  utts_df_shape)
+		utts_df[TokenTypeSetDataFrameColumn.TOKEN_TYPES.value] = utts_df[
+			utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value].transform(self.__create_token_type_set)
+
+		# Do a left-merge with the events dataframe on the left so that utterances without events (e.g. utterances in the pre-game round "0") are not included
+		result = events_df.merge(utts_df, left_on=sd.EventDataColumn.ROUND_ID.value,
+								 right_on=utterances.UtteranceTabularDataColumn.ROUND_ID.value)
+		assert result.loc[result[sd.EventDataColumn.ROUND_ID.value] < 1].empty
 		return result
+
+
+@unique
+class TokenTypeOverlapColumn(Enum):
+	COREF_SEQ_ORDER = "COREF_SEQ_ORDER"
+	PRECEDING_UTT_START_TIME = "PRECEDING_UTT_START_TIME"
+	PRECEDING_TOKEN_TYPES = "PRECEDING_TOKEN_TYPES"
+	TOKEN_TYPE_OVERLAP = "TOKEN_TYPE_OVERLAP"
 
 
 class ReferentTokenTypeOverlapCalculator(object):
 
 	@staticmethod
-	def __token_type_overlap(round_id: Integral, preceding_round_id: Integral, df: pd.DataFrame) -> Decimal:
-		# Check first if there are preceding round rows in order to skip cases where there are none
-		prev_round_rows = df.loc[df[sd.EventDataColumn.ROUND_ID.value] == preceding_round_id]
-		prev_round_row_count = prev_round_rows.shape[0]
-		# If there are no preceding rows, the given referent is a referent for the first time
-		if prev_round_row_count < 1:
+	def __token_type_overlap(utt: pd.Series) -> Decimal:
+		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
+		if pd.isnull(preceding_token_types):
 			result = ZERO_DECIMAL
 		else:
-			assert prev_round_row_count == 1
-			prev_round_token_types = prev_round_rows.iloc[0][
-				SessionRoundTokenTypeSetDataFrameColumn.TOKEN_SEQ.value]
-
-			round_rows = df.loc[df[sd.EventDataColumn.ROUND_ID.value] == round_id]
-			assert round_rows.shape[0] == 1
-			round_token_types = round_rows.iloc[0][SessionRoundTokenTypeSetDataFrameColumn.TOKEN_SEQ.value]
-
-			result = alignment_metrics.token_type_overlap_ratio(round_token_types, prev_round_token_types)
+			token_types = utt[TokenTypeSetDataFrameColumn.TOKEN_TYPES.value]
+			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
 		return result
 
-	@classmethod
-	def __round_token_type_overlaps(cls, ref_df: pd.DataFrame) -> Iterator[Tuple[int, Decimal]]:
-		"""
-		Calculates token-type overlaps for each round in which a given entity is referred to.
-
-		:param ref_df: A DataFrame containing data rows for the given referent.
-		:return: A generator of pairs of "(coref_seq_ordinality, token_type_overlap_ratio)".
-		"""
-
-		all_round_ids = tuple(sorted(ref_df[sd.EventDataColumn.ROUND_ID.value].unique()))
-		# Get rid of the first round because it cannot have any overlap
-		round_ids = all_round_ids[1:]
-		preceding_round_ids = all_round_ids[:len(all_round_ids) - 1]
-		assert len(round_ids) == len(preceding_round_ids)
-		coref_seq_round_id_pairs = zip(round_ids, preceding_round_ids)
-		return ((coref_seq_ordinality, cls.__token_type_overlap(round_id, preceding_round_id, ref_df)) for
-				(coref_seq_ordinality, (round_id, preceding_round_id)) in enumerate(coref_seq_round_id_pairs, start=2))
-
-	@classmethod
-	def __session_token_type_overlaps(cls, session_df: pd.DataFrame) -> Tuple[Tuple[int, Decimal], ...]:
-		"""
-		Calculates token-type overlaps for a single session, since entity IDs are not unique across sessions.
-
-		:param session_df: The session DataFrame.
-		:return: A tuple of pairs of "(coref_seq_ordinality, token_type_overlap_ratio)".
-		"""
-		ref_rows = session_df.groupby(sd.EventDataColumn.ENTITY_ID.value, as_index=False)
-		return tuple((round_id, overlap) for _, rows in ref_rows for (round_id, overlap) in
-					 cls.__round_token_type_overlaps(rows))
-
-	def __call__(self, df: pd.DataFrame) -> DefaultDict[int, List[Decimal]]:
+	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
 		"""
 		Calculates token-type overlaps over multiple sessions.
 
 		:param df: The DataFrame including rows for all sessions.
-		:return: A dictionary of coreference sequence ordinalities ("1","2","3"...) to lists of individual token-type overlap ratios calculated for each session.
+		:return: A copy of the DataFrame with token-type data added.
 		"""
-		sessions = df.groupby(SessionRoundTokenTypeSetDataFrameColumn.DYAD_ID.value, as_index=False)
-		session_coref_seq_overlaps = sessions.apply(self.__session_token_type_overlaps)
-
-		result = defaultdict(list)
-		for overlap_values in session_coref_seq_overlaps:
-			for coref_seq_ordinality, overlap_value in overlap_values:
-				result[coref_seq_ordinality].append(overlap_value)
+		result = df.copy(deep=False)
+		# Calculate token-type overlap for each chain of reference for each entity and each speaker in each session
+		session_speaker_ref_utts = result.groupby((TokenTypeSetDataFrameColumn.DYAD.value,
+												   sd.EventDataColumn.ENTITY_ID.value,
+												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
+												  as_index=False)
+		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_speaker_ref_utts.cumcount() + 1
+		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
+			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
+			TokenTypeSetDataFrameColumn.TOKEN_TYPES.value].shift()
+		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap, axis=1)
 		return result
-
-
-def write_tabular_statistics(coref_chain_seq_overlaps: Mapping[int, Sequence[Decimal]], outfile: IO[str]):
-	writer = csv.writer(outfile, dialect=csv.excel_tab)
-	writer.writerow(("seq", "mean", "std", "sem"))
-	for coref_seq_ordinality, overlap_values in sorted(coref_chain_seq_overlaps.items(), key=lambda item: item[0]):
-		if len(overlap_values) >= 2:
-			float_values = np.asarray(overlap_values, np.longfloat)
-			mean = np.mean(float_values)
-			std = np.std(float_values)
-			sem = scipy.stats.sem(float_values)
-			writer.writerow((coref_seq_ordinality, mean, std, sem))
 
 
 def __create_argparser() -> argparse.ArgumentParser:
@@ -149,9 +119,9 @@ def __create_argparser() -> argparse.ArgumentParser:
 						help="The paths to search for sessions to process.")
 
 	metric_types = result.add_mutually_exclusive_group(required=True)
-	metric_types.add_argument("-i", "--individual",
+	metric_types.add_argument("-i", "--individual", action='store_true',
 							  help="Calculate token-type overlap for individual speakers with themselves.")
-	metric_types.add_argument("-o", "--other",
+	metric_types.add_argument("-o", "--other", action='store_true',
 							  help="Calculate token-type overlap for individual speakers with their interlocutors.")
 
 	return result
@@ -162,23 +132,18 @@ def __main(args):
 	print("Looking for session data underneath {}.".format(inpaths), file=sys.stderr)
 	df_factory = SessionRoundTokenTypeSetDataFrameFactory()
 	session_utt_df = pd.concat(df_factory(session_data) for _, session_data in sd.walk_session_data(inpaths))
-	orig_session_utt_df_shape = session_utt_df.shape
-	print("DF shape is {}; {} unique dyad(s).".format(orig_session_utt_df_shape,
+	print("DF shape is {}; {} unique dyad(s).".format(session_utt_df.shape,
 													  session_utt_df[
-														  SessionRoundTokenTypeSetDataFrameColumn.DYAD_ID.value].nunique()),
+														  TokenTypeSetDataFrameColumn.DYAD.value].nunique()),
 		  file=sys.stderr)
-	session_utt_df = session_utt_df.loc[(session_utt_df[sd.EventDataColumn.REFERENT_ENTITY.value] == True) & (
-			session_utt_df[sd.EventDataColumn.EVENT_NAME.value] == "nextturn.request")]
-	session_utt_df_shape = session_utt_df.shape
-	print("Removed {} non-referent, non new-turn-request entity rows; New shape is {}.".format(
-		orig_session_utt_df_shape[0] - session_utt_df_shape[0], session_utt_df_shape),
-		file=sys.stderr)
-	# Ensure that rows are sorted in order of which round they are for
-	session_utt_df.sort_values(by=sd.EventDataColumn.ROUND_ID.value, inplace=True)
+	# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round
+	session_utt_df.sort_values(
+		by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
+			utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 
 	ref_overlap_calculator = ReferentTokenTypeOverlapCalculator()
-	ref_coref_chain_seq_overlaps = ref_overlap_calculator(session_utt_df)
-	write_tabular_statistics(ref_coref_chain_seq_overlaps, sys.stdout)
+	session_utt_df = ref_overlap_calculator(session_utt_df)
+	session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8")
 
 
 if __name__ == "__main__":
