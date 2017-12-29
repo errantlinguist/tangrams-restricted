@@ -147,6 +147,13 @@ def __create_argparser() -> argparse.ArgumentParser:
 		description="Calculates mean token-type overlap for each coreference chain sequence ordinality in each chain for a given referent.")
 	result.add_argument("inpaths", metavar="INPATH", nargs='+',
 						help="The paths to search for sessions to process.")
+
+	metric_types = result.add_mutually_exclusive_group(required=True)
+	metric_types.add_argument("-i", "--individual",
+							  help="Calculate token-type overlap for individual speakers with themselves.")
+	metric_types.add_argument("-o", "--other",
+							  help="Calculate token-type overlap for individual speakers with their interlocutors.")
+
 	return result
 
 
