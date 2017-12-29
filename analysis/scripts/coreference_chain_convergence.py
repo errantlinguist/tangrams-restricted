@@ -114,41 +114,6 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 		return result
 
 
-class ReferentOtherTokenTypeOverlapCalculator(object):
-
-	@staticmethod
-	def __token_type_overlap(utt: pd.Series) -> Decimal:
-		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
-		if pd.isnull(preceding_token_types):
-			result = ZERO_DECIMAL
-		else:
-			token_types = utt[TokenTypeSetDataFrameColumn.TOKEN_TYPES.value]
-			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
-		return result
-
-	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-		"""
-		Calculates token-type overlaps over multiple sessions.
-
-		:param df: The DataFrame including rows for all sessions.
-		:return: A copy of the DataFrame with token-type data added.
-		"""
-		result = df.copy(deep=False)
-		# Calculate token-type overlap for each chain of reference for each entity and each speaker in each session
-		session_ref_utts = result.groupby((TokenTypeSetDataFrameColumn.DYAD.value,
-										   sd.EventDataColumn.ENTITY_ID.value,
-										   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
-										  as_index=False)
-		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_ref_utts.cumcount() + 1
-		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_ref_utts[
-			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
-		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_ref_utts[
-			TokenTypeSetDataFrameColumn.TOKEN_TYPES.value].shift()
-		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
-																			   axis=1).transform(np.longfloat)
-		return result
-
-
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Calculates mean token-type overlap for each coreference chain sequence ordinality in each chain for a given referent.")
@@ -180,8 +145,6 @@ def __main(args):
 
 	if args.individual:
 		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
-	elif args.other:
-		ref_overlap_calculator = ReferentOtherTokenTypeOverlapCalculator()
 	else:
 		raise AssertionError("Logic error")
 
