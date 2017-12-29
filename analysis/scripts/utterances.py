@@ -9,13 +9,10 @@ __license__ = "GNU General Public License, Version 3"
 import csv
 import sys
 from enum import Enum, unique
-from typing import Any, Callable, Iterable, Iterator, List, Optional, Sequence, Tuple
-from xml.etree.ElementTree import Element
+from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
 import nltk
 import pandas as pd
-
-import annotations
 
 """
 NOTE: See "../src/main/resources/se/kth/speech/nlp/fillers.txt"
@@ -28,39 +25,6 @@ METALANGUAGE_TOKENS = frozenset(
 	("ARTIFACT", "BREATH", "CLICK", "COUGH", "FOREIGN_WORD", "GASP", "GROAN", "GRUNT", "LAUGHTER", "META", "MOAN",
 	 "NOISE", "PUFF", "SIGH", "SNIFF", "START_SIGNAL", "UNKNOWN",))
 __TOKEN_TRUNCATION_MARKER = '-'
-
-
-class SegmentUtteranceFactory(object):
-	def __init__(self, token_seq_factory: Callable[[Iterable[str]], Sequence[str]],
-				 source_speaker_id_factory: Callable[[str], str] = lambda source_id: source_id):
-		"""
-
-		:param token_seq_factory: A function for converting a sequence of bare token strings into normalized forms for use as utterance content.
-		:param source_speaker_id_factory: A function for converting segment source IDs (e.g. "source234") to utterances speaker IDs (e.g. "superplayer" or "A" or "B")
-		"""
-		self.token_seq_factory = token_seq_factory
-		"""A function for converting a sequence of bare token strings into normalized forms for use as utterance content."""
-		self.source_speaker_id_factory = source_speaker_id_factory
-		"""A function for converting segment source IDs (e.g. "source234") to utterances speaker IDs (e.g. "superplayer" or "A" or "B")."""
-
-	def __call__(self, segments: Iterable[Element]) -> Iterator["Utterance"]:
-		for segment in segments:
-			utt = self.__create(segment)
-			if utt:
-				yield utt
-
-	def __create(self, segment: Element) -> Optional["Utterance"]:
-		token_elems = segment.iterfind(".//hat:t", annotations.ANNOTATION_NAMESPACES)
-		token_text = (elem.text for elem in token_elems)
-		content = self.token_seq_factory(token_text)
-		if content:
-			speaker_id = self.source_speaker_id_factory(segment.get("source"))
-			result = Utterance(segment.get("id"), speaker_id, float(segment.get("start")),
-							   float(segment.get("end")), content)
-		else:
-			result = None
-
-		return result
 
 
 class Utterance(object):
