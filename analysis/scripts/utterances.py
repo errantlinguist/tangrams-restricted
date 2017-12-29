@@ -7,12 +7,12 @@ __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
 import csv
-import re
 import sys
 from enum import Enum, unique
 from typing import Any, Callable, Iterable, Iterator, List, Optional, Sequence, Tuple
 from xml.etree.ElementTree import Element
 
+import nltk
 import pandas as pd
 
 import annotations
@@ -108,7 +108,6 @@ class UtteranceTabularDataReader(object):
 	FILE_CSV_DIALECT = csv.excel_tab
 	DTYPES = {UtteranceTabularDataColumn.DIALOGUE_ROLE.value: "category",
 			  UtteranceTabularDataColumn.SPEAKER_ID.value: "category"}
-	TOKEN_DELIMITER_PATTERN = re.compile("\\s+")
 
 	def __init__(self, token_seq_factory: Optional[Callable[[Iterable[str]], Sequence[str]]] = None):
 		self.token_seq_factory = TokenSequenceFactory() if token_seq_factory is None else token_seq_factory
@@ -118,9 +117,8 @@ class UtteranceTabularDataReader(object):
 		return pd.read_csv(infile_path, dialect=self.FILE_CSV_DIALECT, sep=self.FILE_CSV_DIALECT.delimiter,
 						   float_precision="round_trip", converters=self.converters, dtype=self.DTYPES)
 
-	def __parse_utt_token_seq(self, input_str: str) -> Sequence[str]:
-		all_tokens = self.TOKEN_DELIMITER_PATTERN.split(input_str)
-		return self.token_seq_factory(all_tokens)
+	def __parse_utt_token_seq(self, text: str) -> Sequence[str]:
+		return self.token_seq_factory(text)
 
 
 def is_semantically_relevant_token(token: str) -> bool:
@@ -134,13 +132,14 @@ class TokenSequenceFactory(object):
 		self.token_filter = token_filter
 		self.token_seq_singletons = {}
 
-	def __call__(self, tokens: Iterable[str]) -> Tuple[str, ...]:
-		content = tuple(token for token in tokens if self.token_filter(token))
-		if content:
+	def __call__(self, text: str) -> Tuple[str, ...]:
+		if text:
 			try:
-				result = self.token_seq_singletons[content]
+				result = self.token_seq_singletons[text]
 			except KeyError:
-				result = tuple(sys.intern(token) for token in content)
+				tokens = nltk.tokenize.word_tokenize(text)
+				filtered_tokens = (token for token in tokens if self.token_filter(token))
+				result = tuple(sys.intern(token) for token in filtered_tokens)
 				self.token_seq_singletons[result] = result
 		else:
 			result = self.EMPTY_SEQ
