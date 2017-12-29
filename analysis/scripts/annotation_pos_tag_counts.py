@@ -1,8 +1,15 @@
 #!/usr/bin/env python3
 
+"""
+A script which reads Higgins Annotation Tool (HAT) XML annotation files <http://www.speech.kth.se/hat/>, extracts the individual "segment" elements contained therein and creates POS tags for the segment tokens using NLTK.
+The counts of each unique token-tag pair are then printed to the standard output stream.
+"""
+
+import csv
 import sys
 import xml.etree.ElementTree
 from collections import Counter
+from typing import Iterable
 
 import nltk
 
@@ -41,20 +48,23 @@ def count_pos_tags(infile_paths, pos_tagger):
 	return result
 
 
+def __main(inpaths: Iterable[str]):
+	infiles = walk_xml_files(*inpaths)
+	token_pos_tag_counts = count_pos_tags(infiles, CachingPosTagger())
+	print("Found {} unique token(s).".format(len(token_pos_tag_counts)), file=sys.stderr)
+	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+	writer.writerow(("TOKEN", "POS_TAG", "COUNT"))
+	alphabetic_token_counts = sorted(token_pos_tag_counts.items(), key=lambda item: item[0])
+	alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)
+	for tagged_token, count in alphabetic_count_desc_token_counts:
+		row = []
+		row.extend(tagged_token)
+		row.append(count)
+		writer.writerow(row)
+
+
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
 		raise ValueError("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
 	else:
-		inpaths = sys.argv[1:]
-		infiles = walk_xml_files(*inpaths)
-		token_pos_tag_counts = count_pos_tags(infiles, CachingPosTagger())
-		print("Found {} unique token(s).".format(len(token_pos_tag_counts)), file=sys.stderr)
-		col_headers = ("TOKEN", "POS_TAG", "COUNT")
-		print(COL_DELIM.join(col_headers))
-		alphabetic_token_counts = sorted(token_pos_tag_counts.items(), key=lambda item: item[0])
-		alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)
-		for tagged_token, count in alphabetic_count_desc_token_counts:
-			row = []
-			row.extend(tagged_token)
-			row.append(count)
-			print(COL_DELIM.join(str(cell) for cell in row))
+		__main(sys.argv[1:])
