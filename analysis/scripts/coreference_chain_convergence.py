@@ -15,7 +15,7 @@ from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
 from numbers import Integral
-from typing import DefaultDict, FrozenSet, IO, Iterator, List, Mapping, Optional, Tuple
+from typing import DefaultDict, FrozenSet, IO, Iterator, List, Mapping, Optional, Sequence, Tuple
 
 import numpy as np
 import pandas as pd
@@ -130,7 +130,7 @@ class ReferentTokenTypeOverlapCalculator(object):
 		return result
 
 
-def write_tabular_statistics(coref_chain_seq_overlaps: Mapping[int, List[Decimal]], outfile: IO[str]):
+def write_tabular_statistics(coref_chain_seq_overlaps: Mapping[int, Sequence[Decimal]], outfile: IO[str]):
 	writer = csv.writer(outfile, dialect=csv.excel_tab)
 	writer.writerow(("seq", "mean", "std", "sem"))
 	for coref_seq_ordinality, overlap_values in sorted(coref_chain_seq_overlaps.items(), key=lambda item: item[0]):
