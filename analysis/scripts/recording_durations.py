@@ -8,6 +8,7 @@ __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
+import csv
 import os.path
 import statistics
 import wave
@@ -17,8 +18,6 @@ from xml.etree.ElementTree import parse as parse_etree
 
 import annotations
 from xml_files import walk_xml_files
-
-COL_DELIM = "\t"
 
 
 def parent_dir(infile_path: str) -> str:
@@ -31,19 +30,19 @@ def parent_dir(infile_path: str) -> str:
 
 
 def print_statistics(file_durations: Iterable[Tuple[str, Decimal]], outfile: IO[str]):
-	sorted_durations = tuple(sorted(file_durations, key=lambda item: item[0]))
-	print(COL_DELIM.join(("PATH", "DURATION")), file=outfile)
-	for (audio_filepath, duration) in sorted_durations:
-		print(COL_DELIM.join((audio_filepath, str(duration))), file=outfile)
+	sorted_durations = tuple(sorted(file_durations))
+	writer = csv.writer(outfile, dialect=csv.excel_tab)
+	writer.writerow(("PATH", "DURATION"))
+	writer.writerows(sorted_durations)
 
 	min_duration = min(duration for (_, duration) in sorted_durations)
-	print(COL_DELIM.join(("MIN", str(min_duration))))
+	writer.writerow(("MIN", min_duration))
 	max_duration = max(duration for (_, duration) in sorted_durations)
-	print(COL_DELIM.join(("MAX", str(max_duration))))
+	writer.writerow(("MAX", max_duration))
 	mean_duration = statistics.mean(duration for (_, duration) in sorted_durations)
-	print(COL_DELIM.join(("MEAN", str(mean_duration))))
+	writer.writerow(("MEAN", mean_duration))
 	summed_duration = sum(duration for (_, duration) in sorted_durations)
-	print(COL_DELIM.join(("SUM", str(summed_duration))))
+	writer.writerow(("SUM", summed_duration))
 
 
 def read_audio_file_duration(infile_path: str) -> Decimal:
