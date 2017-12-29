@@ -36,8 +36,6 @@ EVENT_LOG_PLAYER_B_INITIAL_ROLE_FORMAT_STRING = '],["WAITING_FOR_NEXT_MOVE","{}"
 EVENT_LOG_PLAYER_INITIAL_ROLE_PATTERN = re.compile(r'.*?\"playerRoles\":\[\["MOVE_SUBMISSION\",\"([^\"]+)"\].*')
 EVENT_LOG_PLAYER_ID_FORMAT_STRING = "\"PLAYER_ID\":\"{}\""
 
-
-
 SESSION_DIR_FILENAME_FORMAT_STRINGS = ("events-{}.txt", "img-info-{}.txt", "system-{}.log")
 
 SYSTEM_LOGFILE_ENCODING = "UTF-8"
