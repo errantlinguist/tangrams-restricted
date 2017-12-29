@@ -79,7 +79,7 @@ class SessionDatum(Enum):
 	EVENTS = "events.tsv"
 	SESSION_METADATA = "session-metadata.tsv"
 	PARTICIPANT_METADATA = "participant-metadata.tsv"
-	UTTERANCES = "utts.xml"
+	UTTERANCES = "utts.tsv"
 
 	@property
 	def canonical_filename(self):
