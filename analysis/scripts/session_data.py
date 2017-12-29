@@ -90,12 +90,17 @@ __SESSION_DATA_FILENAMES = frozenset(datum.canonical_filename for datum in Sessi
 
 
 class SessionData(object):
-	def __init__(self, session_file_prefix: str):
+	def __init__(self, name: str, session_file_prefix: str):
+		self.name = name
 		self.events = os.path.join(session_file_prefix, SessionDatum.EVENTS.canonical_filename)
 		self.session_metadata = os.path.join(session_file_prefix, SessionDatum.SESSION_METADATA.canonical_filename)
 		self.participant_metadata = os.path.join(session_file_prefix,
 												 SessionDatum.PARTICIPANT_METADATA.canonical_filename)
 		self.utts = os.path.join(session_file_prefix, SessionDatum.UTTERANCES.canonical_filename)
+
+	@property
+	def __key(self):
+		return self.name, self.events, self.session_metadata, self.utts
 
 	def __eq__(self, other):
 		return (self is other or (isinstance(other, type(self))
@@ -136,10 +141,6 @@ class SessionData(object):
 
 		return result
 
-	@property
-	def __key(self):
-		return self.events, self.session_metadata, self.utts
-
 
 def is_session_dir(filenames: Iterable[str]) -> bool:
 	result = False
@@ -156,7 +157,8 @@ def is_session_dir(filenames: Iterable[str]) -> bool:
 
 def walk_session_data(inpaths: Iterable[str]) -> Iterator[Tuple[str, SessionData]]:
 	session_dirs = walk_session_dirs(inpaths)
-	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
+	# Use the basename of the directory (i.e. the last directory name in the path) as the session name
+	return ((session_dir, SessionData(os.path.basename(session_dir), session_dir)) for session_dir in session_dirs)
 
 
 def walk_session_dirs(inpaths: Iterable[str]) -> Iterator[str]:
