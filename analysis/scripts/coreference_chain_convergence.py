@@ -9,17 +9,17 @@ __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
 import argparse
-import itertools
-import statistics
+import csv
 import sys
 from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
 from numbers import Integral
-from typing import FrozenSet, Iterator, Optional, Tuple
+from typing import DefaultDict, FrozenSet, Iterator, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+import scipy.stats
 
 import alignment_metrics
 import session_data as sd
@@ -84,52 +84,50 @@ class ReferentTokenTypeOverlapCalculator(object):
 		return result
 
 	@classmethod
-	def __round_token_type_overlaps(cls, df: pd.DataFrame) -> Iterator[Tuple[Integral, Decimal]]:
+	def __round_token_type_overlaps(cls, ref_df: pd.DataFrame) -> Iterator[Tuple[int, Decimal]]:
 		"""
 		Calculates token-type overlaps for each round in which a given entity is referred to.
 
-		:param df: A DataFrame containing data rows for the given referent.
+		:param ref_df: A DataFrame containing data rows for the given referent.
 		:return: A generator of pairs of "(coref_seq_ordinality, token_type_overlap_ratio)".
 		"""
-		round_ids = tuple(sorted(df[sd.EventDataColumn.ROUND_ID.value].unique()))
-		preceding_round_ids = tuple(itertools.chain((np.nan,), round_ids[:len(round_ids) - 1]))
+
+		all_round_ids = tuple(sorted(ref_df[sd.EventDataColumn.ROUND_ID.value].unique()))
+		# Get rid of the first round because it cannot have any overlap
+		round_ids = all_round_ids[1:]
+		preceding_round_ids = all_round_ids[:len(all_round_ids) - 1]
 		assert len(round_ids) == len(preceding_round_ids)
 		coref_seq_round_id_pairs = zip(round_ids, preceding_round_ids)
-		return ((coref_seq_ordinality, cls.__token_type_overlap(round_id, preceding_round_id, df)) for
-				(coref_seq_ordinality, (round_id, preceding_round_id)) in enumerate(coref_seq_round_id_pairs, start=1))
+		return ((coref_seq_ordinality, cls.__token_type_overlap(round_id, preceding_round_id, ref_df)) for
+				(coref_seq_ordinality, (round_id, preceding_round_id)) in enumerate(coref_seq_round_id_pairs, start=2))
 
 	@classmethod
-	def __session_token_type_overlaps(cls, df: pd.DataFrame) -> Tuple[Tuple[Integral, Decimal], ...]:
+	def __session_token_type_overlaps(cls, session_df: pd.DataFrame) -> Tuple[Tuple[int, Decimal], ...]:
 		"""
 		Calculates token-type overlaps for a single session, since entity IDs are not unique across sessions.
 
-		:param df: The session DataFrame.
+		:param session_df: The session DataFrame.
 		:return: A tuple of pairs of "(coref_seq_ordinality, token_type_overlap_ratio)".
 		"""
-		ref_rows = df.groupby(sd.EventDataColumn.ENTITY_ID.value, as_index=False)
+		ref_rows = session_df.groupby(sd.EventDataColumn.ENTITY_ID.value, as_index=False)
 		return tuple((round_id, overlap) for _, rows in ref_rows for (round_id, overlap) in
 					 cls.__round_token_type_overlaps(rows))
 
-	def __init__(self):
-		pass
-
-	def __call__(self, df: pd.DataFrame):
+	def __call__(self, df: pd.DataFrame) -> DefaultDict[int, List[Decimal]]:
 		"""
 		Calculates token-type overlaps over multiple sessions.
 
 		:param df: The DataFrame including rows for all sessions.
-		:return:
+		:return: A dictionary of coreference sequence ordinalities ("1,2,3...") to lists of individual token-type overlap ratios calculated for each session.
 		"""
 		sessions = df.groupby(SessionRoundTokenTypeSetDataFrameColumn.DYAD_ID.value, as_index=False)
 		session_coref_seq_overlaps = sessions.apply(self.__session_token_type_overlaps)
 
-		coref_seq_overlap_values = defaultdict(list)
+		result = defaultdict(list)
 		for overlap_values in session_coref_seq_overlaps:
 			for coref_seq_ordinality, overlap_value in overlap_values:
-				coref_seq_overlap_values[coref_seq_ordinality].append(overlap_value)
-		return dict(
-			(coref_seq_ordinality, statistics.mean(overlap_values)) for (coref_seq_ordinality, overlap_values) in
-			coref_seq_overlap_values.items())
+				result[coref_seq_ordinality].append(overlap_value)
+		return result
 
 
 def __create_argparser() -> argparse.ArgumentParser:
@@ -161,7 +159,16 @@ def __main(args):
 
 	ref_overlap_calculator = ReferentTokenTypeOverlapCalculator()
 	ref_coref_chain_seq_overlaps = ref_overlap_calculator(session_utt_df)
-	print(ref_coref_chain_seq_overlaps)
+
+	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+	writer.writerow(("seq", "mean", "std", "sem"))
+	for coref_seq_ordinality, overlap_values in sorted(ref_coref_chain_seq_overlaps.items(), key=lambda item: item[0]):
+		if len(overlap_values) >= 2:
+			float_values = np.asarray(overlap_values, np.longfloat)
+			mean = np.mean(float_values)
+			std = np.std(float_values)
+			sem = scipy.stats.sem(float_values)
+			writer.writerow((coref_seq_ordinality, mean, std, sem))
 
 
 if __name__ == "__main__":
