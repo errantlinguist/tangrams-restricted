@@ -65,7 +65,9 @@ def __main(args):
 															  SessionRoundTokenBagDataFrameFactory.DYAD_ID_COL_NAME].unique())),
 		  file=sys.stderr)
 	session_utt_df = session_utt_df.loc[session_utt_df[sd.EventDataColumn.REFERENT_ENTITY.value] == True]
-	print("Removed {} non-referent entity rows.".format(orig_session_utt_df_shape[0] - session_utt_df.shape[0]),
+	session_utt_df_shape = session_utt_df.shape
+	print("Removed {} non-referent entity rows; New shape is {}.".format(
+		orig_session_utt_df_shape[0] - session_utt_df_shape[0], session_utt_df_shape),
 		  file=sys.stderr)
 
 	session_rounds = session_utt_df.groupby(
