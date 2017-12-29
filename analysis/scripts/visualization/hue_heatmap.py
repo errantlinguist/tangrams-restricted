@@ -39,6 +39,6 @@ if __name__ == "__main__":
 	import sys
 
 	if len(sys.argv) < 3:
-		raise ValueError("Usage: {} INFILE OUTFILE".format(sys.argv[0]))
+		sys.exit("Usage: {} INFILE OUTFILE".format(sys.argv[0]))
 	else:
 		__main(sys.argv[1], sys.argv[2])

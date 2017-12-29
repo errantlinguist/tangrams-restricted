@@ -73,6 +73,6 @@ if __name__ == "__main__":
 	import sys
 
 	if len(sys.argv) < 2:
-		raise ValueError("Usage: {} INPATHS...".format(sys.argv[0]))
+		sys.exit("Usage: {} INPATHS...".format(sys.argv[0]))
 	else:
 		__main(sys.argv[1:])

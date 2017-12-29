@@ -52,6 +52,6 @@ def __main(inpaths: Iterable[str]):
 
 if __name__ == "__main__":
 	if len(sys.argv) < 2:
-		raise ValueError("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
+		sys.exit("Usage: {} INPUT_PATHS... > OUTFILE".format(sys.argv[0]))
 	else:
 		__main(sys.argv[1:])
