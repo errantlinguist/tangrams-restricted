@@ -41,7 +41,7 @@ class SessionRoundTokenBagDataFrameFactory(object):
 
 		result = session_data.read_events()
 		result[self.DYAD_ID_COL_NAME] = session_name
-		result[self.TOKEN_SEQ_COL_NAME] = result[sd.DataColumn.ROUND_ID.value.name].transform(
+		result[self.TOKEN_SEQ_COL_NAME] = result[sd.EventDataColumn.ROUND_ID.value].transform(
 			lambda round_id: round_token_bags[round_id])
 		return result
 
@@ -63,6 +63,8 @@ def __main(args):
 													  len(session_utt_df[
 															  SessionRoundTokenBagDataFrameFactory.DYAD_ID_COL_NAME].unique())),
 		  file=sys.stderr)
+	session_rounds = session_utt_df.groupby((SessionRoundTokenBagDataFrameFactory.DYAD_ID_COL_NAME, sd.EventDataColumn.ROUND_ID.value), as_index=False)
+	print("Found {} rounds in all sessions.".format(len(session_rounds)), file=sys.stderr)
 
 
 if __name__ == "__main__":

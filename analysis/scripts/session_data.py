@@ -1,64 +1,40 @@
 import csv
 import os
-from decimal import Decimal
 from enum import Enum, unique
 from typing import Dict, Iterator, Iterable, Tuple
 
 import pandas as pd
 
-DECIMAL_VALUE_TYPE = Decimal
 ENCODING = 'utf-8'
 SESSION_METADATA_CSV_DIALECT = csv.excel_tab
 
-_DECIMAL_INFINITY = DECIMAL_VALUE_TYPE('Infinity')
 _EVENT_FILE_DTYPES = {"NAME": "category", "SHAPE": "category", "SUBMITTER": "category"}
 _PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID"
 
-__DECIMAL_VALUE_POOL = {}
-
-
-class DataColumnProperties(object):
-	def __init__(self, name: str, value_transformer):
-		self.name = name
-		self.value_transformer = value_transformer
-
-	def __repr__(self):
-		return self.__class__.__name__ + str(self.__dict__)
-
-
-def fetch_decimal_value(cell_value: str) -> DECIMAL_VALUE_TYPE:
-	try:
-		result = __DECIMAL_VALUE_POOL[cell_value]
-	except KeyError:
-		result = DECIMAL_VALUE_TYPE(cell_value)
-		__DECIMAL_VALUE_POOL[cell_value] = result
-	return result
-
-
-def _is_truth_cell_value(val: str) -> bool:
-	return val == "true"
-
 
 @unique
-class DataColumn(Enum):
-	BLUE = DataColumnProperties("BLUE", int)
-	EDGE_COUNT = DataColumnProperties("EDGE_COUNT", int)
-	ENTITY_ID = DataColumnProperties("ENTITY", int)
-	EVENT_ID = DataColumnProperties("EVENT", int)
-	EVENT_NAME = DataColumnProperties("NAME", str)
-	EVENT_TIME = DataColumnProperties("TIME", fetch_decimal_value)
-	GREEN = DataColumnProperties("BLUE", int)
-	HUE = DataColumnProperties("HUE", fetch_decimal_value)
-	POSITION_X = DataColumnProperties("POSITION_X", fetch_decimal_value)
-	POSITION_Y = DataColumnProperties("POSITION_Y", fetch_decimal_value)
-	REFERENT_ENTITY = DataColumnProperties("REFERENT", _is_truth_cell_value)
-	RED = DataColumnProperties("RED", int)
-	ROUND_ID = DataColumnProperties("ROUND", int)
-	SCORE = DataColumnProperties("SCORE", int)
-	SELECTED_ENTITY = DataColumnProperties("SELECTED", _is_truth_cell_value)
-	SIZE = DataColumnProperties("SIZE", fetch_decimal_value)
-	SHAPE = DataColumnProperties("SHAPE", str)
-	SUBMITTER = DataColumnProperties("SUBMITTER", str)
+class EventDataColumn(Enum):
+	ALPHA = "ALPHA"
+	BLUE = "BLUE"
+	BRIGHTNESS = "BRIGHTNESS"
+	EDGE_COUNT = "EDGE_COUNT"
+	ENTITY_ID = "ENTITY"
+	EVENT_ID = "EVENT"
+	EVENT_NAME = "NAME"
+	EVENT_TIME = "TIME"
+	GREEN = "BLUE"
+	HUE = "HUE"
+	POSITION_X = "POSITION_X"
+	POSITION_Y = "POSITION_Y"
+	REFERENT_ENTITY = "REFERENT"
+	RED = "RED"
+	ROUND_ID = "ROUND"
+	SATURATION = "SATURATION"
+	SCORE = "SCORE"
+	SELECTED_ENTITY = "SELECTED"
+	SIZE = "SIZE"
+	SHAPE = "SHAPE"
+	SUBMITTER = "SUBMITTER"
 
 
 @unique
