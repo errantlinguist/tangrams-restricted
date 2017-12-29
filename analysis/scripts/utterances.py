@@ -7,9 +7,8 @@ __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
 import sys
-from collections import defaultdict
-from typing import Any, Callable, DefaultDict, Iterable, Iterator, List, Optional, Sequence, Tuple
-from xml.etree.ElementTree import Element, parse as parse_etree
+from typing import Any, Callable, Iterable, Iterator, List, Optional, Sequence, Tuple
+from xml.etree.ElementTree import Element
 
 import annotations
 
@@ -94,13 +93,14 @@ def is_semantically_relevant_token(token: str) -> bool:
 
 
 class TokenSequenceFactory(object):
+	EMPTY_SEQ = ()
+
 	def __init__(self, token_filter: Callable[[str], bool] = is_semantically_relevant_token):
 		self.token_filter = token_filter
 		self.token_seq_singletons = {}
 
 	def __call__(self, tokens: Iterable[str]) -> Tuple[str, ...]:
-		content = tuple(stripped_token for stripped_token in (token.strip() for token in tokens) if
-						stripped_token and self.token_filter(stripped_token))
+		content = tuple(token for token in tokens if self.token_filter(token))
 		if content:
 			try:
 				result = self.token_seq_singletons[content]
@@ -108,16 +108,9 @@ class TokenSequenceFactory(object):
 				result = tuple(sys.intern(token) for token in content)
 				self.token_seq_singletons[result] = result
 		else:
-			result = None
+			result = self.EMPTY_SEQ
 
 		return result
-
-
-def create_speaker_dict(utts: Iterable[Utterance]) -> DefaultDict[str, List[Utterance]]:
-	result = defaultdict(list)
-	for utt in utts:
-		result[utt.speaker_id].append(utt)
-	return result
 
 
 def dialogue_utt_str_repr(utts: Iterable[Utterance]) -> str:
@@ -159,12 +152,6 @@ def is_disfluency(token: str) -> bool:
 
 def join_utt_sentence_reprs(utts: Iterable[Utterance]) -> str:
 	return ' '.join(token_seq_repr(utt.content) for utt in utts)
-
-
-def read_segments(infile_path: str) -> Iterator[Element]:
-	print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
-	doc_tree = parse_etree(infile_path)
-	return doc_tree.iterfind(".//hat:segment", annotations.ANNOTATION_NAMESPACES)
 
 
 def token_seq_repr(tokens: Iterable[str]) -> str:
