@@ -9,25 +9,23 @@ __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
+import collections
 import csv
 import sys
 import xml.etree.ElementTree
-from collections import Counter
-from typing import Iterable
+from typing import Dict, Iterable, List, Tuple
 
 import nltk
 
 from annotations import ANNOTATION_NAMESPACES
 from xml_files import walk_xml_files
 
-COL_DELIM = '\t'
-
 
 class CachingPosTagger(object):
 	def __init__(self):
 		self.cache = {}
 
-	def __call__(self, text):
+	def __call__(self, text: str) -> List[Tuple[str, str]]:
 		try:
 			result = self.cache[text]
 		except KeyError:
@@ -37,8 +35,8 @@ class CachingPosTagger(object):
 		return result
 
 
-def count_pos_tags(infile_paths, pos_tagger):
-	result = Counter()
+def count_pos_tags(infile_paths: Iterable[str], pos_tagger: CachingPosTagger) -> Dict[Tuple[str, str], int]:
+	result = collections.Counter()
 	for infile_path in infile_paths:
 		print("Reading XML file \"{}\".".format(infile_path), file=sys.stderr)
 		doc_tree = xml.etree.ElementTree.parse(infile_path)
