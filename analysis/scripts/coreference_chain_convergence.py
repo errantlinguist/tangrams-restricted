@@ -15,7 +15,7 @@ from collections import defaultdict
 from decimal import Decimal
 from enum import Enum, unique
 from numbers import Integral
-from typing import DefaultDict, FrozenSet, Iterator, List, Optional, Tuple
+from typing import DefaultDict, FrozenSet, IO, Iterator, List, Mapping, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -130,6 +130,18 @@ class ReferentTokenTypeOverlapCalculator(object):
 		return result
 
 
+def write_tabular_statistics(coref_chain_seq_overlaps: Mapping[int, List[Decimal]], outfile: IO[str]):
+	writer = csv.writer(outfile, dialect=csv.excel_tab)
+	writer.writerow(("seq", "mean", "std", "sem"))
+	for coref_seq_ordinality, overlap_values in sorted(coref_chain_seq_overlaps.items(), key=lambda item: item[0]):
+		if len(overlap_values) >= 2:
+			float_values = np.asarray(overlap_values, np.longfloat)
+			mean = np.mean(float_values)
+			std = np.std(float_values)
+			sem = scipy.stats.sem(float_values)
+			writer.writerow((coref_seq_ordinality, mean, std, sem))
+
+
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Calculates mean token-type overlap for each coreference chain sequence ordinality in each chain for a given referent.")
@@ -159,16 +171,7 @@ def __main(args):
 
 	ref_overlap_calculator = ReferentTokenTypeOverlapCalculator()
 	ref_coref_chain_seq_overlaps = ref_overlap_calculator(session_utt_df)
-
-	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
-	writer.writerow(("seq", "mean", "std", "sem"))
-	for coref_seq_ordinality, overlap_values in sorted(ref_coref_chain_seq_overlaps.items(), key=lambda item: item[0]):
-		if len(overlap_values) >= 2:
-			float_values = np.asarray(overlap_values, np.longfloat)
-			mean = np.mean(float_values)
-			std = np.std(float_values)
-			sem = scipy.stats.sem(float_values)
-			writer.writerow((coref_seq_ordinality, mean, std, sem))
+	write_tabular_statistics(ref_coref_chain_seq_overlaps, sys.stdout)
 
 
 if __name__ == "__main__":
