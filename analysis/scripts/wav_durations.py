@@ -14,7 +14,7 @@ import re
 import statistics
 import wave
 from decimal import Decimal
-from typing import Iterable, Iterator, Tuple
+from typing import IO, Iterable, Iterator, Tuple
 
 COL_DELIM = "\t"
 WAV_CONTENT_TYPE_PATTERN = re.compile(".*?/(?:x-)?wav")
@@ -29,7 +29,7 @@ def parent_dir(infile_path: str) -> str:
 	return result
 
 
-def print_statistics(file_durations: Iterable[Tuple[str, Decimal]], outfile):
+def print_statistics(file_durations: Iterable[Tuple[str, Decimal]], outfile: IO[str]):
 	sorted_durations = tuple(sorted(file_durations, key=lambda item: item[0]))
 	print(COL_DELIM.join(("PATH", "DURATION")), file=outfile)
 	for (audio_filepath, duration) in sorted_durations:

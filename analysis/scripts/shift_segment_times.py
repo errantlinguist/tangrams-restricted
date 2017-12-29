@@ -12,6 +12,8 @@ __license__ = "GNU General Public License, Version 3"
 import argparse
 import re
 from decimal import Decimal
+from numbers import Number
+from typing import IO, Iterable
 
 from lxml import etree
 
@@ -19,7 +21,7 @@ from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
 from etree_printing import print_etree_to_file
 
 
-def shift_segment_times(segments, addend):
+def shift_segment_times(segments: Iterable[etree.Element], addend: Number):
 	for segment in segments:
 		orig_start = Decimal(segment.get("start"))
 		# print("Original start: %s" % orig_start, file=sys.stderr)
@@ -44,7 +46,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 	return result
 
 
-def __main(args, outfile, err_outfile):
+def __main(args, outfile: IO[str], err_outfile: IO[str]):
 	default_namespace = HAT_DATA_NAMESPACE
 
 	inpath = args.infile
@@ -54,8 +56,8 @@ def __main(args, outfile, err_outfile):
 	infile_datum = parser(doc_tree)
 
 	source_id_pattern = args.source_id_pattern
-	segments = [segment for segment in infile_datum.segment_data.segments_by_id.values() if
-				source_id_pattern.match(segment.get("source")) is not None]
+	segments = tuple(segment for segment in infile_datum.segment_data.segments_by_id.values() if
+					 source_id_pattern.match(segment.get("source")) is not None)
 	if segments:
 		print("%d segment(s) matching source ID pattern \"%s\"." % (len(segments), source_id_pattern.pattern),
 			  file=err_outfile)

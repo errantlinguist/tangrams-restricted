@@ -12,7 +12,7 @@ import os.path
 import statistics
 import wave
 from decimal import Decimal
-from typing import Iterable, Tuple, Set
+from typing import IO, Iterable, Tuple, Set
 from xml.etree.ElementTree import parse as parse_etree
 
 import annotations
@@ -30,7 +30,7 @@ def parent_dir(infile_path: str) -> str:
 	return result
 
 
-def print_statistics(file_durations: Iterable[Tuple[str, Decimal]], outfile):
+def print_statistics(file_durations: Iterable[Tuple[str, Decimal]], outfile: IO[str]):
 	sorted_durations = tuple(sorted(file_durations, key=lambda item: item[0]))
 	print(COL_DELIM.join(("PATH", "DURATION")), file=outfile)
 	for (audio_filepath, duration) in sorted_durations:

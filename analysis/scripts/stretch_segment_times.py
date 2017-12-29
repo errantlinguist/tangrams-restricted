@@ -12,6 +12,8 @@ __license__ = "GNU General Public License, Version 3"
 import argparse
 import re
 from decimal import Decimal
+from numbers import Number
+from typing import IO, Iterable
 
 from lxml import etree
 
@@ -19,7 +21,7 @@ from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
 from etree_printing import print_etree_to_file
 
 
-def stretch_segment_times(segments, factor):
+def stretch_segment_times(segments: Iterable[etree.Element], factor: Number):
 	for segment in segments:
 		orig_start = Decimal(segment.get("start"))
 		# print("Original start: %s" % orig_start, file=sys.stderr)
@@ -44,7 +46,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 	return result
 
 
-def __main(args, outfile, err_outfile):
+def __main(args, outfile: IO[str], err_outfile: IO[str]):
 	default_namespace = HAT_DATA_NAMESPACE
 
 	inpath = args.infile
