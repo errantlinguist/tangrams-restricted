@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+
 """
 Reads tabular utterance files and creates a single map of unique utterances to the canonical referring tokens in that utterance.
 
