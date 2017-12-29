@@ -1,5 +1,13 @@
 #!/usr/bin/env python3
 
+"""
+Calculates mean token-type overlap for each coreference chain sequence ordinality in each chain for a given referent.
+"""
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 import argparse
 import sys
 
