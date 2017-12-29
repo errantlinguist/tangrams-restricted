@@ -17,7 +17,7 @@ import pandas as pd
 import session_data as sd
 import utterances
 
-DYAD_ID_COL_NAME = "DYAD"
+EVENT_DF_DYAD_ID_COL_NAME = "DYAD"
 EVENT_DF_TOKEN_SEQ_COL_NAME = utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value
 
 
@@ -37,7 +37,7 @@ def read_session_utterances(session_data: sd.SessionData,
 	round_token_bags = dict((round_id, concatenate_token_seqs(group)) for round_id, group in round_utts)
 
 	result = session_data.read_events()
-	result[DYAD_ID_COL_NAME] = session_name
+	result[EVENT_DF_DYAD_ID_COL_NAME] = session_name
 	result[EVENT_DF_TOKEN_SEQ_COL_NAME] = result[sd.DataColumn.ROUND_ID.value.name].transform(
 		lambda round_id: round_token_bags[round_id])
 	return result
@@ -58,7 +58,7 @@ def __main(args):
 	session_utt_df = pd.concat(
 		read_session_utterances(session_data, utt_reader) for _, session_data in sd.walk_session_data(inpaths))
 	print("DF shape is {}; {} unique dyad(s).".format(session_utt_df.shape,
-													  len(session_utt_df[DYAD_ID_COL_NAME].unique())), file=sys.stderr)
+													  len(session_utt_df[EVENT_DF_DYAD_ID_COL_NAME].unique())), file=sys.stderr)
 
 
 if __name__ == "__main__":
