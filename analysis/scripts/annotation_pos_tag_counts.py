@@ -5,6 +5,10 @@ A script which reads Higgins Annotation Tool (HAT) XML annotation files <http://
 The counts of each unique token-tag pair are then printed to the standard output stream.
 """
 
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 import csv
 import sys
 import xml.etree.ElementTree
