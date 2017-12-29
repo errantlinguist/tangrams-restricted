@@ -6,9 +6,14 @@ __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
 __copyright__ = "Copyright (C) 2016-2017 Todd Shore"
 __license__ = "GNU General Public License, Version 3"
 
+import csv
+import re
 import sys
+from enum import Enum, unique
 from typing import Any, Callable, Iterable, Iterator, List, Optional, Sequence, Tuple
 from xml.etree.ElementTree import Element
+
+import pandas as pd
 
 import annotations
 
@@ -86,6 +91,36 @@ class Utterance(object):
 
 	def __repr__(self):
 		return self.__class__.__name__ + str(self.__dict__)
+
+
+@unique
+class UtteranceTabularDataColumn(Enum):
+	ROUND_ID = "ROUND"
+	SPEAKER_ID = "SPEAKER"
+	DIALOGUE_ROLE = "DIALOGUE_ROLE"
+	START_TIME = "START_TIME"
+	END_TIME = "END_TIME"
+	TOKEN_SEQ = "TOKENS"
+
+
+class UtteranceTabularDataReader(object):
+	FILE_ENCODING = "utf-8"
+	FILE_CSV_DIALECT = csv.excel_tab
+	DTYPES = {UtteranceTabularDataColumn.DIALOGUE_ROLE.value: "category",
+			  UtteranceTabularDataColumn.SPEAKER_ID.value: "category"}
+	TOKEN_DELIMITER_PATTERN = re.compile("\\s+")
+
+	def __init__(self, token_seq_factory: Optional[Callable[[Iterable[str]], Sequence[str]]] = None):
+		self.token_seq_factory = TokenSequenceFactory() if token_seq_factory is None else token_seq_factory
+		self.converters = {UtteranceTabularDataColumn.TOKEN_SEQ.value: self.__parse_utt_token_seq}
+
+	def __call__(self, infile_path: str) -> pd.DataFrame:
+		return pd.read_csv(infile_path, dialect=self.FILE_CSV_DIALECT, sep=self.FILE_CSV_DIALECT.delimiter,
+						   float_precision="round_trip", converters=self.converters, dtype=self.DTYPES)
+
+	def __parse_utt_token_seq(self, input_str: str) -> Sequence[str]:
+		all_tokens = self.TOKEN_DELIMITER_PATTERN.split(input_str)
+		return self.token_seq_factory(all_tokens)
 
 
 def is_semantically_relevant_token(token: str) -> bool:
