@@ -16,6 +16,7 @@ from decimal import Decimal
 from enum import Enum, unique
 from typing import FrozenSet, Iterable, Optional
 
+import numpy as np
 import pandas as pd
 
 import alignment_metrics
@@ -78,7 +79,7 @@ class TokenTypeOverlapColumn(Enum):
 	TOKEN_TYPE_OVERLAP = "TOKEN_TYPE_OVERLAP"
 
 
-class ReferentTokenTypeOverlapCalculator(object):
+class ReferentIndividualTokenTypeOverlapCalculator(object):
 
 	@staticmethod
 	def __token_type_overlap(utt: pd.Series) -> Decimal:
@@ -108,7 +109,43 @@ class ReferentTokenTypeOverlapCalculator(object):
 			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
 		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
 			TokenTypeSetDataFrameColumn.TOKEN_TYPES.value].shift()
-		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap, axis=1)
+		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
+																			   axis=1).transform(np.longfloat)
+		return result
+
+
+class ReferentOtherTokenTypeOverlapCalculator(object):
+
+	@staticmethod
+	def __token_type_overlap(utt: pd.Series) -> Decimal:
+		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
+		if pd.isnull(preceding_token_types):
+			result = ZERO_DECIMAL
+		else:
+			token_types = utt[TokenTypeSetDataFrameColumn.TOKEN_TYPES.value]
+			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
+		return result
+
+	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Calculates token-type overlaps over multiple sessions.
+
+		:param df: The DataFrame including rows for all sessions.
+		:return: A copy of the DataFrame with token-type data added.
+		"""
+		result = df.copy(deep=False)
+		# Calculate token-type overlap for each chain of reference for each entity and each speaker in each session
+		session_ref_utts = result.groupby((TokenTypeSetDataFrameColumn.DYAD.value,
+										   sd.EventDataColumn.ENTITY_ID.value,
+										   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
+										  as_index=False)
+		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_ref_utts.cumcount() + 1
+		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_ref_utts[
+			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_ref_utts[
+			TokenTypeSetDataFrameColumn.TOKEN_TYPES.value].shift()
+		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
+																			   axis=1).transform(np.longfloat)
 		return result
 
 
@@ -141,9 +178,21 @@ def __main(args):
 		by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
 			utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 
-	ref_overlap_calculator = ReferentTokenTypeOverlapCalculator()
+	if args.individual:
+		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
+	elif args.other:
+		ref_overlap_calculator = ReferentOtherTokenTypeOverlapCalculator()
+	else:
+		raise AssertionError("Logic error")
+
 	session_utt_df = ref_overlap_calculator(session_utt_df)
-	session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8")
+	# session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8")
+	coref_seq_orders = session_utt_df[
+		[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]].groupby(
+		by=TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False)
+	aggs = coref_seq_orders.agg(["mean", "std", "sem"])
+	aggs.columns = aggs.columns.droplevel(0)
+	aggs.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8", index_label="seq")
 
 
 if __name__ == "__main__":
