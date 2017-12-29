@@ -118,7 +118,7 @@ class ReferentTokenTypeOverlapCalculator(object):
 		Calculates token-type overlaps over multiple sessions.
 
 		:param df: The DataFrame including rows for all sessions.
-		:return: A dictionary of coreference sequence ordinalities ("1,2,3...") to lists of individual token-type overlap ratios calculated for each session.
+		:return: A dictionary of coreference sequence ordinalities ("1","2","3"...) to lists of individual token-type overlap ratios calculated for each session.
 		"""
 		sessions = df.groupby(SessionRoundTokenTypeSetDataFrameColumn.DYAD_ID.value, as_index=False)
 		session_coref_seq_overlaps = sessions.apply(self.__session_token_type_overlaps)
