@@ -59,11 +59,17 @@ def __main(args):
 	print("Looking for session data underneath {}.".format(inpaths), file=sys.stderr)
 	df_factory = SessionRoundTokenBagDataFrameFactory()
 	session_utt_df = pd.concat(df_factory(session_data) for _, session_data in sd.walk_session_data(inpaths))
-	print("DF shape is {}; {} unique dyad(s).".format(session_utt_df.shape,
+	orig_session_utt_df_shape = session_utt_df.shape
+	print("DF shape is {}; {} unique dyad(s).".format(orig_session_utt_df_shape,
 													  len(session_utt_df[
 															  SessionRoundTokenBagDataFrameFactory.DYAD_ID_COL_NAME].unique())),
 		  file=sys.stderr)
-	session_rounds = session_utt_df.groupby((SessionRoundTokenBagDataFrameFactory.DYAD_ID_COL_NAME, sd.EventDataColumn.ROUND_ID.value), as_index=False)
+	session_utt_df = session_utt_df.loc[session_utt_df[sd.EventDataColumn.REFERENT_ENTITY.value] == True]
+	print("Removed {} non-referent entity rows.".format(orig_session_utt_df_shape[0] - session_utt_df.shape[0]),
+		  file=sys.stderr)
+
+	session_rounds = session_utt_df.groupby(
+		(SessionRoundTokenBagDataFrameFactory.DYAD_ID_COL_NAME, sd.EventDataColumn.ROUND_ID.value), as_index=False)
 	print("Found {} rounds in all sessions.".format(len(session_rounds)), file=sys.stderr)
 
 
