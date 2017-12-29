@@ -15,7 +15,6 @@ from typing import IO
 
 
 def print_etree_to_file(etree, encoding: str, outfile: IO[str]):
-	tmpfile, tmpfile_path = tempfile.mkstemp(text=True)
 	"""
 	Prints an ElementTree-like object to file in a manner which is agnostic towards the XML implementation used.
 	
@@ -23,6 +22,7 @@ def print_etree_to_file(etree, encoding: str, outfile: IO[str]):
 	:param encoding: The output file encoding.
 	:param outfile: The file-like object to write to.
 	"""
+	tmpfile, tmpfile_path = tempfile.mkstemp(text=True)
 	try:
 		etree.write(tmpfile_path, encoding=encoding, xml_declaration=True, pretty_print=True)
 		with open(tmpfile_path, 'r', encoding=encoding) as inf:
