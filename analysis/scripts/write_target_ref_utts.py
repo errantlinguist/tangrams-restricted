@@ -12,7 +12,7 @@ import argparse
 import csv
 import logging
 import sys
-from typing import Callable
+from typing import Callable, Sequence, TypeVar
 
 import pandas as pd
 
@@ -22,6 +22,8 @@ import utterances
 DYAD_COL_NAME = "DYAD"
 OUTPUT_FILE_DIALECT = csv.excel_tab
 OUTPUT_FILE_ENCODING = "utf-8"
+
+T = TypeVar("T")
 
 
 class SessionRoundTokenTypeSetDataFrameFactory(object):
@@ -62,6 +64,27 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		return result
 
 
+def sort_cols(df: pd.DataFrame) -> pd.DataFrame:
+	partial_ordering = (
+	DYAD_COL_NAME, sd.EventDataColumn.ROUND_ID.value, sd.EventDataColumn.SCORE.value, sd.EventDataColumn.EVENT_ID.value,
+	sd.EventDataColumn.EVENT_NAME.value, sd.EventDataColumn.EVENT_TIME.value, sd.EventDataColumn.SUBMITTER.value,
+	sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
+	utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value,
+	utterances.UtteranceTabularDataColumn.START_TIME.value,
+	utterances.UtteranceTabularDataColumn.END_TIME.value,
+	utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value)
+	return df.reindex(sorted(df.columns, key=lambda col_name: __element_order(col_name, partial_ordering)), axis=1,
+					  copy=False)
+
+
+def __element_order(elem: T, ordering: Sequence[T]) -> int:
+	try:
+		result = ordering.index(elem)
+	except ValueError:
+		result = len(ordering)
+	return result
+
+
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
 		description="Reads in event and utterance files for a directory of sessions and prints the utterance information alongside the target referent entity information on the same row to the standard output stream.")
@@ -100,6 +123,7 @@ def __main(args):
 		by=[DYAD_COL_NAME, sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
 			utterances.UtteranceTabularDataColumn.END_TIME.value,
 			utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value], inplace=True)
+	session_utt_df = sort_cols(session_utt_df)
 	session_utt_df.to_csv(sys.stdout, sep=OUTPUT_FILE_DIALECT.delimiter, encoding=OUTPUT_FILE_ENCODING, index=False)
 
 
