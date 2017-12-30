@@ -15,7 +15,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-# A script for concatenating all tabular utterance files (named "utts.xml").
+# A script for concatenating all tabular utterance files (named "utts.tsv").
 # Author: Todd Shore <errantlinguist+github@gmail.com>
 # Since: 2017-12-04
 
