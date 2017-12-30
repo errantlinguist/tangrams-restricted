@@ -100,7 +100,7 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 		session_speaker_ref_utts = result.groupby((TokenTypeSetDataFrameColumn.DYAD.value,
 												   sd.EventDataColumn.ENTITY_ID.value,
 												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
-												  as_index=False)
+												  as_index=False, sort=False)
 		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_speaker_ref_utts.cumcount() + 1
 		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
 			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
@@ -149,7 +149,7 @@ def __main(args):
 	# session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8")
 	coref_seq_orders = session_utt_df[
 		[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]].groupby(
-		by=TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False)
+		TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False, sort=False)
 	aggs = coref_seq_orders.agg(["mean", "std", "sem"])
 	aggs.columns = aggs.columns.droplevel(0)
 	aggs.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8", index_label="seq")

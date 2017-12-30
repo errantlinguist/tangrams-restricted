@@ -13,6 +13,7 @@ from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
 import nltk
 import pandas as pd
+import numpy as np
 
 """
 NOTE: See "../src/main/resources/se/kth/speech/nlp/fillers.txt"
@@ -73,13 +74,70 @@ class UtteranceTabularDataReader(object):
 	DTYPES = {UtteranceTabularDataColumn.DIALOGUE_ROLE.value: "category",
 			  UtteranceTabularDataColumn.SPEAKER_ID.value: "category"}
 
+	@staticmethod
+	def __merge_consecutive_utts(round_utts : pd.DataFrame) -> pd.DataFrame:
+		# noinspection PyProtectedMember
+		row_dicts = (row._asdict() for row in round_utts.itertuples(index=False))
+		first_row = next(row_dicts)
+		last_round_id = first_row[UtteranceTabularDataColumn.ROUND_ID.value]
+		last_speaker_id = first_row[UtteranceTabularDataColumn.SPEAKER_ID.value]
+		last_diag_role = first_row[UtteranceTabularDataColumn.DIALOGUE_ROLE.value]
+		last_start_time = first_row[UtteranceTabularDataColumn.START_TIME.value]
+		last_end_time = first_row[UtteranceTabularDataColumn.END_TIME.value]
+		last_tokens = list(first_row[UtteranceTabularDataColumn.TOKEN_SEQ.value])
+
+		col_data = dict((col.value, []) for col in UtteranceTabularDataColumn)
+		for row_dict in row_dicts:
+			tokens = row_dict[UtteranceTabularDataColumn.TOKEN_SEQ.value]
+			if tokens:
+				round_id = row_dict[UtteranceTabularDataColumn.ROUND_ID.value]
+				speaker_id = row_dict[UtteranceTabularDataColumn.SPEAKER_ID.value]
+				diag_role = row_dict[UtteranceTabularDataColumn.DIALOGUE_ROLE.value]
+				start_time = row_dict[UtteranceTabularDataColumn.START_TIME.value]
+				end_time = row_dict[UtteranceTabularDataColumn.END_TIME.value]
+				if round_id == last_round_id and speaker_id == last_speaker_id and diag_role == last_diag_role:
+						last_start_time = min(last_start_time, start_time)
+						last_end_time = max(last_end_time,
+											end_time)
+						last_tokens.extend(tokens)
+				else:
+					col_data[UtteranceTabularDataColumn.ROUND_ID.value].append(last_round_id)
+					last_round_id = round_id
+					col_data[UtteranceTabularDataColumn.SPEAKER_ID.value].append(last_speaker_id)
+					last_speaker_id = speaker_id
+					col_data[UtteranceTabularDataColumn.DIALOGUE_ROLE.value].append(last_diag_role)
+					last_diag_role = diag_role
+					col_data[UtteranceTabularDataColumn.START_TIME.value].append(last_start_time)
+					last_start_time = start_time
+					col_data[UtteranceTabularDataColumn.END_TIME.value].append(last_end_time)
+					last_end_time = end_time
+					col_data[UtteranceTabularDataColumn.TOKEN_SEQ.value].append(tuple(last_tokens))
+					last_tokens = list(tokens)
+
+		# Add the final row
+		col_data[UtteranceTabularDataColumn.ROUND_ID.value].append(last_round_id)
+		col_data[UtteranceTabularDataColumn.SPEAKER_ID.value].append(last_speaker_id)
+		col_data[UtteranceTabularDataColumn.DIALOGUE_ROLE.value].append(last_diag_role)
+		col_data[UtteranceTabularDataColumn.START_TIME.value].append(last_start_time)
+		col_data[UtteranceTabularDataColumn.END_TIME.value].append(last_end_time)
+		col_data[UtteranceTabularDataColumn.TOKEN_SEQ.value].append(tuple(last_tokens))
+
+		return pd.DataFrame(data=col_data, copy=False)
+
+
 	def __init__(self, token_seq_factory: Optional[Callable[[Iterable[str]], Sequence[str]]] = None):
 		self.token_seq_factory = TokenSequenceFactory() if token_seq_factory is None else token_seq_factory
 		self.converters = {UtteranceTabularDataColumn.TOKEN_SEQ.value: self.__parse_utt_token_seq}
 
 	def __call__(self, infile_path: str) -> pd.DataFrame:
-		return pd.read_csv(infile_path, dialect=self.FILE_CSV_DIALECT, sep=self.FILE_CSV_DIALECT.delimiter,
-						   float_precision="round_trip", converters=self.converters, dtype=self.DTYPES)
+		result = pd.read_csv(infile_path, dialect=self.FILE_CSV_DIALECT, sep=self.FILE_CSV_DIALECT.delimiter,
+							 float_precision="round_trip", converters=self.converters, dtype=self.DTYPES)
+		# Ensure that rows are sorted according to their chronological ordering withing each round
+		result.sort_values(
+			by=[UtteranceTabularDataColumn.START_TIME.value, UtteranceTabularDataColumn.END_TIME.value], inplace=True)
+		round_utts = result.groupby(UtteranceTabularDataColumn.ROUND_ID.value, as_index=False, sort=False)
+		return round_utts.apply(self.__merge_consecutive_utts)
+
 
 	def __parse_utt_token_seq(self, text: str) -> Sequence[str]:
 		return self.token_seq_factory(text)
