@@ -20,6 +20,8 @@ import session_data as sd
 import utterances
 
 DYAD_COL_NAME = "DYAD"
+OUTPUT_FILE_DIALECT = csv.excel_tab
+OUTPUT_FILE_ENCODING = "utf-8"
 
 
 class SessionRoundTokenTypeSetDataFrameFactory(object):
@@ -96,8 +98,9 @@ def __main(args):
 	# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round, sorting finally by dialogue role as a tiebreaker
 	session_utt_df.sort_values(
 		by=[DYAD_COL_NAME, sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
-			utterances.UtteranceTabularDataColumn.END_TIME.value, utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value], inplace=True)
-	session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8", index=False)
+			utterances.UtteranceTabularDataColumn.END_TIME.value,
+			utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value], inplace=True)
+	session_utt_df.to_csv(sys.stdout, sep=OUTPUT_FILE_DIALECT.delimiter, encoding=OUTPUT_FILE_ENCODING, index=False)
 
 
 if __name__ == "__main__":
