@@ -7,8 +7,8 @@ import pandas as pd
 
 ENCODING = 'utf-8'
 SESSION_METADATA_CSV_DIALECT = csv.excel_tab
+EVENT_FILE_DTYPES = {"NAME": "category", "SHAPE": "category", "SUBMITTER": "category"}
 
-_EVENT_FILE_DTYPES = {"NAME": "category", "SHAPE": "category", "SUBMITTER": "category"}
 _PARTICIPANT_METADATA_HEADER_ROW_NAME = "PARTICIPANT_ID"
 
 
@@ -94,7 +94,7 @@ class SessionData(object):
 	def read_events(self) -> pd.DataFrame:
 		return pd.read_csv(self.events, sep=csv.excel_tab.delimiter, dialect=csv.excel_tab,
 						   float_precision="round_trip",
-						   encoding=ENCODING, memory_map=True, dtype=_EVENT_FILE_DTYPES)
+						   encoding=ENCODING, memory_map=True, dtype=EVENT_FILE_DTYPES)
 
 	def read_session_metadata(self) -> Dict[str, str]:
 		with open(self.session_metadata, 'r', encoding=ENCODING) as infile:
