@@ -49,7 +49,7 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		postprocessed_utts_df = postprocessed_utts_df.loc[
 			postprocessed_utts_df[utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value].str.len() > 0]
 		postprocessed_utts_df_shape = postprocessed_utts_df.shape
-		logging.debug("Removed %s empty utterances; New shape is %s.",
+		logging.debug("Removed %d empty utterances; New shape is %s.",
 					  orig_utts_df_row_count - postprocessed_utts_df_shape[0],
 					  postprocessed_utts_df_shape)
 
