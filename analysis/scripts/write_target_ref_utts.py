@@ -66,15 +66,17 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 
 def sort_cols(df: pd.DataFrame) -> pd.DataFrame:
 	partial_ordering = (
-	DYAD_COL_NAME, sd.EventDataColumn.ROUND_ID.value, sd.EventDataColumn.SCORE.value, sd.EventDataColumn.EVENT_ID.value,
-	sd.EventDataColumn.EVENT_NAME.value, sd.EventDataColumn.EVENT_TIME.value, sd.EventDataColumn.SUBMITTER.value,
-	sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
-	utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value,
-	utterances.UtteranceTabularDataColumn.START_TIME.value,
-	utterances.UtteranceTabularDataColumn.END_TIME.value,
-	utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value)
-	return df.reindex(sorted(df.columns, key=lambda col_name: __element_order(col_name, partial_ordering)), axis=1,
-					  copy=False)
+		DYAD_COL_NAME, sd.EventDataColumn.ROUND_ID.value, sd.EventDataColumn.SCORE.value,
+		sd.EventDataColumn.EVENT_ID.value,
+		sd.EventDataColumn.EVENT_NAME.value, sd.EventDataColumn.EVENT_TIME.value, sd.EventDataColumn.SUBMITTER.value,
+		sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
+		utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value,
+		utterances.UtteranceTabularDataColumn.START_TIME.value,
+		utterances.UtteranceTabularDataColumn.END_TIME.value,
+		utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value)
+	# NOTE: "reindex_axis(..)" is used instead of "reindex(..)" so that sorting on the column axis works even with older versions of pandas
+	return df.reindex_axis(sorted(df.columns, key=lambda col_name: __element_order(col_name, partial_ordering)), axis=1,
+						   copy=False)
 
 
 def __element_order(elem: T, ordering: Sequence[T]) -> int:
