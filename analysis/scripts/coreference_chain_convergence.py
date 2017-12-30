@@ -111,17 +111,20 @@ def __create_argparser() -> argparse.ArgumentParser:
 						help="The combined events and utterance data file to read.")
 	result.add_argument("-d", "--dump", action='store_true',
 						help="Dumps all the dataframe data to file rather than just the aggregates for the token type overlap.")
+	result.add_argument("-ui", "--utts-instructor", dest="utts_instructor", action='store_true',
+						help="Use only utterances from the instructor for each given round.")
+
 	metric_types = result.add_mutually_exclusive_group(required=True)
 	metric_types.add_argument("-ms", "--metric-self", dest="metric_self", action='store_true',
 							  help="Calculate token type overlap for individual speakers with themselves.")
 	metric_types.add_argument("-mo", "--metric-other", dest="metric_other", action='store_true',
 							  help="Calculate token type overlap for individual speakers with their interlocutors.")
-
 	return result
 
 
 def __main(args):
 	if args.metric_self:
+		print("Calculating self overlap.", file=sys.stderr)
 		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
 	else:
 		raise AssertionError("Logic error")
@@ -133,6 +136,11 @@ def __main(args):
 													  session_utt_df[
 														  "DYAD"].nunique()),
 		  file=sys.stderr)
+	if args.utts_instructor:
+		print("Removing non-instructor utterances from dataframe.", file=sys.stderr)
+		session_utt_df = session_utt_df.loc[
+			session_utt_df[utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value] == "INSTRUCTOR"]
+
 	# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round, sorting finally by dialogue role as a tiebreaker
 	session_utt_df.sort_values(
 		by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
