@@ -153,11 +153,37 @@ def join_utt_sentence_reprs(utts: Iterable[Utterance]) -> str:
 
 
 def merge_consecutive_utts(df: pd.DataFrame) -> pd.DataFrame:
+	"""
+	Reads in all rows from a given DataFrame and merges chronologically-consecutive utterance rows for each unique round ID which have the same speaker ID and dialogue role. Rows which have empty token sequences are thus effectively removed.
+
+	:param df: The DataFrame to read.
+	:return: A new DataFrame which contains the consecutive rows of the given input DataFrame merged into single rows.
+	"""
+
 	# Ensure that rows are sorted according to their chronological ordering withing each round
 	df.sort_values(
 		by=[UtteranceTabularDataColumn.START_TIME.value, UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 	round_utts = df.groupby(UtteranceTabularDataColumn.ROUND_ID.value, as_index=False, sort=False)
 	return round_utts.apply(__create_merged_consecutive_utt_df)
+
+
+def merge_speaker_utts(df: pd.DataFrame) -> pd.DataFrame:
+	"""
+	Reads in all rows from a given DataFrame and merges utterance rows for each unique round ID which have the same speaker ID and dialogue role. Rows which have empty token sequences are thus effectively removed.
+
+	:param df: The DataFrame to read.
+	:return: A new DataFrame which contains the individual speaker utterance rows of the given input DataFrame merged into single rows.
+	"""
+
+	# Remove all empty token sequences because it will break the grouping transformation below
+	df = df.loc[df[UtteranceTabularDataColumn.TOKEN_SEQ.value].str.len() > 0].copy(deep=False)
+	# Ensure that rows are sorted according to their chronological ordering withing each round
+	df.sort_values(
+		by=[UtteranceTabularDataColumn.START_TIME.value, UtteranceTabularDataColumn.END_TIME.value], inplace=True)
+	round_speaker_utts = df.groupby(
+		(UtteranceTabularDataColumn.ROUND_ID.value, UtteranceTabularDataColumn.SPEAKER_ID.value), as_index=False,
+		sort=False)
+	return round_speaker_utts.apply(__merge_rows)
 
 
 def token_seq_repr(tokens: Iterable[str]) -> str:
@@ -187,6 +213,13 @@ def __capitalize_first_char(string: str) -> str:
 
 
 def __create_merged_consecutive_utt_df(round_utts: pd.DataFrame) -> pd.DataFrame:
+	"""
+	Reads in all rows from a given dataframe and merges consecutive rows which have the same round ID, speaker ID and dialogue role. Rows which have empty token sequences are thus effectively removed.
+
+	:param round_utts: The DataFrame to read.
+	:return: A new DataFrame which contains the consecutive rows of the given input DataFrame merged into single rows.
+	"""
+
 	# noinspection PyProtectedMember
 	row_dicts = (row._asdict() for row in round_utts.itertuples(index=False))
 	first_row = next(row_dicts)
@@ -232,8 +265,33 @@ def __create_merged_consecutive_utt_df(round_utts: pd.DataFrame) -> pd.DataFrame
 	col_data[UtteranceTabularDataColumn.START_TIME.value].append(last_start_time)
 	col_data[UtteranceTabularDataColumn.END_TIME.value].append(last_end_time)
 	col_data[UtteranceTabularDataColumn.TOKEN_SEQ.value].append(tuple(last_tokens))
-
+	# NOTE: Index isn't set here because the input dataframe may actually be a GroupBy instance, which would have its own, temporary index
 	return pd.DataFrame(data=col_data, copy=False)
+
+
+def __get_unique_value(df: pd.DataFrame, col_name: str) -> Any:
+	unique_vals = df[col_name].unique()
+	assert len(unique_vals) == 1
+	return unique_vals[0]
+
+
+def __merge_rows(df: pd.DataFrame) -> pd.Series:
+	data = {
+		UtteranceTabularDataColumn.ROUND_ID.value: __get_unique_value(df,
+																	  UtteranceTabularDataColumn.ROUND_ID.value),
+		UtteranceTabularDataColumn.SPEAKER_ID.value: __get_unique_value(df,
+																		UtteranceTabularDataColumn.SPEAKER_ID.value),
+		UtteranceTabularDataColumn.DIALOGUE_ROLE.value: __get_unique_value(df,
+																		   UtteranceTabularDataColumn.DIALOGUE_ROLE.value),
+		UtteranceTabularDataColumn.START_TIME.value: df[UtteranceTabularDataColumn.START_TIME.value].min(),
+		UtteranceTabularDataColumn.END_TIME.value: df[UtteranceTabularDataColumn.END_TIME.value].max(),
+		UtteranceTabularDataColumn.TOKEN_SEQ.value: tuple(
+			token for token_seq in df[UtteranceTabularDataColumn.TOKEN_SEQ.value] for token in token_seq)
+	}
+	# noinspection PyTypeChecker
+	assert len(data) == len(UtteranceTabularDataColumn)
+	# NOTE: Index isn't set here because the input dataframe may actually be a GroupBy instance, which would have its own, temporary index
+	return pd.Series(data=data, copy=False)
 
 
 def __speaker_id_repr(speaker_id: Any) -> str:
