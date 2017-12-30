@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 """
-Calculates mean token-type overlap for each coreference chain sequence ordinality in each chain for a given referent.
+Calculates mean token type overlap for each coreference chain sequence ordinality in each chain for a given referent.
 """
 
 __author__ = "Todd Shore <errantlinguist+github@gmail.com>"
@@ -25,6 +25,8 @@ import write_target_ref_utts
 
 INFILE_DTYPES = {**sd.EVENT_FILE_DTYPES, utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value: "category",
 				 utterances.UtteranceTabularDataColumn.SPEAKER_ID.value: "category"}
+OUTFILE_CSV_DIALECT = csv.excel_tab
+OUTFILE_ENCODING = "utf-8"
 
 
 @unique
@@ -50,13 +52,13 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 	# noinspection PyTypeChecker,PyUnresolvedReferences
 	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
 		"""
-		Calculates token-type overlaps over multiple sessions.
+		Calculates token type overlaps over multiple sessions.
 
 		:param df: The DataFrame including rows for all sessions.
-		:return: A copy of the DataFrame with token-type data added.
+		:return: A copy of the DataFrame with token type data added.
 		"""
 		result = df.copy(deep=False)
-		# Calculate token-type overlap for each chain of reference for each entity and each speaker in each session
+		# Calculate token type overlap for each chain of reference for each entity and each speaker in each session
 		session_speaker_ref_utts = result.groupby(("DYAD",
 												   sd.EventDataColumn.ENTITY_ID.value,
 												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
@@ -104,19 +106,26 @@ def read_event_utts(infile_path: str) -> pd.DataFrame:
 
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
-		description="Calculates mean token-type overlap for each coreference chain sequence ordinality in each chain for a given referent.")
+		description="Calculates mean token type overlap for each coreference chain sequence ordinality in each chain for a given referent.")
 	result.add_argument("infile", metavar="INFILE",
 						help="The combined events and utterance data file to read.")
+	result.add_argument("-d", "--dump", action='store_true',
+						help="Dumps all the dataframe data to file rather than just the aggregates for the token type overlap.")
 	metric_types = result.add_mutually_exclusive_group(required=True)
 	metric_types.add_argument("-i", "--individual", action='store_true',
-							  help="Calculate token-type overlap for individual speakers with themselves.")
+							  help="Calculate token type overlap for individual speakers with themselves.")
 	metric_types.add_argument("-o", "--other", action='store_true',
-							  help="Calculate token-type overlap for individual speakers with their interlocutors.")
+							  help="Calculate token type overlap for individual speakers with their interlocutors.")
 
 	return result
 
 
 def __main(args):
+	if args.individual:
+		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
+	else:
+		raise AssertionError("Logic error")
+
 	infile = args.infile
 	print("Reading \"{}\".".format(infile), file=sys.stderr)
 	session_utt_df = read_event_utts(infile)
@@ -130,19 +139,19 @@ def __main(args):
 			utterances.UtteranceTabularDataColumn.END_TIME.value,
 			utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value], inplace=True)
 
-	if args.individual:
-		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
-	else:
-		raise AssertionError("Logic error")
-
 	session_utt_df = ref_overlap_calculator(session_utt_df)
-	# session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8")
-	coref_seq_orders = session_utt_df[
-		[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]].groupby(
-		TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False, sort=False)
-	aggs = coref_seq_orders.agg(["mean", "std", "sem"])
-	aggs.columns = aggs.columns.droplevel(0)
-	aggs.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8", index_label="seq")
+	session_utt_df.sort_values(
+		["DYAD", sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
+		 utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
+	if args.dump:
+		session_utt_df.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index=False)
+	else:
+		coref_seq_orders = session_utt_df[
+			[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]].groupby(
+			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False, sort=False)
+		aggs = coref_seq_orders.agg(["mean", "std", "sem"])
+		aggs.columns = aggs.columns.droplevel(0)
+		aggs.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index_label="seq")
 
 
 if __name__ == "__main__":
