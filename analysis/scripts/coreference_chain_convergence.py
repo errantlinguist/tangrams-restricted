@@ -141,8 +141,8 @@ def __main(args):
 
 	session_utt_df = ref_overlap_calculator(session_utt_df)
 	session_utt_df.sort_values(
-		["DYAD", sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
-		 utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
+		["DYAD", sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
+		 sd.EventDataColumn.ROUND_ID.value], inplace=True)
 	if args.dump:
 		session_utt_df.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index=False)
 	else:
