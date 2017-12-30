@@ -13,7 +13,6 @@ from typing import Any, Callable, Iterable, List, Optional, Sequence, Tuple
 
 import nltk
 import pandas as pd
-import numpy as np
 
 """
 NOTE: See "../src/main/resources/se/kth/speech/nlp/fillers.txt"
@@ -75,7 +74,7 @@ class UtteranceTabularDataReader(object):
 			  UtteranceTabularDataColumn.SPEAKER_ID.value: "category"}
 
 	@staticmethod
-	def __merge_consecutive_utts(round_utts : pd.DataFrame) -> pd.DataFrame:
+	def __merge_consecutive_utts(round_utts: pd.DataFrame) -> pd.DataFrame:
 		# noinspection PyProtectedMember
 		row_dicts = (row._asdict() for row in round_utts.itertuples(index=False))
 		first_row = next(row_dicts)
@@ -96,10 +95,10 @@ class UtteranceTabularDataReader(object):
 				start_time = row_dict[UtteranceTabularDataColumn.START_TIME.value]
 				end_time = row_dict[UtteranceTabularDataColumn.END_TIME.value]
 				if round_id == last_round_id and speaker_id == last_speaker_id and diag_role == last_diag_role:
-						last_start_time = min(last_start_time, start_time)
-						last_end_time = max(last_end_time,
-											end_time)
-						last_tokens.extend(tokens)
+					last_start_time = min(last_start_time, start_time)
+					last_end_time = max(last_end_time,
+										end_time)
+					last_tokens.extend(tokens)
 				else:
 					col_data[UtteranceTabularDataColumn.ROUND_ID.value].append(last_round_id)
 					last_round_id = round_id
@@ -124,8 +123,14 @@ class UtteranceTabularDataReader(object):
 
 		return pd.DataFrame(data=col_data, copy=False)
 
+	@classmethod
+	def __create_merged_df(cls, result: pd.DataFrame) -> pd.DataFrame:
+		round_utts = result.groupby(UtteranceTabularDataColumn.ROUND_ID.value, as_index=False, sort=False)
+		return round_utts.apply(cls.__merge_consecutive_utts)
 
-	def __init__(self, token_seq_factory: Optional[Callable[[Iterable[str]], Sequence[str]]] = None):
+	def __init__(self, merge_consecutive_utts: bool,
+				 token_seq_factory: Optional[Callable[[Iterable[str]], Sequence[str]]] = None):
+		self.df_postprocessor = self.__create_merged_df if merge_consecutive_utts else lambda df: df
 		self.token_seq_factory = TokenSequenceFactory() if token_seq_factory is None else token_seq_factory
 		self.converters = {UtteranceTabularDataColumn.TOKEN_SEQ.value: self.__parse_utt_token_seq}
 
@@ -135,9 +140,7 @@ class UtteranceTabularDataReader(object):
 		# Ensure that rows are sorted according to their chronological ordering withing each round
 		result.sort_values(
 			by=[UtteranceTabularDataColumn.START_TIME.value, UtteranceTabularDataColumn.END_TIME.value], inplace=True)
-		round_utts = result.groupby(UtteranceTabularDataColumn.ROUND_ID.value, as_index=False, sort=False)
-		return round_utts.apply(self.__merge_consecutive_utts)
-
+		return self.df_postprocessor(result)
 
 	def __parse_utt_token_seq(self, text: str) -> Sequence[str]:
 		return self.token_seq_factory(text)

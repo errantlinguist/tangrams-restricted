@@ -13,7 +13,7 @@ import csv
 import logging
 import sys
 from enum import Enum, unique
-from typing import FrozenSet, Iterable, Optional
+from typing import FrozenSet, Iterable
 
 import numpy as np
 import pandas as pd
@@ -37,8 +37,8 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		assert result
 		return result
 
-	def __init__(self, utt_reader: Optional[utterances.UtteranceTabularDataReader] = None):
-		self.utt_reader = utterances.UtteranceTabularDataReader() if utt_reader is None else utt_reader
+	def __init__(self, utt_reader: utterances.UtteranceTabularDataReader):
+		self.utt_reader = utt_reader
 
 	def __call__(self, session_data: sd.SessionData) -> pd.DataFrame:
 		session_name = session_data.name
@@ -129,7 +129,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 def __main(args):
 	inpaths = args.inpaths
 	print("Looking for session data underneath {}.".format(inpaths), file=sys.stderr)
-	df_factory = SessionRoundTokenTypeSetDataFrameFactory()
+	df_factory = SessionRoundTokenTypeSetDataFrameFactory(utterances.UtteranceTabularDataReader(True))
 	session_utt_df = pd.concat(df_factory(session_data) for _, session_data in sd.walk_session_data(inpaths))
 	print("DF shape is {}; {} unique dyad(s).".format(session_utt_df.shape,
 													  session_utt_df[
