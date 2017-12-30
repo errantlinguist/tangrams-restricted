@@ -160,6 +160,32 @@ def merge_consecutive_utts(df: pd.DataFrame) -> pd.DataFrame:
 	return round_utts.apply(__create_merged_consecutive_utt_df)
 
 
+def token_seq_repr(tokens: Iterable[str]) -> str:
+	token_iter = iter(tokens)
+	formatted_tokens = []
+
+	next_token = __capitalize_first_char(next(token_iter))
+	end_reached = False
+	while not end_reached:
+		current_token = next_token
+		try:
+			next_token = next(token_iter)
+		except StopIteration:
+			current_token = current_token + '.'
+			end_reached = True
+		formatted_tokens.append(current_token)
+
+	return ' '.join(formatted_tokens)
+
+
+def __capitalize_first_char(string: str) -> str:
+	if len(string) < 2:
+		return string.upper()
+	else:
+		first_char = string[0]
+		return first_char.upper() + string[1:]
+
+
 def __create_merged_consecutive_utt_df(round_utts: pd.DataFrame) -> pd.DataFrame:
 	# noinspection PyProtectedMember
 	row_dicts = (row._asdict() for row in round_utts.itertuples(index=False))
@@ -208,32 +234,6 @@ def __create_merged_consecutive_utt_df(round_utts: pd.DataFrame) -> pd.DataFrame
 	col_data[UtteranceTabularDataColumn.TOKEN_SEQ.value].append(tuple(last_tokens))
 
 	return pd.DataFrame(data=col_data, copy=False)
-
-
-def token_seq_repr(tokens: Iterable[str]) -> str:
-	token_iter = iter(tokens)
-	formatted_tokens = []
-
-	next_token = __capitalize_first_char(next(token_iter))
-	end_reached = False
-	while not end_reached:
-		current_token = next_token
-		try:
-			next_token = next(token_iter)
-		except StopIteration:
-			current_token = current_token + '.'
-			end_reached = True
-		formatted_tokens.append(current_token)
-
-	return ' '.join(formatted_tokens)
-
-
-def __capitalize_first_char(string: str) -> str:
-	if len(string) < 2:
-		return string.upper()
-	else:
-		first_char = string[0]
-		return first_char.upper() + string[1:]
 
 
 def __speaker_id_repr(speaker_id: Any) -> str:
