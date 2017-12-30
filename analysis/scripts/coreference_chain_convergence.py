@@ -112,16 +112,16 @@ def __create_argparser() -> argparse.ArgumentParser:
 	result.add_argument("-d", "--dump", action='store_true',
 						help="Dumps all the dataframe data to file rather than just the aggregates for the token type overlap.")
 	metric_types = result.add_mutually_exclusive_group(required=True)
-	metric_types.add_argument("-i", "--individual", action='store_true',
+	metric_types.add_argument("-ms", "--metric-self", dest="metric_self", action='store_true',
 							  help="Calculate token type overlap for individual speakers with themselves.")
-	metric_types.add_argument("-o", "--other", action='store_true',
+	metric_types.add_argument("-mo", "--metric-other", dest="metric_other", action='store_true',
 							  help="Calculate token type overlap for individual speakers with their interlocutors.")
 
 	return result
 
 
 def __main(args):
-	if args.individual:
+	if args.metric_self:
 		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
 	else:
 		raise AssertionError("Logic error")
@@ -141,7 +141,8 @@ def __main(args):
 
 	session_utt_df = ref_overlap_calculator(session_utt_df)
 	session_utt_df.sort_values(
-		["DYAD", sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
+		["DYAD", sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
+		 TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
 		 sd.EventDataColumn.ROUND_ID.value], inplace=True)
 	if args.dump:
 		session_utt_df.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index=False)
