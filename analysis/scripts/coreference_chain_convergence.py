@@ -52,7 +52,7 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		events_df_shape = events_df.shape
 		logging.debug("Removed %d non-referent, non new-turn-request entity rows; New shape is %s.",
 					  orig_event_row_count - events_df_shape[0], events_df_shape)
-		utts_df = self.utt_reader(session_data.utts)
+		utts_df = utterances.merge_consecutive_utts(self.utt_reader(session_data.utts))
 		orig_utts_df_row_count = utts_df.shape[0]
 		utts_df = utts_df.loc[utts_df[utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value].str.len() > 0]
 		utts_df_shape = utts_df.shape
@@ -129,7 +129,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 def __main(args):
 	inpaths = args.inpaths
 	print("Looking for session data underneath {}.".format(inpaths), file=sys.stderr)
-	df_factory = SessionRoundTokenTypeSetDataFrameFactory(utterances.UtteranceTabularDataReader(True))
+	df_factory = SessionRoundTokenTypeSetDataFrameFactory(utterances.UtteranceTabularDataReader())
 	session_utt_df = pd.concat(df_factory(session_data) for _, session_data in sd.walk_session_data(inpaths))
 	print("DF shape is {}; {} unique dyad(s).".format(session_utt_df.shape,
 													  session_utt_df[
@@ -146,7 +146,7 @@ def __main(args):
 		raise AssertionError("Logic error")
 
 	session_utt_df = ref_overlap_calculator(session_utt_df)
-	# session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8")
+	session_utt_df.to_csv(sys.stdout, sep=csv.excel_tab.delimiter, encoding="utf-8")
 	coref_seq_orders = session_utt_df[
 		[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]].groupby(
 		TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False, sort=False)
