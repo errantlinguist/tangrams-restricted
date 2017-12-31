@@ -73,6 +73,43 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 		return result
 
 
+class ReferentOtherTokenTypeOverlapCalculator(object):
+
+	@staticmethod
+	def __token_type_overlap(utt: pd.Series) -> np.longfloat:
+		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
+		if pd.isnull(preceding_token_types):
+			result = np.longfloat(0.0)
+		else:
+			token_types = utt["TOKEN_TYPES"]
+			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
+		return result
+
+	# noinspection PyTypeChecker,PyUnresolvedReferences
+	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Calculates token type overlaps over multiple sessions.
+
+		:param df: The DataFrame including rows for all sessions.
+		:return: A copy of the DataFrame with token type data added.
+		"""
+		# TODO: This is a copy of ReferentIndividualTokenTypeOverlapCalculator; Re-implement for other-overlap metric
+		result = df.copy(deep=False)
+		# Calculate token type overlap for each chain of reference for each entity and each speaker in each session
+		session_speaker_ref_utts = result.groupby(("DYAD",
+												   sd.EventDataColumn.ENTITY_ID.value,
+												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
+												  as_index=False, sort=False)
+		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_speaker_ref_utts.cumcount() + 1
+		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
+			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
+			"TOKEN_TYPES"].shift()
+		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
+																			   axis=1)
+		return result
+
+
 class TokenTypeSetFactory(object):
 	EMPTY_SET = frozenset()
 	TOKEN_DELIMITER_PATTERN = re.compile("\\s+")
@@ -124,6 +161,9 @@ def __main(args):
 	if args.metric_self:
 		print("Calculating self overlap.", file=sys.stderr)
 		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
+	elif args.metric_other:
+		print("Calculating other overlap.", file=sys.stderr)
+		ref_overlap_calculator = ReferentOtherTokenTypeOverlapCalculator
 	else:
 		raise AssertionError("Logic error")
 
