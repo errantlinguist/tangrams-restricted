@@ -57,8 +57,8 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		utts_df = self.__remove_noninstructor_utts(utts_df)
 		utts_df = self.__merge_speaker_utts(utts_df)
 
-		# Do a left-merge with the events dataframe on the left so that utterances without events (e.g. utterances in the pre-game round "0") are not included
-		result = events_df.merge(utts_df, how="left", left_on=sd.EventDataColumn.ROUND_ID.value,
+		# Do an inner merge with the events dataframe so that utterances without events (e.g. utterances in the pre-game round "0") are not included
+		result = events_df.merge(utts_df, how="inner", left_on=sd.EventDataColumn.ROUND_ID.value,
 								 right_on=utterances.UtteranceTabularDataColumn.ROUND_ID.value)
 		assert result.loc[result[sd.EventDataColumn.ROUND_ID.value] < 1].empty
 		return result
