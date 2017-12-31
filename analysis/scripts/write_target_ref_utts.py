@@ -15,9 +15,10 @@ __license__ = "GNU General Public License, Version 3"
 
 import argparse
 import csv
+import itertools
 import logging
 import sys
-from typing import Iterable, Sequence, Tuple, TypeVar
+from typing import Any, Iterable, Sequence, Tuple, TypeVar
 
 import pandas as pd
 
@@ -32,6 +33,10 @@ T = TypeVar("T")
 
 
 class SessionRoundTokenTypeSetDataFrameFactory(object):
+
+	@staticmethod
+	def __create_summary_row(desc: str, datum: Tuple[int, ...]) -> Tuple[Any, ...]:
+		return tuple(itertools.chain((desc,), datum))
 
 	def __init__(self, utt_reader: utterances.UtteranceTabularDataReader):
 		self.utt_reader = utt_reader
@@ -56,6 +61,17 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		result = events_df.merge(utts_df, how="left", left_on=sd.EventDataColumn.ROUND_ID.value,
 								 right_on=utterances.UtteranceTabularDataColumn.ROUND_ID.value)
 		assert result.loc[result[sd.EventDataColumn.ROUND_ID.value] < 1].empty
+		return result
+
+	def create_summary_rows(self):
+		result = (
+			("DESC", "ROWS", "COLS"),
+			self.__create_summary_row("Original DF", self.orig_utt_df_shape_union),
+			self.__create_summary_row("After removing empty utterances", self.nonempty_utt_df_shape_union),
+			self.__create_summary_row("After removing non-instructor utterances", self.instructor_utt_df_shape_union),
+			self.__create_summary_row("After merging speaker utterances", self.speaker_utt_df_shape_union),
+		)
+		assert len(frozenset(len(row) for row in result)) == 1
 		return result
 
 	def __merge_speaker_utts(self, utts_df: pd.DataFrame) -> pd.DataFrame:
@@ -152,7 +168,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 
 
 def __main(args):
-	print("Will concatenate speaker utterances and remove non-instructor utterances.", file=sys.stderr)
+	print("Will remove non-instructor utterances and concatenate speaker utterances.", file=sys.stderr)
 	df_factory = SessionRoundTokenTypeSetDataFrameFactory(utterances.UtteranceTabularDataReader())
 
 	inpaths = args.inpaths
@@ -162,6 +178,9 @@ def __main(args):
 													  session_utt_df[
 														  DYAD_COL_NAME].nunique()),
 		  file=sys.stderr)
+	print("Utterance dataframe summary:", file=sys.stderr)
+	summary_writer = csv.writer(sys.stderr, dialect=OUTPUT_FILE_DIALECT)
+	summary_writer.writerows(df_factory.create_summary_rows())
 
 	session_utt_df[utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value] = session_utt_df[
 		utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value].transform(__create_str_repr)
