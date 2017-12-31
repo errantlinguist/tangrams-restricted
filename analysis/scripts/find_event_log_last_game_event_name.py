@@ -34,7 +34,7 @@ def read_last_game_event_name(infile_path: str):
 
 def __create_argparser() -> argparse.ArgumentParser:
 	result = argparse.ArgumentParser(
-		description="Calculates mean token type overlap for each coreference chain sequence ordinality in each chain for a given referent.")
+		description="Finds the last game event name in IrisTK event logs.")
 	result.add_argument("infiles", metavar="INFILE", nargs="+",
 						help="The event log file(s) to read.")
 	return result
