@@ -164,7 +164,7 @@ def merge_consecutive_utts(df: pd.DataFrame) -> pd.DataFrame:
 	df.sort_values(
 		by=[UtteranceTabularDataColumn.START_TIME.value, UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 	round_utts = df.groupby(UtteranceTabularDataColumn.ROUND_ID.value, as_index=False, sort=False)
-	return round_utts.apply(__create_merged_consecutive_utt_df)
+	return round_utts.apply(__create_merged_consecutive_utt_df).dropna()
 
 
 def merge_speaker_utts(df: pd.DataFrame) -> pd.DataFrame:
@@ -175,15 +175,13 @@ def merge_speaker_utts(df: pd.DataFrame) -> pd.DataFrame:
 	:return: A new DataFrame which contains the individual speaker utterance rows of the given input DataFrame merged into single rows.
 	"""
 
-	# Remove all empty token sequences because it will break the grouping transformation below
-	df = df.loc[df[UtteranceTabularDataColumn.TOKEN_SEQ.value].str.len() > 0].copy(deep=False)
 	# Ensure that rows are sorted according to their chronological ordering withing each round
 	df.sort_values(
 		by=[UtteranceTabularDataColumn.START_TIME.value, UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 	round_speaker_utts = df.groupby(
 		(UtteranceTabularDataColumn.ROUND_ID.value, UtteranceTabularDataColumn.SPEAKER_ID.value), as_index=False,
 		sort=False)
-	return round_speaker_utts.apply(__merge_rows)
+	return round_speaker_utts.apply(__merge_rows).dropna()
 
 
 def token_seq_repr(tokens: Iterable[str]) -> str:
@@ -276,6 +274,7 @@ def __get_unique_value(df: pd.DataFrame, col_name: str) -> Any:
 
 
 def __merge_rows(df: pd.DataFrame) -> pd.Series:
+	assert not df.empty
 	data = {
 		UtteranceTabularDataColumn.ROUND_ID.value: __get_unique_value(df,
 																	  UtteranceTabularDataColumn.ROUND_ID.value),
