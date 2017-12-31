@@ -37,14 +37,9 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		session_name = session_data.name
 		print("Reading events and utterances for \"{}\".".format(session_name), file=sys.stderr)
 		events_df = session_data.read_events()
+		events_df = remove_nonreferent_entity_utts(events_df)
 		events_df[DYAD_COL_NAME] = session_name
 
-		orig_event_row_count = events_df.shape[0]
-		events_df = events_df.loc[(events_df[sd.EventDataColumn.REFERENT_ENTITY.value] == True) & (
-				events_df[sd.EventDataColumn.EVENT_NAME.value] == "nextturn.request")]
-		events_df_shape = events_df.shape
-		logging.debug("Removed %d non-referent, non new-turn-request entity rows; New shape is %s.",
-					  orig_event_row_count - events_df_shape[0], events_df_shape)
 		orig_utts_df = self.utt_reader(session_data.utts)
 		logging.debug("Read utterances with shape %s.", orig_utts_df.shape)
 		postprocessed_utts_df = self.postprocessor(orig_utts_df)
@@ -62,6 +57,17 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 								 right_on=utterances.UtteranceTabularDataColumn.ROUND_ID.value)
 		assert result.loc[result[sd.EventDataColumn.ROUND_ID.value] < 1].empty
 		return result
+
+
+def remove_nonreferent_entity_utts(events_df: pd.DataFrame) -> pd.DataFrame:
+	logging.debug("Removing non-referent, non-new-turn-request rows.")
+	orig_shape = events_df.shape
+	result = events_df.loc[(events_df[sd.EventDataColumn.REFERENT_ENTITY.value] == True) & (
+			events_df[sd.EventDataColumn.EVENT_NAME.value] == "nextturn.request")]
+	new_shape = result.shape
+	logging.debug("Removed %d non-referent, non new-turn-request entity rows; New shape is %s.",
+				  orig_shape[0] - new_shape[0], new_shape)
+	return result
 
 
 def sort_cols(df: pd.DataFrame) -> pd.DataFrame:
