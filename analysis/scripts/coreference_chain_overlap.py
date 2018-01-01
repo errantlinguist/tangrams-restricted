@@ -14,7 +14,7 @@ import logging
 import re
 import sys
 from enum import Enum, unique
-from typing import FrozenSet, Tuple
+from typing import FrozenSet, Mapping, Tuple
 
 import numpy as np
 import pandas as pd
@@ -66,6 +66,7 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 					  len(coref_chain), entity_df.loc[last_utt_idx, start_time_col_name], speaker_id)
 
 		preceding_coref_token_types = _EMPTY_SET
+		preceding_coref_start_time = np.nan
 		for coref_chain_idx, df_idx in enumerate(coref_chain):
 			old_coref_seq_no = entity_df.loc[df_idx, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value]
 			if old_coref_seq_no < 1:
@@ -73,11 +74,14 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 				# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
 				entity_df.at[df_idx, TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = " ".join(
 					sorted(preceding_coref_token_types))
-				token_types = entity_df.loc[df_idx, TokenTypeOverlapColumn.TOKEN_TYPES.value]
+				entity_df.at[df_idx, TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = preceding_coref_start_time
+				coref = entity_df.loc[df_idx]
+				token_types = coref[TokenTypeOverlapColumn.TOKEN_TYPES.value]
 				entity_df.at[
 					df_idx, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = alignment_metrics.token_type_overlap_ratio(
 					token_types, preceding_coref_token_types)
 				preceding_coref_token_types = token_types
+				preceding_coref_start_time = coref[utterances.UtteranceTabularDataColumn.START_TIME.value]
 			else:
 				raise ValueError("Already set coref seq no!")
 
@@ -107,10 +111,62 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = -1
 		# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
 		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
+		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = np.nan
 		# Calculate token type overlap for each chain of reference for each entity in each session
 		session_ref_utts = result.groupby(("DYAD", self.coreference_feature_col_name), as_index=False, sort=False)
 		return session_ref_utts.apply(self.__other_overlap)
 
+class GeneralConvergenceTokenTypeOverlapCalculator(object):
+
+	@staticmethod
+	def __create_row_with_overlap_data(utt_row : pd.Series, prev_utt_row : pd.Series)-> pd.Series:
+		result = utt_row.copy(deep=False)
+		prev_token_types = prev_utt_row[TokenTypeOverlapColumn.TOKEN_TYPES.value]
+		# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = " ".join(prev_token_types)
+		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = prev_utt_row[utterances.UtteranceTabularDataColumn.START_TIME.value]
+		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = alignment_metrics.token_type_overlap_ratio(utt_row[TokenTypeOverlapColumn.TOKEN_TYPES.value], prev_token_types)
+		return result
+
+	def __create_utt_overlap_df(self, utt_row: pd.Series, coref_seq_utts: Mapping[int, pd.DataFrame]) -> pd.DataFrame:
+		coref_seq_ordinality = utt_row[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value]
+		if coref_seq_ordinality < 2:
+			scored_utt = utt_row.copy(deep=False)
+			# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
+			scored_utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
+			scored_utt[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = np.nan
+			scored_utt[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = 0.0
+			result = scored_utt.to_frame()
+		else:
+			prev_utts = coref_seq_utts[coref_seq_ordinality - 1]
+			result = prev_utts.apply(lambda prev_utt: self.__create_row_with_overlap_data(utt_row, prev_utt), axis=1)
+		return result
+
+	def __init__(self, coreference_feature_col_name: str):
+		self.coreference_feature_col_name = coreference_feature_col_name
+
+	# noinspection PyTypeChecker,PyUnresolvedReferences
+	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Calculates token type overlaps over multiple sessions.
+
+		:param df: The DataFrame including rows for all sessions.
+		:return: A copy of the DataFrame with token type data added.
+		"""
+		scored_df = df.copy(deep=False)
+		# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round
+		scored_df.sort_values(
+			by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
+				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
+		# Calculate token type overlap for each chain of reference for each entity/coreference feature and each speaker in each session
+		session_ref_utts = scored_df.groupby(("DYAD",
+												   self.coreference_feature_col_name),
+												  as_index=False, sort=False)
+		scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_ref_utts.cumcount() + 1
+		coref_seq_utts = dict((coref_seq_ordinality, scored_df.loc[scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] == coref_seq_ordinality]) for coref_seq_ordinality in scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].unique())
+		scored_utt_dfs = pd.concat(self.__create_utt_overlap_df(row, coref_seq_utts) for _, row in scored_df.iterrows())
+		#print(scored_utt_dfs)
+		return scored_utt_dfs
 
 @unique
 class TokenTypeOverlapColumn(Enum):
@@ -208,6 +264,8 @@ def __create_argparser() -> argparse.ArgumentParser:
 							  help="Calculate token type overlap for individual speakers with themselves.")
 	metric_types.add_argument("-b", "--between-speaker", dest="between_speaker", action='store_true',
 							  help="Calculate token type overlap for individual speakers with their interlocutors.")
+	metric_types.add_argument("-g", "--general-convergence", dest="general_convergence", action='store_true',
+							  help="Calculate general token type overlap for coreference chain steps.")
 
 	feature_types = result.add_mutually_exclusive_group(required=True)
 	feature_types.add_argument("-r", "--referent", action='store_true',
@@ -233,6 +291,9 @@ def __main(args):
 	elif args.between_speaker:
 		print("Calculating between-speaker overlap.", file=sys.stderr)
 		overlap_calculator = BetweenSpeakerTokenTypeOverlapCalculator(coreference_feature_col_name)
+	elif args.general_convergence:
+		print("Calculating general overlap.", file=sys.stderr)
+		overlap_calculator = GeneralConvergenceTokenTypeOverlapCalculator(coreference_feature_col_name)
 	else:
 		raise AssertionError("Logic error")
 
