@@ -238,7 +238,7 @@ def __main(args):
 	else:
 		coref_seq_orders = session_utt_df[
 			[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]].groupby(
-			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False, sort=False)
+			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False)
 		aggs = coref_seq_orders.agg(["mean", "std", "sem"])
 		aggs.columns = aggs.columns.droplevel(0)
 		aggs.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index_label="seq")
