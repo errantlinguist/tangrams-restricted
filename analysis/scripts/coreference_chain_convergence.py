@@ -104,10 +104,6 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 		:return: A copy of the DataFrame with token type data added.
 		"""
 		result = df.copy(deep=False)
-		# Ensure that rows are sorted in reverse order of their chronological ordering withing each round
-		result.sort_values(
-			by=[utterances.UtteranceTabularDataColumn.START_TIME.value,
-				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True, ascending=False)
 		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = -1
 		# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
 		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
