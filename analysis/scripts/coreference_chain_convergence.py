@@ -14,7 +14,7 @@ import logging
 import re
 import sys
 from enum import Enum, unique
-from typing import FrozenSet, Tuple
+from typing import Callable, FrozenSet, Tuple
 
 import numpy as np
 import pandas as pd
@@ -162,6 +162,46 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 		return session_ref_utts.apply(self.__other_overlap)
 
 
+class ShapeIndividualTokenTypeOverlapCalculator(object):
+
+	@staticmethod
+	def __token_type_overlap(utt: pd.Series) -> np.longfloat:
+		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
+		if pd.isnull(preceding_token_types):
+			result = np.longfloat(0.0)
+		else:
+			token_types = utt[TokenTypeOverlapColumn.TOKEN_TYPES.value]
+			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
+		return result
+
+	# noinspection PyTypeChecker,PyUnresolvedReferences
+	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Calculates token type overlaps over multiple sessions.
+
+		:param df: The DataFrame including rows for all sessions.
+		:return: A copy of the DataFrame with token type data added.
+		"""
+		result = df.copy(deep=False)
+		# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round
+		result.sort_values(
+			by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
+				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
+		# Calculate token type overlap for each chain of reference for each entity and each speaker in each session
+		session_speaker_ref_utts = result.groupby(("DYAD",
+												   sd.EventDataColumn.ENTITY_ID.value,
+												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
+												  as_index=False, sort=False)
+		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_speaker_ref_utts.cumcount() + 1
+		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
+			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
+			TokenTypeOverlapColumn.TOKEN_TYPES.value].shift()
+		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
+																			   axis=1)
+		return result
+
+
 class TokenTypeSetFactory(object):
 	TOKEN_DELIMITER_PATTERN = re.compile("\\s+")
 
@@ -202,23 +242,47 @@ def __create_argparser() -> argparse.ArgumentParser:
 						help="Dumps all the dataframe data to file rather than just the aggregates for the token type overlap.")
 
 	metric_types = result.add_mutually_exclusive_group(required=True)
-	metric_types.add_argument("-ms", "--metric-self", dest="metric_self", action='store_true',
+	metric_types.add_argument("-b", "--between", dest="metric_self", action='store_true',
 							  help="Calculate token type overlap for individual speakers with themselves.")
-	metric_types.add_argument("-mo", "--metric-other", dest="metric_other", action='store_true',
+	metric_types.add_argument("-w", "--within", dest="metric_other", action='store_true',
 							  help="Calculate token type overlap for individual speakers with their interlocutors.")
+
+	feature_types = result.add_mutually_exclusive_group(required=True)
+	feature_types.add_argument("-r", "--referent", action='store_true',
+							   help="Calculate overlap for coreference of individual referent entities.")
+	feature_types.add_argument("-s", "--shape", action='store_true',
+							   help="Calculate overlap for coreference of shape features.")
+	return result
+
+
+def __create_overlap_calculator(args) -> Callable[[pd.DataFrame], pd.DataFrame]:
+	if args.metric_self:
+		if args.referent:
+			print("Calculating self overlap for referent entities.", file=sys.stderr)
+			result = ReferentIndividualTokenTypeOverlapCalculator()
+		elif args.shape:
+			print("Calculating self overlap for shape features.", file=sys.stderr)
+			result = ShapeIndividualTokenTypeOverlapCalculator()
+		else:
+			raise AssertionError("Logic error")
+	elif args.metric_other:
+		if args.referent:
+			print("Calculating other overlap for referent entities.", file=sys.stderr)
+			result = ReferentOtherTokenTypeOverlapCalculator()
+		elif args.shape:
+			print("Calculating other overlap for shape features.", file=sys.stderr)
+			raise AssertionError("Not yet implemented")
+		# result = ShapeOtherTokenTypeOverlapCalculator()
+		else:
+			raise AssertionError("Logic error")
+	else:
+		raise AssertionError("Logic error")
+
 	return result
 
 
 def __main(args):
-	if args.metric_self:
-		print("Calculating self overlap.", file=sys.stderr)
-		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
-	elif args.metric_other:
-		print("Calculating other overlap.", file=sys.stderr)
-		ref_overlap_calculator = ReferentOtherTokenTypeOverlapCalculator()
-	else:
-		raise AssertionError("Logic error")
-
+	overlap_calculator = __create_overlap_calculator(args)
 	infile = args.infile
 	print("Reading \"{}\".".format(infile), file=sys.stderr)
 	session_utt_df = read_event_utts(infile)
@@ -227,7 +291,7 @@ def __main(args):
 														  "DYAD"].nunique()),
 		  file=sys.stderr)
 
-	session_utt_df = ref_overlap_calculator(session_utt_df)
+	session_utt_df = overlap_calculator(session_utt_df)
 
 	session_utt_df.sort_values(
 		["DYAD", sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
