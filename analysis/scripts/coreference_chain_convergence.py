@@ -117,7 +117,7 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 		preceding_coref_token_types = _EMPTY_SET
 		for coref_chain_idx, df_idx in enumerate(coref_chain):
 			old_coref_seq_no = entity_df.loc[df_idx, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value]
-			if pd.isnull(old_coref_seq_no):
+			if old_coref_seq_no < 1:
 				entity_df.at[df_idx, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = coref_chain_idx + 1
 				# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
 				entity_df.at[df_idx, TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = " ".join(
@@ -135,7 +135,7 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 		last_speaker = last_utt[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value]
 		self.__speaker_other_overlap(entity_df, last_speaker)
 		missed_utts = entity_df.loc[entity_df[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value].isnull() | entity_df[
-			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].isnull()]
+			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] < 1]
 		if not missed_utts.empty:
 			raise ValueError("Missed {} utterance rows.".format(missed_utts.shape[0]))
 
@@ -154,7 +154,7 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 		result.sort_values(
 			by=[utterances.UtteranceTabularDataColumn.START_TIME.value,
 				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True, ascending=False)
-		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = np.nan
+		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = -1
 		# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
 		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
 		# Calculate token type overlap for each chain of reference for each entity in each session
