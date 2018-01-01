@@ -32,58 +32,6 @@ OUTFILE_ENCODING = "utf-8"
 _EMPTY_SET = frozenset()
 
 
-@unique
-class TokenTypeOverlapColumn(Enum):
-	COREF_SEQ_ORDER = "COREF_SEQ_ORDER"
-	PRECEDING_UTT_START_TIME = "PRECEDING_UTT_START_TIME"
-	PRECEDING_TOKEN_TYPES = "PRECEDING_TOKEN_TYPES"
-	TOKEN_TYPES = "TOKEN_TYPES"
-	TOKEN_TYPE_OVERLAP = "TOKEN_TYPE_OVERLAP"
-
-
-class WithinSpeakerTokenTypeOverlapCalculator(object):
-
-	@staticmethod
-	def __token_type_overlap(utt: pd.Series) -> np.longfloat:
-		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
-		if pd.isnull(preceding_token_types):
-			result = np.longfloat(0.0)
-		else:
-			token_types = utt[TokenTypeOverlapColumn.TOKEN_TYPES.value]
-			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
-		return result
-
-	def __init__(self, coreference_feature_col_name: str):
-		self.coreference_feature_col_name = coreference_feature_col_name
-
-	# noinspection PyTypeChecker,PyUnresolvedReferences
-	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
-		"""
-		Calculates token type overlaps over multiple sessions.
-
-		:param df: The DataFrame including rows for all sessions.
-		:return: A copy of the DataFrame with token type data added.
-		"""
-		result = df.copy(deep=False)
-		# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round
-		result.sort_values(
-			by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
-				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
-		# Calculate token type overlap for each chain of reference for each entity/coreference feature and each speaker in each session
-		session_speaker_ref_utts = result.groupby(("DYAD",
-												   self.coreference_feature_col_name,
-												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
-												  as_index=False, sort=False)
-		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_speaker_ref_utts.cumcount() + 1
-		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
-			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
-		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
-			TokenTypeOverlapColumn.TOKEN_TYPES.value].shift()
-		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
-																			   axis=1)
-		return result
-
-
 class BetweenSpeakerTokenTypeOverlapCalculator(object):
 
 	@staticmethod
@@ -166,6 +114,58 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 		# Calculate token type overlap for each chain of reference for each entity in each session
 		session_ref_utts = result.groupby(("DYAD", self.coreference_feature_col_name), as_index=False, sort=False)
 		return session_ref_utts.apply(self.__other_overlap)
+
+
+@unique
+class TokenTypeOverlapColumn(Enum):
+	COREF_SEQ_ORDER = "COREF_SEQ_ORDER"
+	PRECEDING_UTT_START_TIME = "PRECEDING_UTT_START_TIME"
+	PRECEDING_TOKEN_TYPES = "PRECEDING_TOKEN_TYPES"
+	TOKEN_TYPES = "TOKEN_TYPES"
+	TOKEN_TYPE_OVERLAP = "TOKEN_TYPE_OVERLAP"
+
+
+class WithinSpeakerTokenTypeOverlapCalculator(object):
+
+	@staticmethod
+	def __token_type_overlap(utt: pd.Series) -> np.longfloat:
+		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
+		if pd.isnull(preceding_token_types):
+			result = np.longfloat(0.0)
+		else:
+			token_types = utt[TokenTypeOverlapColumn.TOKEN_TYPES.value]
+			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
+		return result
+
+	def __init__(self, coreference_feature_col_name: str):
+		self.coreference_feature_col_name = coreference_feature_col_name
+
+	# noinspection PyTypeChecker,PyUnresolvedReferences
+	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
+		"""
+		Calculates token type overlaps over multiple sessions.
+
+		:param df: The DataFrame including rows for all sessions.
+		:return: A copy of the DataFrame with token type data added.
+		"""
+		result = df.copy(deep=False)
+		# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round
+		result.sort_values(
+			by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
+				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
+		# Calculate token type overlap for each chain of reference for each entity/coreference feature and each speaker in each session
+		session_speaker_ref_utts = result.groupby(("DYAD",
+												   self.coreference_feature_col_name,
+												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
+												  as_index=False, sort=False)
+		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_speaker_ref_utts.cumcount() + 1
+		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
+			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
+			TokenTypeOverlapColumn.TOKEN_TYPES.value].shift()
+		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
+																			   axis=1)
+		return result
 
 
 class TokenTypeSetFactory(object):
