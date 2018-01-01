@@ -10,10 +10,11 @@ __license__ = "GNU General Public License, Version 3"
 
 import argparse
 import csv
+import logging
 import re
 import sys
 from enum import Enum, unique
-from typing import FrozenSet
+from typing import FrozenSet, Tuple
 
 import numpy as np
 import pandas as pd
@@ -28,12 +29,15 @@ INFILE_DTYPES = {**sd.EVENT_FILE_DTYPES, utterances.UtteranceTabularDataColumn.D
 OUTFILE_CSV_DIALECT = csv.excel_tab
 OUTFILE_ENCODING = "utf-8"
 
+_EMPTY_SET = frozenset()
+
 
 @unique
 class TokenTypeOverlapColumn(Enum):
 	COREF_SEQ_ORDER = "COREF_SEQ_ORDER"
 	PRECEDING_UTT_START_TIME = "PRECEDING_UTT_START_TIME"
 	PRECEDING_TOKEN_TYPES = "PRECEDING_TOKEN_TYPES"
+	TOKEN_TYPES = "TOKEN_TYPES"
 	TOKEN_TYPE_OVERLAP = "TOKEN_TYPE_OVERLAP"
 
 
@@ -45,7 +49,7 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 		if pd.isnull(preceding_token_types):
 			result = np.longfloat(0.0)
 		else:
-			token_types = utt["TOKEN_TYPES"]
+			token_types = utt[TokenTypeOverlapColumn.TOKEN_TYPES.value]
 			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
 		return result
 
@@ -58,6 +62,10 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 		:return: A copy of the DataFrame with token type data added.
 		"""
 		result = df.copy(deep=False)
+		# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round
+		result.sort_values(
+			by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
+				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 		# Calculate token type overlap for each chain of reference for each entity and each speaker in each session
 		session_speaker_ref_utts = result.groupby(("DYAD",
 												   sd.EventDataColumn.ENTITY_ID.value,
@@ -67,7 +75,7 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
 			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
 		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
-			"TOKEN_TYPES"].shift()
+			TokenTypeOverlapColumn.TOKEN_TYPES.value].shift()
 		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
 																			   axis=1)
 		return result
@@ -76,14 +84,63 @@ class ReferentIndividualTokenTypeOverlapCalculator(object):
 class ReferentOtherTokenTypeOverlapCalculator(object):
 
 	@staticmethod
-	def __token_type_overlap(utt: pd.Series) -> np.longfloat:
-		preceding_token_types = utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value]
-		if pd.isnull(preceding_token_types):
-			result = np.longfloat(0.0)
-		else:
-			token_types = utt["TOKEN_TYPES"]
-			result = alignment_metrics.token_type_overlap_ratio(token_types, preceding_token_types)
-		return result
+	def __prev_utts(utt_row: pd.Series, df: pd.DataFrame) -> pd.DataFrame:
+		start_time_col_name = utterances.UtteranceTabularDataColumn.START_TIME.value
+		start_time = utt_row[start_time_col_name]
+		speaker_id_col_name = utterances.UtteranceTabularDataColumn.END_TIME.value
+		speaker_id = utt_row[speaker_id_col_name]
+		return df.loc[(df[speaker_id_col_name] != speaker_id) & (df[start_time_col_name] <= start_time)]
+
+	@classmethod
+	def __create_coref_chain(cls, utt_row_idx: int, df: pd.DataFrame) -> Tuple[int, ...]:
+		start_time_col_name = utterances.UtteranceTabularDataColumn.START_TIME.value
+		result = []
+		latest_prev_utt_idx = utt_row_idx
+		prev_utts = cls.__prev_utts(df.loc[latest_prev_utt_idx], df)
+		while not prev_utts.empty:
+			result.append(latest_prev_utt_idx)
+			latest_prev_utt_idx = prev_utts[start_time_col_name].idxmax()
+			prev_utts = cls.__prev_utts(df.loc[latest_prev_utt_idx], df)
+
+		# Append the last coreference to the list (in this case, the head of the chain)
+		result.append(latest_prev_utt_idx)
+		return tuple(reversed(result))
+
+	def __speaker_other_overlap(self, entity_df: pd.DataFrame, speaker_id: str):
+		speaker_utts = entity_df.loc[entity_df[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value] == speaker_id]
+		start_time_col_name = utterances.UtteranceTabularDataColumn.START_TIME.value
+		last_utt_idx = speaker_utts[start_time_col_name].idxmax()
+		last_utt = entity_df.loc[last_utt_idx]
+		coref_chain = self.__create_coref_chain(last_utt_idx, entity_df)
+		logging.debug("Created a coreference chain of length %d for the utt starting at %f by speaker \"%s\".",
+					  len(coref_chain), last_utt[start_time_col_name], speaker_id)
+
+		preceding_coref_token_types = _EMPTY_SET
+		for coref_chain_idx, df_idx in enumerate(coref_chain):
+			old_coref_seq_no = entity_df.loc[df_idx, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value]
+			if pd.isnull(old_coref_seq_no):
+				entity_df.at[df_idx, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = coref_chain_idx + 1
+				# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
+				entity_df.at[df_idx, TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = " ".join(
+					sorted(preceding_coref_token_types))
+				token_types = entity_df.loc[df_idx, TokenTypeOverlapColumn.TOKEN_TYPES.value]
+				entity_df.at[
+					df_idx, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = alignment_metrics.token_type_overlap_ratio(
+					token_types, preceding_coref_token_types)
+				preceding_coref_token_types = token_types
+			else:
+				raise ValueError("Already set coref seq no!")
+
+	def __other_overlap(self, entity_df: pd.DataFrame):
+		last_utt_idx = entity_df[utterances.UtteranceTabularDataColumn.START_TIME.value].idxmax()
+		last_utt = entity_df.loc[last_utt_idx]
+		last_speaker = last_utt[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value]
+		self.__speaker_other_overlap(entity_df, last_speaker)
+
+		# TODO: Calculate overlap for last utt of other speaker, too, in the case that they don't perfectly alternate
+		# Calculate the chain for each individual speaker in order to cover all possible references, even in cases where the different times the entity is references do not alternate between the speakers
+		speaker_ids = entity_df[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value].unique()
+		return entity_df
 
 	# noinspection PyTypeChecker,PyUnresolvedReferences
 	def __call__(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -93,25 +150,20 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 		:param df: The DataFrame including rows for all sessions.
 		:return: A copy of the DataFrame with token type data added.
 		"""
-		# TODO: This is a copy of ReferentIndividualTokenTypeOverlapCalculator; Re-implement for other-overlap metric
 		result = df.copy(deep=False)
-		# Calculate token type overlap for each chain of reference for each entity and each speaker in each session
-		session_speaker_ref_utts = result.groupby(("DYAD",
-												   sd.EventDataColumn.ENTITY_ID.value,
-												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
-												  as_index=False, sort=False)
-		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_speaker_ref_utts.cumcount() + 1
-		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = session_speaker_ref_utts[
-			utterances.UtteranceTabularDataColumn.START_TIME.value].shift()
-		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = session_speaker_ref_utts[
-			"TOKEN_TYPES"].shift()
-		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
-																			   axis=1)
-		return result
+		# Ensure that rows are sorted in reverse order of their chronological ordering withing each round
+		result.sort_values(
+			by=[utterances.UtteranceTabularDataColumn.START_TIME.value,
+				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True, ascending=False)
+		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = np.nan
+		# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
+		# Calculate token type overlap for each chain of reference for each entity in each session
+		session_ref_utts = result.groupby(("DYAD", sd.EventDataColumn.ENTITY_ID.value), as_index=False, sort=False)
+		return session_ref_utts.apply(self.__other_overlap)
 
 
 class TokenTypeSetFactory(object):
-	EMPTY_SET = frozenset()
 	TOKEN_DELIMITER_PATTERN = re.compile("\\s+")
 
 	def __init__(self):
@@ -127,7 +179,7 @@ class TokenTypeSetFactory(object):
 				result = frozenset(sys.intern(token) for token in tokens)
 				self.token_seq_singletons[result] = result
 		else:
-			result = self.EMPTY_SET
+			result = _EMPTY_SET
 
 		return result
 
@@ -137,7 +189,8 @@ def read_event_utts(infile_path: str) -> pd.DataFrame:
 	converters = {utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value: TokenTypeSetFactory()}
 	result = pd.read_csv(infile_path, dialect=dialect, sep=dialect.delimiter,
 						 float_precision="round_trip", converters=converters, dtype=INFILE_DTYPES)
-	result.rename({utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value: "TOKEN_TYPES"}, axis=1, inplace=True)
+	result.rename({utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value: TokenTypeOverlapColumn.TOKEN_TYPES.value},
+				  axis=1, inplace=True)
 	return result
 
 
@@ -163,7 +216,7 @@ def __main(args):
 		ref_overlap_calculator = ReferentIndividualTokenTypeOverlapCalculator()
 	elif args.metric_other:
 		print("Calculating other overlap.", file=sys.stderr)
-		ref_overlap_calculator = ReferentOtherTokenTypeOverlapCalculator
+		ref_overlap_calculator = ReferentOtherTokenTypeOverlapCalculator()
 	else:
 		raise AssertionError("Logic error")
 
@@ -175,13 +228,8 @@ def __main(args):
 														  "DYAD"].nunique()),
 		  file=sys.stderr)
 
-	# Ensure that rows are sorted in order of which round they are for and their chronological ordering withing each round, sorting finally by dialogue role as a tiebreaker
-	session_utt_df.sort_values(
-		by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
-			utterances.UtteranceTabularDataColumn.END_TIME.value,
-			utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value], inplace=True)
-
 	session_utt_df = ref_overlap_calculator(session_utt_df)
+
 	session_utt_df.sort_values(
 		["DYAD", sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
 		 TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
