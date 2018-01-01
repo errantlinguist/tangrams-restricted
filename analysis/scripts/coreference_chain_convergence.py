@@ -134,10 +134,11 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 		last_utt = entity_df.loc[entity_df[utterances.UtteranceTabularDataColumn.START_TIME.value].idxmax()]
 		last_speaker = last_utt[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value]
 		self.__speaker_other_overlap(entity_df, last_speaker)
+		missed_utts = entity_df.loc[entity_df[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value].isnull() | entity_df[
+			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].isnull()]
+		if not missed_utts.empty:
+			raise ValueError("Missed {} utterance rows.".format(missed_utts.shape[0]))
 
-		# TODO: Calculate overlap for last utt of other speaker, too, in the case that they don't perfectly alternate
-		# Calculate the chain for each individual speaker in order to cover all possible references, even in cases where the different times the entity is references do not alternate between the speakers
-		speaker_ids = entity_df[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value].unique()
 		return entity_df
 
 	# noinspection PyTypeChecker,PyUnresolvedReferences
