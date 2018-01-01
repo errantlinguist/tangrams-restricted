@@ -245,12 +245,11 @@ def __main(args):
 		  file=sys.stderr)
 
 	session_utt_df = overlap_calculator(session_utt_df)
-
-	session_utt_df.sort_values(
-		["DYAD", sd.EventDataColumn.ENTITY_ID.value, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
-		 TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
-		 sd.EventDataColumn.ROUND_ID.value], inplace=True)
 	if args.dump:
+		session_utt_df.sort_values(
+			["DYAD", coreference_feature_col_name, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
+			 TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
+			 sd.EventDataColumn.ROUND_ID.value], inplace=True)
 		session_utt_df.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index=False)
 	else:
 		coref_seq_orders = session_utt_df[
