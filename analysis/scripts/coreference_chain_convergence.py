@@ -110,10 +110,9 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 		speaker_utts = entity_df.loc[entity_df[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value] == speaker_id]
 		start_time_col_name = utterances.UtteranceTabularDataColumn.START_TIME.value
 		last_utt_idx = speaker_utts[start_time_col_name].idxmax()
-		last_utt = entity_df.loc[last_utt_idx]
 		coref_chain = self.__create_coref_chain(last_utt_idx, entity_df)
 		logging.debug("Created a coreference chain of length %d for the utt starting at %f by speaker \"%s\".",
-					  len(coref_chain), last_utt[start_time_col_name], speaker_id)
+					  len(coref_chain), entity_df.loc[last_utt_idx, start_time_col_name], speaker_id)
 
 		preceding_coref_token_types = _EMPTY_SET
 		for coref_chain_idx, df_idx in enumerate(coref_chain):
@@ -132,8 +131,7 @@ class ReferentOtherTokenTypeOverlapCalculator(object):
 				raise ValueError("Already set coref seq no!")
 
 	def __other_overlap(self, entity_df: pd.DataFrame):
-		last_utt_idx = entity_df[utterances.UtteranceTabularDataColumn.START_TIME.value].idxmax()
-		last_utt = entity_df.loc[last_utt_idx]
+		last_utt = entity_df.loc[entity_df[utterances.UtteranceTabularDataColumn.START_TIME.value].idxmax()]
 		last_speaker = last_utt[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value]
 		self.__speaker_other_overlap(entity_df, last_speaker)
 
