@@ -120,12 +120,12 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 class GeneralConvergenceTokenTypeOverlapCalculator(object):
 
 	@staticmethod
-	def __utt_mean_overlap(utt_row: pd.Series, coref_seq_utts: Mapping[int, pd.DataFrame]) -> float:
+	def __utt_mean_overlap(utt_row: pd.Series, prev_coref_utts: Mapping[int, pd.DataFrame]) -> float:
 		coref_seq_ordinality = utt_row[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value]
 		if coref_seq_ordinality < 2:
 			result = np.longfloat(0.0)
 		else:
-			prev_utts = coref_seq_utts[coref_seq_ordinality - 1]
+			prev_utts = prev_coref_utts[coref_seq_ordinality]
 			token_types = utt_row[TokenTypeOverlapColumn.TOKEN_TYPES.value]
 			result = prev_utts.apply(lambda prev_utt: alignment_metrics.token_type_overlap_ratio(token_types, prev_utt[
 				TokenTypeOverlapColumn.TOKEN_TYPES.value]), axis=1).mean()
@@ -152,11 +152,12 @@ class GeneralConvergenceTokenTypeOverlapCalculator(object):
 											  self.coreference_feature_col_name),
 											 as_index=False, sort=False)
 		scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_ref_utts.cumcount() + 1
-		coref_seq_utts = dict((coref_seq_ordinality, scored_df.loc[
-			scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] == coref_seq_ordinality]) for coref_seq_ordinality
-							  in scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].unique())
+		prev_coref_utts = dict((coref_seq_ordinality, scored_df.loc[
+			scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] == coref_seq_ordinality - 1]) for
+							   coref_seq_ordinality
+							   in scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].unique())
 		scored_df[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = scored_df.apply(
-			lambda utt_row: self.__utt_mean_overlap(utt_row, coref_seq_utts), axis=1)
+			lambda utt_row: self.__utt_mean_overlap(utt_row, prev_coref_utts), axis=1)
 		scored_df[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = "(not applicable for general convergence)"
 		scored_df[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = "(not applicable for general convergence)"
 		return scored_df
