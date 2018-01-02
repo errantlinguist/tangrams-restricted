@@ -157,6 +157,8 @@ class GeneralConvergenceTokenTypeOverlapCalculator(object):
 							  in scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].unique())
 		scored_df[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = scored_df.apply(
 			lambda utt_row: self.__utt_mean_overlap(utt_row, coref_seq_utts), axis=1)
+		scored_df[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = "(not applicable for general convergence)"
+		scored_df[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = "(not applicable for general convergence)"
 		return scored_df
 
 
