@@ -78,7 +78,8 @@ se <- function(x) sqrt(var(x)/length(x))
 print("Coference overlap means:", quote=FALSE)
 aggs <- aggregate(corefOverlaps$overlap, list(seq=corefOverlaps$seq), function(x) c(mean = mean(x), sd = sd(x), sem = se(x)))
 # https://stackoverflow.com/a/21509371/1391325
-round(aggs, 4)
+format(aggs, scientific=FALSE)
+#round(aggs, 4)
 
 testIntervalCorefSeqs(corefOverlaps)
 testOrdinalCorefSeqs(corefOverlaps)
