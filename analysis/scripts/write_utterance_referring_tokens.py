@@ -39,7 +39,7 @@ def create_utterance_referring_token_map(*inpaths: str) -> Dict[str, str]:
 				if old_ref_lang is None or old_ref_lang == ref_lang:
 					result[utt] = ref_lang
 				else:
-					raise ValueError("Differing referring language for utterance \"{}\".".format(utt))
+					raise ValueError("Differing referring language for utterance \"{}\": Existing: {} \"\"; New: \"{}\"".format(utt, old_ref_lang, ref_lang))
 	return result
 
 
