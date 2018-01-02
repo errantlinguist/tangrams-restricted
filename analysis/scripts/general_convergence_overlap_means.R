@@ -29,7 +29,7 @@ if (!file_test("-f", infile))
 
 # https://www.statmethods.net/stats/correlations.html
 # Correlations with significance levels
-library(Hmisc)
+#library(Hmisc)
 
 filterInvalidCorefs <- function(corefOverlaps, minCorefChainLength, maxCorefChainLength) {
   origSampleSize <- nrow(corefOverlaps)
@@ -57,8 +57,8 @@ testOrdinalCorefSeqs <- function(corefOverlaps) {
   #corefOverlaps <- cbind(corefOverlaps)
   #corefOverlaps$seq <- as.ordered(corefOverlaps$seq)
   
-  print("Spearman's rank correlation coefficient:", quote=FALSE)
-  print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="spearman"))
+  #print("Spearman's rank correlation coefficient:", quote=FALSE)
+  #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="spearman"))
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
   cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
