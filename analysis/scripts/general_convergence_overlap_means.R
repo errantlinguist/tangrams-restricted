@@ -76,7 +76,7 @@ corefOverlaps <- filterInvalidCorefs(corefOverlaps, 2, 6)
 se <- function(x) sqrt(var(x)/length(x))
 
 print("Coference overlap means:", quote=FALSE)
-aggs <- aggregate(corefOverlaps$overlap, list(seq=corefOverlaps$seq), function(x) c(mean = mean(x), sd = sd(x), sem = se(x)))
+aggs <- aggregate(corefOverlaps$overlap, list(seq=corefOverlaps$seq), function(x) c(mean = mean(x), std = sd(x), sem = se(x)))
 # https://stackoverflow.com/a/21509371/1391325
 format(aggs, scientific=FALSE)
 #round(aggs, 4)
