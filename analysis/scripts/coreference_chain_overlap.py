@@ -115,7 +115,7 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
 		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = np.nan
 		# Calculate token type overlap for each chain of reference for each entity in each session
-		session_ref_utts = result.groupby(("DYAD", self.coreference_feature_col_name), as_index=False, sort=False)
+		session_ref_utts = result.groupby((write_target_ref_utts.DYAD_COL_NAME, self.coreference_feature_col_name), as_index=False, sort=False)
 		return session_ref_utts.apply(self.__between_speaker_overlap)
 
 
@@ -150,7 +150,7 @@ class GeneralConvergenceTokenTypeOverlapCalculator(object):
 			by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
 				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 		# Calculate token type overlap for each chain of reference for each entity/coreference feature and each speaker in each session
-		session_ref_utts = scored_df.groupby(("DYAD",
+		session_ref_utts = scored_df.groupby((write_target_ref_utts.DYAD_COL_NAME,
 											  self.coreference_feature_col_name),
 											 as_index=False, sort=False)
 		scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_ref_utts.cumcount() + 1
@@ -204,7 +204,7 @@ class WithinSpeakerTokenTypeOverlapCalculator(object):
 			by=[sd.EventDataColumn.ROUND_ID.value, utterances.UtteranceTabularDataColumn.START_TIME.value,
 				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 		# Calculate token type overlap for each chain of reference for each entity/coreference feature and each speaker in each session
-		session_speaker_ref_utts = result.groupby(("DYAD",
+		session_speaker_ref_utts = result.groupby((write_target_ref_utts.DYAD_COL_NAME,
 												   self.coreference_feature_col_name,
 												   utterances.UtteranceTabularDataColumn.SPEAKER_ID.value),
 												  as_index=False, sort=False)
@@ -300,13 +300,13 @@ def __main(args):
 	session_utt_df = read_event_utts(infile)
 	print("DF shape is {}; {} unique dyad(s).".format(session_utt_df.shape,
 													  session_utt_df[
-														  "DYAD"].nunique()),
+														  write_target_ref_utts.DYAD_COL_NAME].nunique()),
 		  file=sys.stderr)
 
 	session_utt_df = overlap_calculator(session_utt_df)
 	if args.dump:
 		session_utt_df.sort_values(
-			["DYAD", coreference_feature_col_name, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
+			[write_target_ref_utts.DYAD_COL_NAME, coreference_feature_col_name, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
 			 TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
 			 sd.EventDataColumn.ROUND_ID.value], inplace=True)
 		session_utt_df.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index=False)
