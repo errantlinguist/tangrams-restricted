@@ -226,34 +226,34 @@ public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 		private void addUtteranceDataRows(final int roundId, final EventDialogue evtDiag,
 				final Collection<? super String> uttRows,
 				final BiFunction<? super Utterance, ? super EventDialogue, DialogueRole> uttDiagRoleFactory) {
-			final List<Utterance> origUtts = evtDiag.getUtterances();
+			final List<Utterance> diagUttBeforeTransformation = evtDiag.getUtterances();
 			LOGGER.debug("Writing rows for round ID {}.", roundId);
 			final EventDialogue transformedDiag = diagTransformer.apply(evtDiag);
 			final List<Utterance> tranformedUtts = transformedDiag.getUtterances();
 			final Map<String, Utterance> transformedUttsById = tranformedUtts.stream()
 					.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
-							MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(origUtts.size())));
-			for (final Utterance origUtt : origUtts) {
-				final String segId = origUtt.getSegmentId();
+							MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(diagUttBeforeTransformation.size())));
+			for (final Utterance diagUttsBeforeTransformation : diagUttBeforeTransformation) {
+				final String segId = diagUttsBeforeTransformation.getSegmentId();
 				final Utterance transformedUtt = transformedUttsById.get(segId);
 				if (transformedUttRowFilter.test(transformedUtt)) {
 					final List<Object> rowCells = new ArrayList<>(6);
 					rowCells.add(roundId);
 
-					final String speakerId = origUtt.getSpeakerId();
+					final String speakerId = diagUttsBeforeTransformation.getSpeakerId();
 					final String participantId = playerParticipantIds.get(speakerId);
 					rowCells.add(participantId);
-					final DialogueRole diagRole = uttDiagRoleFactory.apply(origUtt, evtDiag);
+					final DialogueRole diagRole = uttDiagRoleFactory.apply(diagUttsBeforeTransformation, evtDiag);
 					rowCells.add(diagRole);
 
-					final float startTime = origUtt.getStartTime();
+					final float startTime = diagUttsBeforeTransformation.getStartTime();
 					rowCells.add(startTime);
-					final float endTime = origUtt.getEndTime();
+					final float endTime = diagUttsBeforeTransformation.getEndTime();
 					rowCells.add(endTime);
 
-					final Utterance rawUtt = origUttsBySegmentId.get(segId);
-					final String rawUttRepr = rawUtt.getTokens().stream().collect(TOKEN_JOINER);
-					rowCells.add(rawUttRepr);
+					final Utterance origUtt = origUttsBySegmentId.get(segId);
+					final String origUttRepr = origUtt.getTokens().stream().collect(TOKEN_JOINER);
+					rowCells.add(origUttRepr);
 
 					final String refLangStr;
 					if (transformedUtt == null) {
@@ -265,8 +265,9 @@ public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
 					}
 					rowCells.add(refLangStr);
-					LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", rawUttRepr,
-							origUtt.getTokens().stream().collect(TOKEN_JOINER), refLangStr);
+					final String diagUttsBeforeTransformationRepr = diagUttsBeforeTransformation.getTokens().stream().collect(TOKEN_JOINER);
+					LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", origUttRepr,
+							diagUttsBeforeTransformationRepr, refLangStr);
 					uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
 				}
 			}
