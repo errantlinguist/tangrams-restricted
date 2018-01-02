@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.EnumSet;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -196,8 +195,6 @@ public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 	private static class TabularDataFactory {
 
-		private static final Map<String, String> ORIG_UTT_TRANSFORMATIONS = new HashMap<>(1000);
-
 		private static final Collector<CharSequence, ?, String> ROW_CELL_JOINER = Collectors.joining("\t");
 
 		private static final Collector<CharSequence, ?, String> TOKEN_JOINER = Collectors.joining(" ");
@@ -235,8 +232,7 @@ public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 			final List<Utterance> tranformedUtts = transformedDiag.getUtterances();
 			final Map<String, Utterance> transformedUttsById = tranformedUtts.stream()
 					.collect(Collectors.toMap(Utterance::getSegmentId, Function.identity(),
-							MapCollectors.throwingMerger(),
-							() -> Maps.newHashMapWithExpectedSize(diagUttBeforeTransformation.size())));
+							MapCollectors.throwingMerger(), () -> Maps.newHashMapWithExpectedSize(diagUttBeforeTransformation.size())));
 			for (final Utterance diagUttsBeforeTransformation : diagUttBeforeTransformation) {
 				final String segId = diagUttsBeforeTransformation.getSegmentId();
 				final Utterance transformedUtt = transformedUttsById.get(segId);
@@ -268,24 +264,8 @@ public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 						assert transformedUtt.getEndTime() == endTime;
 						refLangStr = transformedUtt.getTokens().stream().collect(TOKEN_JOINER);
 					}
-					// Sanity check
-					ORIG_UTT_TRANSFORMATIONS.compute(origUttRepr, (key, oldValue) -> {
-						final String newValue;
-						if (oldValue == null) {
-							newValue = refLangStr;
-						} else if (oldValue.equals(refLangStr)) {
-							newValue = oldValue;
-						} else {
-							throw new AssertionError(String.format(
-									"Extant referring language for utt \"%s\" is \"%s\" but newly-transformed utt resulted in \"%s\".",
-									origUttRepr, oldValue, refLangStr));
-						}
-						return newValue;
-					});
-
 					rowCells.add(refLangStr);
-					final String diagUttsBeforeTransformationRepr = diagUttsBeforeTransformation.getTokens().stream()
-							.collect(TOKEN_JOINER);
+					final String diagUttsBeforeTransformationRepr = diagUttsBeforeTransformation.getTokens().stream().collect(TOKEN_JOINER);
 					LOGGER.debug("Raw utt: \"{}\"; Orig utt: \"{}\"; Transformed utt: \"{}\"", origUttRepr,
 							diagUttsBeforeTransformationRepr, refLangStr);
 					uttRows.add(rowCells.stream().map(Object::toString).collect(ROW_CELL_JOINER));
@@ -334,8 +314,8 @@ public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 	}
 
 	/**
-	 * Parsing can take up huge amounts of memory, so it's single-threaded and thus
-	 * the caches are created designed for single-threaded operation.
+	 * Parsing can take up huge amounts of memory, so it's single-threaded and
+	 * thus the caches are created designed for single-threaded operation.
 	 */
 	private static final AnnotationCacheFactory ANNOTATION_CACHE_FACTORY = new AnnotationCacheFactory(1);
 
