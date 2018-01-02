@@ -59,7 +59,7 @@ print(sprintf("Set training reference level to \"%s\".", refLevel), quote=FALSE)
 
 #Model m.additive is an additive model (only main effects)
 m.additive <- lmer(RANK ~ TOKEN_COUNT + Training + SESSION_ORDER +  (1|DYAD), data=cvResults, REML=FALSE)
-#Model m.interaction is an interaction model (interaction btw token count and trainng)
+#Model m.interaction is an interaction model (interaction btw token count and training)
 m.interaction <- lmer(RANK ~ TOKEN_COUNT * Training + SESSION_ORDER +  (1|DYAD), data=cvResults, REML=FALSE)
 #Model m.cubicNonlinear includes a cubic nonlinear term for token count, does not significantly improve the model
 #m.cubicNonlinear <- lmer(RANK ~ I(TOKEN_COUNT^2) * Training + SESSION_ORDER +  (1|DYAD), data=cvResults, REML=FALSE)
