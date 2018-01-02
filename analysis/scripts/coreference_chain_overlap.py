@@ -158,6 +158,7 @@ class GeneralConvergenceTokenTypeOverlapCalculator(object):
 			scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] == coref_seq_ordinality - 1]) for
 							   coref_seq_ordinality
 							   in scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].unique())
+		# NOTE: This causes some loss of accuracy through rounding errors if the mean is taken of these means, but creating a bigger dataframe containing each individual comparison is extremely annoying with pandas
 		scored_df[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = scored_df.apply(
 			lambda utt_row: self.__utt_mean_overlap(utt_row, prev_coref_utts), axis=1)
 		scored_df[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = "(not applicable for general convergence)"
