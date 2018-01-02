@@ -142,6 +142,7 @@ def sort_cols(df: pd.DataFrame) -> pd.DataFrame:
 		utterances.UtteranceTabularDataColumn.START_TIME.value,
 		utterances.UtteranceTabularDataColumn.END_TIME.value,
 		utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value)
+	# This line works with pandas 0.22.0 but not 0.20.3
 	# NOTE: "reindex_axis(..)" should be used instead of "reindex(..)" for older versions of pandas
 	return df.reindex(sorted(df.columns, key=lambda col_name: __element_order(col_name, partial_ordering)), axis=1,
 						   copy=False)
