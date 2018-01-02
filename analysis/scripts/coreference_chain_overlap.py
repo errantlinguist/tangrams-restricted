@@ -14,7 +14,7 @@ import logging
 import re
 import sys
 from enum import Enum, unique
-from typing import FrozenSet, Mapping, Tuple
+from typing import Any, FrozenSet, Iterable, Mapping, Tuple
 
 import numpy as np
 import pandas as pd
@@ -30,6 +30,7 @@ OUTFILE_CSV_DIALECT = csv.excel_tab
 OUTFILE_ENCODING = "utf-8"
 
 _EMPTY_SET = frozenset()
+_EMPTY_SET_STR_REPR = ""
 
 
 class BetweenSpeakerTokenTypeOverlapCalculator(object):
@@ -85,8 +86,9 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 			if old_coref_seq_no < 1:
 				entity_df.at[df_idx, TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = coref_chain_idx + 1
 				# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
-				entity_df.at[df_idx, TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = " ".join(
-					sorted(preceding_coref_token_types))
+				entity_df.at[
+					df_idx, TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = create_tabular_collection_repr(
+					preceding_coref_token_types)
 				entity_df.at[df_idx, TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = preceding_coref_start_time
 				coref = entity_df.loc[df_idx]
 				token_types = coref[TokenTypeOverlapColumn.TOKEN_TYPES.value]
@@ -112,10 +114,11 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 		result = df.copy(deep=False)
 		result[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = -1
 		# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
-		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = _EMPTY_SET_STR_REPR
 		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = np.nan
 		# Calculate token type overlap for each chain of reference for each entity in each session
-		session_ref_utts = result.groupby((write_target_ref_utts.DYAD_COL_NAME, self.coreference_feature_col_name), as_index=False, sort=False)
+		session_ref_utts = result.groupby((write_target_ref_utts.DYAD_COL_NAME, self.coreference_feature_col_name),
+										  as_index=False, sort=False)
 		return session_ref_utts.apply(self.__between_speaker_overlap)
 
 
@@ -215,6 +218,13 @@ class WithinSpeakerTokenTypeOverlapCalculator(object):
 			TokenTypeOverlapColumn.TOKEN_TYPES.value].shift()
 		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = result.apply(self.__token_type_overlap,
 																			   axis=1)
+		# Convert the data rows into stable string representations here, after they have been used for calculating ovelaps and thus are no longer necessary for doing so
+		result[TokenTypeOverlapColumn.TOKEN_TYPES.value] = result[TokenTypeOverlapColumn.TOKEN_TYPES.value].transform(
+			create_tabular_collection_repr)
+		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = result[
+			TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value].transform(
+			lambda token_types: _EMPTY_SET_STR_REPR if pd.isnull(token_types) else create_tabular_collection_repr(
+				token_types))
 		return result
 
 
@@ -237,6 +247,15 @@ class TokenTypeSetFactory(object):
 			result = _EMPTY_SET
 
 		return result
+
+
+def create_tabular_collection_repr(coll: Iterable[Any]) -> str:
+	"""
+	 Creates a string from an iterable object because it is not possible to assign iterable types as pandas column values <https://github.com/pandas-dev/pandas/issues/7787>
+	:param coll: The iterable object to create a string representation for.
+	:return: A deterministic string representation for the given object.
+	"""
+	return " ".join(sorted(coll))
 
 
 def read_event_utts(infile_path: str) -> pd.DataFrame:
@@ -307,7 +326,8 @@ def __main(args):
 	session_utt_df = overlap_calculator(session_utt_df)
 	if args.dump:
 		session_utt_df.sort_values(
-			[write_target_ref_utts.DYAD_COL_NAME, coreference_feature_col_name, utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
+			[write_target_ref_utts.DYAD_COL_NAME, coreference_feature_col_name,
+			 utterances.UtteranceTabularDataColumn.SPEAKER_ID.value,
 			 TokenTypeOverlapColumn.COREF_SEQ_ORDER.value,
 			 sd.EventDataColumn.ROUND_ID.value], inplace=True)
 		session_utt_df.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index=False)
