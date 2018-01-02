@@ -42,7 +42,7 @@ def __create_argparser() -> argparse.ArgumentParser:
 
 def __main(args):
 	infiles = args.infiles
-	writer = csv.writer(sys.stderr, dialect=OUTPUT_CSV_DIALECT)
+	writer = csv.writer(sys.stdout, dialect=OUTPUT_CSV_DIALECT)
 	writer.writerow(("FILE", "LAST_EVENT_NAME"))
 	for infile in sorted(infiles):
 		last_event_name = read_last_game_event_name(infile)
