@@ -312,6 +312,10 @@ def __main(args):
 			 sd.EventDataColumn.ROUND_ID.value], inplace=True)
 		session_utt_df.to_csv(sys.stdout, sep=OUTFILE_CSV_DIALECT.delimiter, encoding=OUTFILE_ENCODING, index=False)
 	else:
+		session_utt_df = session_utt_df[
+			[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]]
+		session_utt_df = session_utt_df.groupby(
+			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False).filter(lambda group: group.name > 1)
 		coref_seq_orders = session_utt_df[
 			[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value]].groupby(
 			TokenTypeOverlapColumn.COREF_SEQ_ORDER.value, as_index=False)
