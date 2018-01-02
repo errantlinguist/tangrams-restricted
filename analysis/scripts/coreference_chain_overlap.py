@@ -116,30 +116,19 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 		session_ref_utts = result.groupby(("DYAD", self.coreference_feature_col_name), as_index=False, sort=False)
 		return session_ref_utts.apply(self.__other_overlap)
 
+
 class GeneralConvergenceTokenTypeOverlapCalculator(object):
 
 	@staticmethod
-	def __create_row_with_overlap_data(utt_row : pd.Series, prev_utt_row : pd.Series)-> pd.Series:
-		result = utt_row.copy(deep=False)
-		prev_token_types = prev_utt_row[TokenTypeOverlapColumn.TOKEN_TYPES.value]
-		# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
-		result[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = " ".join(prev_token_types)
-		result[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = prev_utt_row[utterances.UtteranceTabularDataColumn.START_TIME.value]
-		result[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = alignment_metrics.token_type_overlap_ratio(utt_row[TokenTypeOverlapColumn.TOKEN_TYPES.value], prev_token_types)
-		return result
-
-	def __create_utt_overlap_df(self, utt_row: pd.Series, coref_seq_utts: Mapping[int, pd.DataFrame]) -> pd.DataFrame:
+	def __utt_mean_overlap(utt_row: pd.Series, coref_seq_utts: Mapping[int, pd.DataFrame]) -> float:
 		coref_seq_ordinality = utt_row[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value]
 		if coref_seq_ordinality < 2:
-			scored_utt = utt_row.copy(deep=False)
-			# NOTE: Cannot assign iterable types as column values <https://github.com/pandas-dev/pandas/issues/7787>
-			scored_utt[TokenTypeOverlapColumn.PRECEDING_TOKEN_TYPES.value] = ""
-			scored_utt[TokenTypeOverlapColumn.PRECEDING_UTT_START_TIME.value] = np.nan
-			scored_utt[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = 0.0
-			result = scored_utt.to_frame()
+			result = np.longfloat(0.0)
 		else:
 			prev_utts = coref_seq_utts[coref_seq_ordinality - 1]
-			result = prev_utts.apply(lambda prev_utt: self.__create_row_with_overlap_data(utt_row, prev_utt), axis=1)
+			token_types = utt_row[TokenTypeOverlapColumn.TOKEN_TYPES.value]
+			result = prev_utts.apply(lambda prev_utt: alignment_metrics.token_type_overlap_ratio(token_types, prev_utt[
+				TokenTypeOverlapColumn.TOKEN_TYPES.value]), axis=1).mean()
 		return result
 
 	def __init__(self, coreference_feature_col_name: str):
@@ -160,13 +149,16 @@ class GeneralConvergenceTokenTypeOverlapCalculator(object):
 				utterances.UtteranceTabularDataColumn.END_TIME.value], inplace=True)
 		# Calculate token type overlap for each chain of reference for each entity/coreference feature and each speaker in each session
 		session_ref_utts = scored_df.groupby(("DYAD",
-												   self.coreference_feature_col_name),
-												  as_index=False, sort=False)
+											  self.coreference_feature_col_name),
+											 as_index=False, sort=False)
 		scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] = session_ref_utts.cumcount() + 1
-		coref_seq_utts = dict((coref_seq_ordinality, scored_df.loc[scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] == coref_seq_ordinality]) for coref_seq_ordinality in scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].unique())
-		scored_utt_dfs = pd.concat(self.__create_utt_overlap_df(row, coref_seq_utts) for _, row in scored_df.iterrows())
-		#print(scored_utt_dfs)
-		return scored_utt_dfs
+		coref_seq_utts = dict((coref_seq_ordinality, scored_df.loc[
+			scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value] == coref_seq_ordinality]) for coref_seq_ordinality
+							  in scored_df[TokenTypeOverlapColumn.COREF_SEQ_ORDER.value].unique())
+		scored_df[TokenTypeOverlapColumn.TOKEN_TYPE_OVERLAP.value] = scored_df.apply(
+			lambda utt_row: self.__utt_mean_overlap(utt_row, coref_seq_utts), axis=1)
+		return scored_df
+
 
 @unique
 class TokenTypeOverlapColumn(Enum):
