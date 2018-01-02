@@ -43,24 +43,26 @@ filterInvalidCorefs <- function(corefOverlaps, minCorefChainLength, maxCorefChai
 }
 
 testIntervalCorefSeqs <- function(corefOverlaps) {
-  print("Pearson correlation coefficient:", quote=FALSE)
-  print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="pearson"))
+  print("Testing correlation with coreference sequence ordinality considered an interval value.", quote=FALSE)
+  #print("Pearson correlation coefficient:", quote=FALSE)
+  #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="pearson"))
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
-  cor.test(corefOverlaps$seq, corefOverlaps$overlap, method="pearson", exact = TRUE, conf.level=0.999)
+  cor.test(corefOverlaps$seq, corefOverlaps$overlap, method="pearson", conf.level=0.999)
 }
 
 testOrdinalCorefSeqs <- function(corefOverlaps) {
-  print("Converting coreference sequence ordinalities to ordinal values.", quote=FALSE)
-  corefOverlaps <- cbind(corefOverlaps)
-  corefOverlaps$seq <- as.ordered(corefOverlaps$seq)
+  print("Testing correlation with coreference sequence ordinality considered an ordinal value.", quote=FALSE)
+  #print("Converting coreference sequence ordinalities to ordinal values.", quote=FALSE)
+  #corefOverlaps <- cbind(corefOverlaps)
+  #corefOverlaps$seq <- as.ordered(corefOverlaps$seq)
   
   print("Spearman's rank correlation coefficient:", quote=FALSE)
   print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="spearman"))
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
   #cor.test(corefOverlaps$seq, corefOverlaps$overlap, method = "spearman", exact = TRUE)
-  cor.test(corefOverlaps$seq, corefOverlaps$overlap, method = "spearman", exact = TRUE)
+  cor.test(corefOverlaps$seq, corefOverlaps$overlap, method = "spearman", conf.level=0.999)
   #cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative = c("two.sided", "less", "greater"), method = "kendall", exact = TRUE, continuity = FALSE)
 }
 
