@@ -303,6 +303,7 @@ def __main(args):
 														  write_target_ref_utts.DYAD_COL_NAME].nunique()),
 		  file=sys.stderr)
 
+	print("Calculating overlaps.", file=sys.stderr)
 	session_utt_df = overlap_calculator(session_utt_df)
 	if args.dump:
 		session_utt_df.sort_values(
