@@ -27,9 +27,8 @@ if (!file_test("-f", infile))
   stop(sprintf("No file found at \"%s\".", infile));
 }
 
-# https://www.statmethods.net/stats/correlations.html
-# Correlations with significance levels
-#library(Hmisc)
+maxCorefChainLength <- ifelse(length(args) < 2, 6, strtoi(args[2]))
+print(sprintf("Using a maximum coref sequence ordinality of %d.", maxCorefChainLength), quote=FALSE)
 
 filterInvalidCorefs <- function(corefOverlaps, minCorefChainLength, maxCorefChainLength) {
   origSampleSize <- nrow(corefOverlaps)
@@ -70,7 +69,7 @@ options(na.action=na.fail)
 print(sprintf("Reading data from \"%s\".", infile), quote=FALSE)
 corefOverlaps <- read.table(infile, sep="\t", header=TRUE)
 print(sprintf("Read %d coreference overlap value(s).", nrow(corefOverlaps)), quote=FALSE)
-corefOverlaps <- filterInvalidCorefs(corefOverlaps, 2, 6)
+corefOverlaps <- filterInvalidCorefs(corefOverlaps, 2, maxCorefChainLength)
 
 # https://stackoverflow.com/a/2677859/1391325
 se <- function(x) sqrt(var(x)/length(x))
