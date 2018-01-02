@@ -57,6 +57,6 @@ corefOverlaps <- filterInvalidCorefs(corefOverlaps, 2, maxCorefChainLength)
 
 
 #Model m.additive is an additive model (only main effects)
-m.additive <- lmer(TOKEN_TYPE_OVERLAP ~ COREF_SEQ_ORDER +  (1 + SHAPE|DYAD), data=corefOverlaps, REML=FALSE)
+m.additive <- lmer(TOKEN_TYPE_OVERLAP ~ COREF_SEQ_ORDER + (1|SHAPE) + (1|DYAD), data=corefOverlaps, REML=FALSE)
 
 summary(m.additive)
