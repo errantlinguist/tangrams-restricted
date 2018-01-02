@@ -43,7 +43,7 @@ class BetweenSpeakerTokenTypeOverlapCalculator(object):
 		return df.loc[(df[speaker_id_col_name] != speaker_id) & (df[start_time_col_name] <= start_time)]
 
 	@classmethod
-	def __between_speaker_overlap(cls, entity_df: pd.DataFrame):
+	def __between_speaker_overlap(cls, entity_df: pd.DataFrame) -> pd.DataFrame:
 		last_utt = entity_df.loc[entity_df[utterances.UtteranceTabularDataColumn.START_TIME.value].idxmax()]
 		last_speaker = last_utt[utterances.UtteranceTabularDataColumn.SPEAKER_ID.value]
 		cls.__speaker_other_overlap(entity_df, last_speaker)
