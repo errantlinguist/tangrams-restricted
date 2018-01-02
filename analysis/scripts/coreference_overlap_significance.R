@@ -45,6 +45,28 @@ filterInvalidCorefs <- function(corefOverlaps, minCorefChainLength, maxCorefChai
   return(result)
 }
 
+testIntervalCorefSeqs <- function(corefOverlaps) {
+  print("Testing correlation with coreference sequence ordinality considered an interval value.", quote=FALSE)
+  #print("Pearson correlation coefficient:", quote=FALSE)
+  #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="pearson"))
+  
+  # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
+  cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method="pearson", conf.level=0.999, exact=TRUE)
+}
+
+testOrdinalCorefSeqs <- function(corefOverlaps) {
+  print("Testing correlation with coreference sequence ordinality considered an ordinal value.", quote=FALSE)
+  #print("Converting coreference sequence ordinalities to ordinal values.", quote=FALSE)
+  #corefOverlaps <- cbind(corefOverlaps)
+  #corefOverlaps$seq <- as.ordered(corefOverlaps$seq)
+  
+  #print("Spearman's rank correlation coefficient:", quote=FALSE)
+  #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="spearman"))
+  
+  # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
+  cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
+}
+
 # https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html
 options(na.action=na.fail)
 
@@ -54,9 +76,11 @@ print(sprintf("Read %d coreference overlap value(s).", nrow(corefOverlaps)), quo
 corefOverlaps$DYAD <- as.factor(corefOverlaps$DYAD)
 corefOverlaps <- filterInvalidCorefs(corefOverlaps, 2, maxCorefChainLength)
 
+testIntervalCorefSeqs(corefOverlaps)
+testOrdinalCorefSeqs(corefOverlaps)
 
 
 #Model m.additive is an additive model (only main effects)
-m.additive <- lmer(TOKEN_TYPE_OVERLAP ~ COREF_SEQ_ORDER + (1|SHAPE) + (1|DYAD), data=corefOverlaps, REML=FALSE)
-
-summary(m.additive)
+#m.additive <- lmer(TOKEN_TYPE_OVERLAP ~ COREF_SEQ_ORDER + (1|SHAPE) + (1|DYAD), data=corefOverlaps, REML=FALSE)
+#m.additive <- lmer(TOKEN_TYPE_OVERLAP ~ COREF_SEQ_ORDER + (SHAPE|DYAD), data=corefOverlaps, REML=FALSE)
+#summary(m.additive)
