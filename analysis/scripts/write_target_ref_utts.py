@@ -180,7 +180,8 @@ def __main(args):
 														  DYAD_COL_NAME].nunique()),
 		  file=sys.stderr)
 	print("Utterance dataframe summary:", file=sys.stderr)
-	summary_writer = csv.writer(sys.stderr, dialect=OUTPUT_FILE_DIALECT)
+	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+	summary_writer = csv.writer(sys.stderr, dialect=OUTPUT_FILE_DIALECT, lineterminator="\n")
 	summary_writer.writerows(df_factory.create_summary_rows())
 
 	session_utt_df[utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value] = session_utt_df[

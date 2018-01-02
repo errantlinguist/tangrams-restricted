@@ -54,7 +54,8 @@ def __main(inpaths: Iterable[str]):
 	infiles = walk_xml_files(*inpaths)
 	token_pos_tag_counts = count_pos_tags(infiles, CachingPosTagger())
 	print("Found {} unique token(s).".format(len(token_pos_tag_counts)), file=sys.stderr)
-	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+	writer = csv.writer(sys.stdout, dialect=csv.excel_tab, lineterminator="\n")
 	writer.writerow(("TOKEN", "POS_TAG", "COUNT"))
 	alphabetic_token_counts = sorted(token_pos_tag_counts.items(), key=lambda item: item[0])
 	alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)

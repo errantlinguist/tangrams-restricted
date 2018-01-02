@@ -34,7 +34,8 @@ def __main(inpaths: Iterable[str]):
 	infiles = walk_xml_files(*inpaths)
 	token_counts = count_tokens(infiles)
 	print("Found {} unique token(s).".format(len(token_counts)), file=sys.stderr)
-	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+	writer = csv.writer(sys.stdout, dialect=csv.excel_tab, lineterminator="\n")
 	writer.writerow(("TOKEN", "COUNT"))
 	alphabetic_token_counts = sorted(token_counts.items(), key=lambda item: item[0])
 	alphabetic_count_desc_token_counts = sorted(alphabetic_token_counts, key=lambda item: item[1], reverse=True)

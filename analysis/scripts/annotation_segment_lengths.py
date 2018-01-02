@@ -40,7 +40,8 @@ def __main(inpaths: Iterable[str]):
 	segments = read_segments(infiles)
 	print("Found {} segment(s).".format(len(segments)), file=sys.stderr)
 	segments.sort(key=__token_length)
-	writer = csv.writer(sys.stdout, dialect=csv.excel_tab)
+	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+	writer = csv.writer(sys.stdout, dialect=csv.excel_tab, lineterminator="\n")
 	writer.writerow(("FILE", "SEGMENT_ID", "TOKENS"))
 	for seg in segments:
 		filename = seg[0]

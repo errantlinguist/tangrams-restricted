@@ -10,6 +10,7 @@ __license__ = "GNU General Public License, Version 3"
 
 import argparse
 import csv
+import os
 import sys
 from typing import Any, Dict, List, Mapping, Tuple
 
@@ -110,7 +111,8 @@ def __main(args):
 	overlaps_to_print = ((coref_seq_ordinality, overlaps) for (coref_seq_ordinality, overlaps) in utt_overlaps.items()
 						 if
 						 coref_seq_ordinality > 1)
-	writer = csv.writer(sys.stdout, dialect=OUTFILE_CSV_DIALECT)
+	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+	writer = csv.writer(sys.stdout, dialect=OUTFILE_CSV_DIALECT, lineterminator="\n")
 	writer.writerow(("seq", "overlap"))
 	for coref_seq_ordinality, overlaps in sorted(overlaps_to_print, key=lambda item: item[0]):
 		for overlap in overlaps:

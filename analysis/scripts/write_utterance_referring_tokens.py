@@ -56,7 +56,8 @@ def __main(args):
 	inpaths = args.inpaths
 	print("Will read {} file(s).".format(len(inpaths)), file=sys.stderr)
 	utt_ref_lang = create_utterance_referring_token_map(*inpaths)
-	writer = csv.writer(sys.stdout, dialect=OUTPUT_CSV_DIALECT)
+	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+	writer = csv.writer(sys.stdout, dialect=OUTPUT_CSV_DIALECT, lineterminator="\n")
 	header = (UTTERANCE_COL_NAME, REFERRING_LANGUAGE_COL_NAME)
 	rows = itertools.chain((header,), (sorted(utt_ref_lang.items(), key=lambda item: item[0])))
 	writer.writerows(rows)

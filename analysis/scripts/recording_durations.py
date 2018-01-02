@@ -31,7 +31,8 @@ def parent_dir(infile_path: str) -> str:
 
 def print_statistics(file_durations: Iterable[Tuple[str, Decimal]], outfile: IO[str]):
 	sorted_durations = tuple(sorted(file_durations))
-	writer = csv.writer(outfile, dialect=csv.excel_tab)
+	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+	writer = csv.writer(outfile, dialect=csv.excel_tab, lineterminator="\n")
 	writer.writerow(("PATH", "DURATION"))
 	writer.writerows(sorted_durations)
 
