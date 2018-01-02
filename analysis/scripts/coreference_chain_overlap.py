@@ -14,7 +14,7 @@ import logging
 import re
 import sys
 from enum import Enum, unique
-from typing import Any, FrozenSet, Iterable, Mapping, Tuple
+from typing import FrozenSet, Iterable, Mapping, Tuple
 
 import numpy as np
 import pandas as pd
@@ -249,7 +249,7 @@ class TokenTypeSetFactory(object):
 		return result
 
 
-def create_tabular_collection_repr(coll: Iterable[Any]) -> str:
+def create_tabular_collection_repr(coll: Iterable[str]) -> str:
 	"""
 	 Creates a string from an iterable object because it is not possible to assign iterable types as pandas column values <https://github.com/pandas-dev/pandas/issues/7787>
 	:param coll: The iterable object to create a string representation for.
