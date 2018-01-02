@@ -33,6 +33,7 @@ if (!file_test("-f", infile))
 	stop(sprintf("No file found at \"%s\".", infile));
 }
 
+print(sprintf("Reading data from \"%s\".", infile), quote=FALSE)
 cvResults <- read.table(infile, sep="\t", header=TRUE)
 origSampleSize <- nrow(cvResults)
 print(sprintf("Read %d cross-validation sample(s).", origSampleSize), quote=FALSE)
