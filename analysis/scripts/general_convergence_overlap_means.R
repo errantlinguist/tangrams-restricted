@@ -18,7 +18,7 @@
 args <- commandArgs(trailingOnly=TRUE)
 if(length(args) < 1)
 {
-  stop("Usage: <scriptname> INFILE")
+  stop("Usage: <scriptname> INFILE [MAX_COREF_SEQ_LENGTH]")
 }
 
 infile <-args[1]
