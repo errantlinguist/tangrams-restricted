@@ -145,7 +145,7 @@ final class InteractiveGameViewFrameFactory implements Function<InteractiveGameV
 		// http://stackoverflow.com/a/1936582/1391325
 		final Dimension screenSize = gameBoardPanel.getToolkit().getScreenSize();
 		LOGGER.debug("Setting maximum component size to {}.", screenSize);
-		final int shortestScreenLength = (int) (Math.min(screenSize.width, screenSize.height) * 0.8);
+		final int shortestScreenLength = Math.toIntExact(Math.round(Math.floor(Math.min(screenSize.width, screenSize.height) * 0.8f)));
 		final Dimension preferredSize = new Dimension(shortestScreenLength, shortestScreenLength);
 		final PatternMoveFactory moveFactory = new PatternMoveFactory(rnd, controller.getModel(), 4);
 		controller.getListeners().add(moveFactory);
