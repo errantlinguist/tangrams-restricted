@@ -68,6 +68,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 
+import se.kth.speech.LaTeX;
 import se.kth.speech.TimestampArithmetic;
 import se.kth.speech.coin.tangrams.analysis.dialogues.Utterance;
 import se.kth.speech.coin.tangrams.analysis.io.SessionDataManager;
@@ -90,8 +91,8 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 		HOURS(HOURS_OPT_NAME) {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("hours").desc(
-						"Prints statistics in \"HH:mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
+				return Option.builder(optName).longOpt("hours")
+						.desc("Prints statistics in \"HH:mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		},
@@ -105,8 +106,8 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 		MINUTES(MINUTES_OPT_NAME) {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("mintes").desc(
-						"Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
+				return Option.builder(optName).longOpt("mintes")
+						.desc("Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
 		};
@@ -177,12 +178,20 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 				}
 
 				final Function<Duration, String> durationFormatter = parseDurationFormatter();
-				final Collector<CharSequence, ?, String> rowCellJoiner = cl.hasOption(Parameter.LATEX.optName)
-						? LATEX_ROW_CELL_JOINER
-						: TAB_ROW_CELL_JOINER;
+
+				final Function<String, String> stringTransformer;
+				final Collector<CharSequence, ?, String> rowCellJoiner;
+				if (cl.hasOption(Parameter.LATEX.optName)) {
+					stringTransformer = LaTeX::escapeReservedCharacters;
+					rowCellJoiner = LATEX_ROW_CELL_JOINER;
+				} else {
+					stringTransformer = Function.identity();
+					rowCellJoiner = TAB_ROW_CELL_JOINER;
+				}
+
 				try (PrintWriter outputWriter = new PrintWriter(new OutputStreamWriter(System.out, OUTPUT_ENCODING))) {
-					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, durationFormatter,
-							rowCellJoiner, sessionSummaries.size());
+					final SessionStatisticsWriter writer = new SessionStatisticsWriter(outputWriter, stringTransformer,
+							durationFormatter, rowCellJoiner, sessionSummaries.size());
 					writer.accept(sessionSummaries.entrySet());
 				}
 			}
@@ -271,10 +280,14 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 
 	private final LoadingCache<GameSummary, IntSummaryStatistics> sessionUtteranceTokenCountStats;
 
+	private final Function<? super String, String> stringTransformer;
+
 	public SessionStatisticsWriter(final PrintWriter outputWriter,
+			final Function<? super String, String> stringTransformer,
 			final Function<? super Duration, String> durationFormatter,
 			final Collector<? super String, ?, String> rowCellJoiner, final int expectedUniqueSessionCount) {
 		this.outputWriter = outputWriter;
+		this.stringTransformer = stringTransformer;
 		this.durationFormatter = durationFormatter;
 		this.rowCellJoiner = rowCellJoiner;
 
@@ -295,7 +308,7 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 
 	@Override
 	public void accept(final Collection<? extends Entry<Path, ? extends Map<String, GameSummary>>> sessionSummaries) {
-		outputWriter.print(COLUMN_HEADERS.stream().collect(rowCellJoiner));
+		outputWriter.print(COLUMN_HEADERS.stream().map(stringTransformer).collect(rowCellJoiner));
 
 		for (final Entry<Path, ? extends Map<String, GameSummary>> sessionSummary : sessionSummaries) {
 			outputWriter.print(ROW_DELIMITER);
@@ -308,7 +321,7 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 				final String durationRepr = durationFormatter.apply(summary.getDuration());
 				final IntSummaryStatistics tokenCountStats = fetchUtteranceTokenCountStats(summary);
 				final DoubleSummaryStatistics uttDurationStats = fetchUtteranceDurationStats(summary);
-				final List<Object> rowCellVals = Arrays.asList(inpath, gameId, durationRepr,
+				final List<Object> rowCellVals = Arrays.asList(stringTransformer.apply(inpath.toString()), gameId, durationRepr,
 						summary.getCompletedRoundCount(), tokenCountStats.getCount(), tokenCountStats.getSum(),
 						tokenCountStats.getMin(), tokenCountStats.getMax(), tokenCountStats.getAverage(),
 						uttDurationStats.getMin(), uttDurationStats.getMax(), uttDurationStats.getAverage());
