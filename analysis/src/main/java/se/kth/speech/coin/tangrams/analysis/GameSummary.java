@@ -54,7 +54,12 @@ final class GameSummary {
 
 	private final Supplier<Stream<Utterance>> uttsGetter;
 
-	GameSummary(final GameHistory history, final List<EventDialogue> diags) {
+	GameSummary(final GameHistory history, List<EventDialogue> diags) {
+		// Remove pre-game dialogue if present
+		if (diags.get(0).getEvents().isEmpty()){
+			diags = diags.subList(1, diags.size());
+		}
+		
 		final int lastDiagEndIdx = findIncompleteDialogueTailStartIndex(diags);
 		final List<EventDialogue> completedDiags;
 		final GameEvent gameOverEvent;
