@@ -30,9 +30,7 @@ if (!file_test("-f", infile))
 maxCorefChainLength <- ifelse(length(args) < 2, 6, strtoi(args[2]))
 print(sprintf("Using a maximum coref sequence ordinality of %d.", maxCorefChainLength), quote=FALSE)
 
-library(lmerTest)
-library(MASS)
-library(MuMIn)
+library(psych)
 
 filterInvalidCorefs <- function(corefOverlaps, minCorefChainLength, maxCorefChainLength) {
   origSampleSize <- nrow(corefOverlaps)
@@ -51,7 +49,9 @@ testIntervalCorefSeqs <- function(corefOverlaps) {
   #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="pearson"))
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
-  cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method="pearson", conf.level=0.999, exact=TRUE)
+  #testResults <- cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method="pearson", conf.level=0.999, exact=TRUE)
+  testResults <- corr.test(corefOverlaps[,c("COREF_SEQ_ORDER", "TOKEN_TYPE_OVERLAP")], method="pearson", alpha=0.001)
+  print(testResults, short=FALSE)
 }
 
 testOrdinalCorefSeqs <- function(corefOverlaps) {
@@ -64,7 +64,9 @@ testOrdinalCorefSeqs <- function(corefOverlaps) {
   #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="spearman"))
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
-  cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
+  #cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
+  testResults <- corr.test(corefOverlaps[,c("COREF_SEQ_ORDER", "TOKEN_TYPE_OVERLAP")], method="spearman", alpha=0.001)
+  print(testResults, short=FALSE)
 }
 
 # https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html

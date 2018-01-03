@@ -30,6 +30,8 @@ if (!file_test("-f", infile))
 maxCorefChainLength <- ifelse(length(args) < 2, 6, strtoi(args[2]))
 print(sprintf("Using a maximum coref sequence ordinality of %d.", maxCorefChainLength), quote=FALSE)
 
+library(psych)
+
 filterInvalidCorefs <- function(corefOverlaps, minCorefChainLength, maxCorefChainLength) {
   origSampleSize <- nrow(corefOverlaps)
   corefOverlaps[!corefOverlaps$seq<minCorefChainLength,] -> result
@@ -47,7 +49,9 @@ testIntervalCorefSeqs <- function(corefOverlaps) {
   #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="pearson"))
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
-  cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative="two.sided", method="pearson", conf.level=0.999, exact=TRUE)
+  #cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative="two.sided", method="pearson", conf.level=0.999, exact=TRUE)
+  testResults <- corr.test(corefOverlaps[,c("seq", "overlap")], method="pearson", alpha=0.001)
+  print(testResults, short=FALSE)
 }
 
 testOrdinalCorefSeqs <- function(corefOverlaps) {
@@ -60,7 +64,9 @@ testOrdinalCorefSeqs <- function(corefOverlaps) {
   #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="spearman"))
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
-  cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
+  #cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
+  testResults <- corr.test(corefOverlaps[,c("seq", "overlap")], method="spearman", alpha=0.001)
+  print(testResults, short=FALSE)
 }
 
 # https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html
