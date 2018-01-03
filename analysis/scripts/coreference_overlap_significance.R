@@ -51,7 +51,7 @@ testIntervalCorefSeqs <- function(corefOverlaps) {
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
   #testResults <- cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method="pearson", conf.level=0.999, exact=TRUE)
   testResults <- corr.test(corefOverlaps[,c("COREF_SEQ_ORDER", "TOKEN_TYPE_OVERLAP")], method="pearson", alpha=0.001)
-  print(testResults, short=FALSE)
+  print(testResults, short=FALSE, digits=4)
 }
 
 testOrdinalCorefSeqs <- function(corefOverlaps) {
@@ -66,7 +66,7 @@ testOrdinalCorefSeqs <- function(corefOverlaps) {
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
   #cor.test(corefOverlaps$COREF_SEQ_ORDER, corefOverlaps$TOKEN_TYPE_OVERLAP, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
   testResults <- corr.test(corefOverlaps[,c("COREF_SEQ_ORDER", "TOKEN_TYPE_OVERLAP")], method="spearman", alpha=0.001)
-  print(testResults, short=FALSE)
+  print(testResults, short=FALSE, digits=4)
 }
 
 # https://stat.ethz.ch/R-manual/R-devel/library/base/html/options.html
