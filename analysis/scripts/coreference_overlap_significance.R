@@ -46,7 +46,7 @@ filterInvalidCorefs <- function(corefOverlaps, minCorefChainLength, maxCorefChai
 }
 
 testIntervalCorefSeqs <- function(corefOverlaps) {
-  print("Testing correlation with coreference sequence ordinality considered an interval value.", quote=FALSE)
+  print("Testing correlation with coreference sequence ordinality considered as an interval value.", quote=FALSE)
   #print("Pearson correlation coefficient:", quote=FALSE)
   #print(rcorr(corefOverlaps$seq, corefOverlaps$overlap, type="pearson"))
   
@@ -55,7 +55,7 @@ testIntervalCorefSeqs <- function(corefOverlaps) {
 }
 
 testOrdinalCorefSeqs <- function(corefOverlaps) {
-  print("Testing correlation with coreference sequence ordinality considered an ordinal value.", quote=FALSE)
+  print("Testing correlation with coreference sequence ordinality considered as an ordinal value.", quote=FALSE)
   #print("Converting coreference sequence ordinalities to ordinal values.", quote=FALSE)
   #corefOverlaps <- cbind(corefOverlaps)
   #corefOverlaps$seq <- as.ordered(corefOverlaps$seq)
