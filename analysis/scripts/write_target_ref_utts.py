@@ -44,6 +44,7 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		self.nonempty_utt_df_shape_union = (0, 0)
 		self.instructor_utt_df_shape_union = (0, 0)
 		self.speaker_utt_df_shape_union = (0, 0)
+		self.unmerged_utt_df_shape_union = (0, 0)
 
 	def __call__(self, session_data: sd.SessionData) -> pd.DataFrame:
 		session_name = session_data.name
@@ -60,6 +61,12 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		# Do an inner merge with the events dataframe so that utterances without events (e.g. utterances in the pre-game round "0") are not included
 		result = events_df.merge(utts_df, how="inner", left_on=sd.EventDataColumn.ROUND_ID.value,
 								 right_on=utterances.UtteranceTabularDataColumn.ROUND_ID.value)
+		unmerged_rounds = frozenset(utts_df[utterances.UtteranceTabularDataColumn.ROUND_ID.value].unique()) - frozenset(result[sd.EventDataColumn.ROUND_ID.value].unique())
+		logging.debug("Merged events and utterance dataframes. Rounds with utts which were not merged: %s", ", ".join(sorted(str(round_id) for round_id in unmerged_rounds)))
+		unmerged_utt_rows = utts_df.loc[utts_df[utterances.UtteranceTabularDataColumn.ROUND_ID.value].isin(unmerged_rounds)]
+		assert not unmerged_utt_rows.empty == bool(unmerged_rounds)
+		self.unmerged_utt_df_shape_union = shape_union(self.unmerged_utt_df_shape_union, unmerged_utt_rows.shape)
+
 		assert result.loc[result[sd.EventDataColumn.ROUND_ID.value] < 1].empty
 		return result
 
@@ -70,6 +77,7 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 			self.__create_summary_row("After removing empty utterances", self.nonempty_utt_df_shape_union),
 			self.__create_summary_row("After removing non-instructor utterances", self.instructor_utt_df_shape_union),
 			self.__create_summary_row("After merging speaker utterances", self.speaker_utt_df_shape_union),
+			self.__create_summary_row("Unmerged utterance DF", self.unmerged_utt_df_shape_union),
 		)
 		assert len(frozenset(len(row) for row in result)) == 1
 		return result
