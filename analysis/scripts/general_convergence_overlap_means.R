@@ -75,7 +75,7 @@ options(na.action=na.fail)
 print(sprintf("Reading data from \"%s\".", infile), quote=FALSE)
 corefOverlaps <- read.table(infile, sep="\t", header=TRUE)
 print(sprintf("Read %d coreference overlap value(s).", nrow(corefOverlaps)), quote=FALSE)
-corefOverlaps <- filterInvalidCorefs(corefOverlaps, 2, maxCorefChainLength)
+
 
 # https://stackoverflow.com/a/2677859/1391325
 se <- function(x) sqrt(var(x)/length(x))
@@ -86,5 +86,7 @@ aggs <- aggregate(corefOverlaps$overlap, list(seq=corefOverlaps$seq), function(x
 format(aggs, scientific=FALSE)
 #round(aggs, 4)
 
+
+corefOverlaps <- filterInvalidCorefs(corefOverlaps, 2, maxCorefChainLength)
 testIntervalCorefSeqs(corefOverlaps)
 testOrdinalCorefSeqs(corefOverlaps)
