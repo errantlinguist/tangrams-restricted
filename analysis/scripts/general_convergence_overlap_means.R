@@ -50,7 +50,7 @@ testIntervalCorefSeqs <- function(corefOverlaps) {
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
   #cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative="two.sided", method="pearson", conf.level=0.999, exact=TRUE)
-  testResults <- corr.test(corefOverlaps[,c("seq", "overlap")], method="pearson", alpha=0.001)
+  testResults <- corr.test(corefOverlaps[,c("seq", "overlap")], method="pearson", alpha=0.02)
   print(testResults, short=FALSE, digits=4)
 }
 
@@ -65,7 +65,7 @@ testOrdinalCorefSeqs <- function(corefOverlaps) {
   
   # https://www.rdocumentation.org/packages/stats/versions/3.4.3/topics/cor.test
   #cor.test(corefOverlaps$seq, corefOverlaps$overlap, alternative="two.sided", method = "spearman", conf.level=0.999, exact=FALSE)
-  testResults <- corr.test(corefOverlaps[,c("seq", "overlap")], method="spearman", alpha=0.001)
+  testResults <- corr.test(corefOverlaps[,c("seq", "overlap")], method="spearman", alpha=0.02)
   print(testResults, short=FALSE, digits=4)
 }
 
