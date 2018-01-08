@@ -33,19 +33,31 @@
 			<name>GNU General Public License, Version 3</name>
 			<url>https://www.gnu.org/licenses/gpl-3.0.html</url>
 			<distribution>repo</distribution>
-			<comments>The license for the entire project, being the most restrictive license of all included in this project.</comments>
+			<comments>The license for embedded IrisTK code and thus for the entire project as it is the most restrictive license of all included in this project.</comments>
 		</license>
 		<license>
-			<name>PortAudio License for V19</name>
-			<url>http://www.portaudio.com/license.html</url>
+			<name>Apache License, Version 2.0</name>
+			<url>https://www.apache.org/licenses/LICENSE-2.0</url>
 			<distribution>repo</distribution>
-			<comments>The license for the original PortAudio code.</comments>
+			<comments>The license for embedded code from "com.github.errantlinguist.*"</comments>
+		</license>
+		<license>
+			<name>3-Clause BSD License</name>
+			<url>https://opensource.org/licenses/BSD-3-Clause</url>
+			<distribution>repo</distribution>
+			<comments>This is the copyright for the stopword list included from the Snowball project (http://snowball.tartarus.org/algorithms/english/stop.txt).</comments>
 		</license>
 		<license>
 			<name>Creative Commons Attribution 3.0 Unported License</name>
 			<url>https://creativecommons.org/licenses/by/3.0/</url>
 			<distribution>repo</distribution>
 			<comments>The license for selected audio content.</comments>
+		</license>
+		<license>
+			<name>PortAudio License for V19</name>
+			<url>http://www.portaudio.com/license.html</url>
+			<distribution>repo</distribution>
+			<comments>The license for the original PortAudio code.</comments>
 		</license>
 	</licenses>
 

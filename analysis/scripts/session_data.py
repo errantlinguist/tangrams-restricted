@@ -1,9 +1,18 @@
+"""
+A module for manipulating Tangrams session data.
+"""
+
+__author__ = "Todd Shore <errantlinguist+github@gmail.com>"
+__copyright__ = "Copyright (C) 2016-2017 Todd Shore"
+__license__ = "GNU General Public License, Version 3"
+
 import csv
-import os
 from enum import Enum, unique
+import os
 from typing import Dict, Iterator, Iterable, Tuple
 
 import pandas as pd
+
 
 ENCODING = 'utf-8'
 PARTICIPANT_METADATA_CSV_DIALECT = csv.excel_tab
