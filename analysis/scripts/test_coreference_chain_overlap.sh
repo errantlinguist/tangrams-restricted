@@ -30,9 +30,9 @@ else
 	outdir="$2"
 	derived_data_dir="${1}/Derived"
 	
-	echo "Writing referring language."
-	find "${derived_data_dir}" -iname "*utt-referring-tokens-basic-inflected.tsv" -exec ./write_utterance_referring_tokens.py {} + > "${outdir}/utt-referring-tokens-basic-inflected.tsv" &&
-	find "${derived_data_dir}" -iname "*utt-referring-tokens-basic-lemma.tsv" -exec ./write_utterance_referring_tokens.py {} + > "${outdir}/utt-referring-tokens-basic-lemma.tsv" &&
+	#echo "Writing referring language."
+	#find "${derived_data_dir}" -iname "*utt-referring-tokens-basic-inflected.tsv" -exec ./write_utterance_referring_tokens.py {} + > "${outdir}/utt-referring-tokens-basic-inflected.tsv" &&
+	#find "${derived_data_dir}" -iname "*utt-referring-tokens-basic-lemma.tsv" -exec ./write_utterance_referring_tokens.py {} + > "${outdir}/utt-referring-tokens-basic-lemma.tsv" &&
 	ready_data_dir="${1}/Ready"
 	
 	target_ref_utt_file="${outdir}/target_ref_utts_speaker_instructoronly.tsv"
