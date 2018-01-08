@@ -67,7 +67,7 @@ public final class MetaLanguage {
 	private static ObjectSet<String> readMetaLanguageTokenSet() throws IOException {
 		final ObjectOpenHashSet<String> result = new ObjectOpenHashSet<>();
 		try (BufferedReader reader = new BufferedReader(
-				new InputStreamReader(MetaLanguage.class.getResourceAsStream("metalanguage-tokens.tsv")))) {
+				new InputStreamReader(MetaLanguage.class.getResourceAsStream("metalanguage-tokens.txt")))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
 				final String trimmedLine = line.trim();
 				if (!trimmedLine.startsWith(COMMENT_LINE_PREFIX)) {
