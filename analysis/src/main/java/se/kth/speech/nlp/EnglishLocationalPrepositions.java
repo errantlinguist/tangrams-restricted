@@ -39,6 +39,8 @@ import com.google.common.collect.Sets;
  */
 public final class EnglishLocationalPrepositions {
 
+	private static final String COMMENT_LINE_PREFIX = "#";
+
 	private static volatile SoftReference<Set<List<String>>> list = new SoftReference<>(null);
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(EnglishLocationalPrepositions.class);
@@ -64,8 +66,11 @@ public final class EnglishLocationalPrepositions {
 		try (final BufferedReader reader = new BufferedReader(new InputStreamReader(
 				EnglishLocationalPrepositions.class.getResourceAsStream("english-locational-prepositions.txt")))) {
 			for (String line = reader.readLine(); line != null; line = reader.readLine()) {
-				final String[] tokens = WHITESPACE_PATTERN.split(line);
-				result.add(Arrays.asList(tokens));
+				final String trimmedLine = line.trim();
+				if (!trimmedLine.startsWith(COMMENT_LINE_PREFIX)) {
+					final String[] tokens = WHITESPACE_PATTERN.split(trimmedLine);
+					result.add(Arrays.asList(tokens));
+				}
 			}
 		} catch (final IOException e) {
 			throw new UncheckedIOException(e);
