@@ -47,13 +47,13 @@ else
 		./coreference_chain_overlap.py -r -w "${target_ref_utt_file}" > "${outdir}/referent-within-speaker-overlap.tsv" &&
 		ref_within_dumpfile=`mktemp --tmpdir "referent-within-speaker-overlap-dump.tsv.XXXXXXXXXXXX"` &&
 		./coreference_chain_overlap.py -r -w -d "${target_ref_utt_file}" > "${ref_within_dumpfile}" &&
-		./coreference_overlap_significance.R "${ref_within_dumpfile}" > "${outdir}/referent-within-speaker-overlap-dump-test.txt" &&
+		./coreference_chain_overlap_significance.R "${ref_within_dumpfile}" > "${outdir}/referent-within-speaker-overlap-dump-test.txt" &&
 		
 		echo "Testing referent between-speaker overlap."
 		./coreference_chain_overlap.py -r -b "${target_ref_utt_file}" > "${outdir}/referent-between-speaker-overlap.tsv" &&
 		ref_between_dumpfile=`mktemp --tmpdir "referent-between-speaker-overlap-dump.tsv.XXXXXXXXXXXX"` &&
 		./coreference_chain_overlap.py -r -b -d "${target_ref_utt_file}" > "${ref_between_dumpfile}" &&
-		./coreference_overlap_significance.R "${ref_between_dumpfile}" > "${outdir}/referent-between-speaker-overlap-dump-test.txt" &&
+		./coreference_chain_overlap_significance.R "${ref_between_dumpfile}" > "${outdir}/referent-between-speaker-overlap-dump-test.txt" &&
 		
 		echo "Testing referent general convergence overlap."
 		ref_general_overlap_file=`mktemp --tmpdir "referent-general-convergence-overlap.tsv.XXXXXXXXXXXX"` &&
@@ -65,13 +65,13 @@ else
 		./coreference_chain_overlap.py -s -w "${target_ref_utt_file}" > "${outdir}/shape-within-speaker-overlap.tsv" &&
 		shape_within_dumpfile=`mktemp --tmpdir "shape-within-speaker-overlap-dump.tsv.XXXXXXXXXXXX"` &&
 		./coreference_chain_overlap.py -s -w -d "${target_ref_utt_file}" > "${shape_within_dumpfile}" &&
-		./coreference_overlap_significance.R "${shape_within_dumpfile}" > "${outdir}/shape-within-speaker-overlap-dump-test.txt" &&
+		./coreference_chain_overlap_significance.R "${shape_within_dumpfile}" > "${outdir}/shape-within-speaker-overlap-dump-test.txt" &&
 		
 		echo "Testing shape between-speaker overlap."
 		./coreference_chain_overlap.py -s -b "${target_ref_utt_file}" > "${outdir}/shape-between-speaker-overlap.tsv" &&
 		shape_between_dumpfile=`mktemp --tmpdir "shape-between-speaker-overlap-dump.tsv.XXXXXXXXXXXX"` &&
 		./coreference_chain_overlap.py -s -b -d "${target_ref_utt_file}" > "${shape_between_dumpfile}" &&
-		./coreference_overlap_significance.R "${shape_between_dumpfile}" > "${outdir}/shape-between-speaker-overlap-dump-test.txt" &&
+		./coreference_chain_overlap_significance.R "${shape_between_dumpfile}" > "${outdir}/shape-between-speaker-overlap-dump-test.txt" &&
 		
 		echo "Testing shape general convergence overlap."
 		shape_general_overlap_file=`mktemp --tmpdir "shape-general-convergence-overlap.tsv.XXXXXXXXXXXX"` &&
