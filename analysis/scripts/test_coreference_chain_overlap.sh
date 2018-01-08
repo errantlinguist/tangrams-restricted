@@ -58,7 +58,7 @@ else
 		echo "Testing referent general convergence overlap."
 		ref_general_overlap_file=`mktemp --tmpdir "referent-general-convergence-overlap.tsv.XXXXXXXXXXXX"` &&
 		./general_convergence_overlap.py -r "${target_ref_utt_file}" > "${ref_general_overlap_file}" &&
-		./general_convergence_overlap_means.R "${ref_general_overlap_file}" > "${outdir}/referent-general-convergence-overlap-test.txt" &&
+		./general_convergence_overlap_significance.R "${ref_general_overlap_file}" > "${outdir}/referent-general-convergence-overlap-test.txt" &&
 		
 		
 		echo "Testing shape within-speaker overlap."
@@ -76,7 +76,7 @@ else
 		echo "Testing shape general convergence overlap."
 		shape_general_overlap_file=`mktemp --tmpdir "shape-general-convergence-overlap.tsv.XXXXXXXXXXXX"` &&
 		./general_convergence_overlap.py -s "${target_ref_utt_file}" > "${shape_general_overlap_file}" &&
-		./general_convergence_overlap_means.R "${shape_general_overlap_file}" > "${outdir}/shape-general-convergence-overlap-test.txt"
+		./general_convergence_overlap_significance.R "${shape_general_overlap_file}" > "${outdir}/shape-general-convergence-overlap-test.txt"
 		exit_code="$?"
 		
 	else
