@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 
-# This file is part of tangrams-restricted.
+# This file is part of Tangrams-restricted.
 #
 # Tangrams-restricted is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by

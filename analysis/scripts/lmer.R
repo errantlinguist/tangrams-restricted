@@ -5,7 +5,7 @@
 # See Shore, T. Skantze, G. (2017) "Enhancing Reference Resolution in Dialogue Using Participant Feedback" <http://dx.doi.org/10.21437/GLU.2017-16> in Salvi, G. and Dupont, S. (eds.) Proceedings of the GLU2017 International Workshop on Grounding Language Understanding <http://dx.doi.org/10.21437/GLU.2017>, pp. 78--82.
 #
 #
-# This file is part of tangrams-restricted.
+# This file is part of Tangrams-restricted.
 #
 # Tangrams-restricted is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
