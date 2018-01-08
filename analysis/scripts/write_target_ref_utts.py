@@ -20,6 +20,7 @@ import logging
 import sys
 from typing import Any, Iterable, Sequence, Tuple, TypeVar
 
+import packaging.version
 import pandas as pd
 
 import session_data as sd
@@ -61,9 +62,12 @@ class SessionRoundTokenTypeSetDataFrameFactory(object):
 		# Do an inner merge with the events dataframe so that utterances without events (e.g. utterances in the pre-game round "0") are not included
 		result = events_df.merge(utts_df, how="inner", left_on=sd.EventDataColumn.ROUND_ID.value,
 								 right_on=utterances.UtteranceTabularDataColumn.ROUND_ID.value)
-		unmerged_rounds = frozenset(utts_df[utterances.UtteranceTabularDataColumn.ROUND_ID.value].unique()) - frozenset(result[sd.EventDataColumn.ROUND_ID.value].unique())
-		logging.debug("Merged events and utterance dataframes. Rounds with utts which were not merged: %s", ", ".join(sorted(str(round_id) for round_id in unmerged_rounds)))
-		unmerged_utt_rows = utts_df.loc[utts_df[utterances.UtteranceTabularDataColumn.ROUND_ID.value].isin(unmerged_rounds)]
+		unmerged_rounds = frozenset(utts_df[utterances.UtteranceTabularDataColumn.ROUND_ID.value].unique()) - frozenset(
+			result[sd.EventDataColumn.ROUND_ID.value].unique())
+		logging.debug("Merged events and utterance dataframes. Rounds with utts which were not merged: %s",
+					  ", ".join(sorted(str(round_id) for round_id in unmerged_rounds)))
+		unmerged_utt_rows = utts_df.loc[
+			utts_df[utterances.UtteranceTabularDataColumn.ROUND_ID.value].isin(unmerged_rounds)]
 		assert not unmerged_utt_rows.empty == bool(unmerged_rounds)
 		self.unmerged_utt_df_shape_union = shape_union(self.unmerged_utt_df_shape_union, unmerged_utt_rows.shape)
 
@@ -150,10 +154,7 @@ def sort_cols(df: pd.DataFrame) -> pd.DataFrame:
 		utterances.UtteranceTabularDataColumn.START_TIME.value,
 		utterances.UtteranceTabularDataColumn.END_TIME.value,
 		utterances.UtteranceTabularDataColumn.TOKEN_SEQ.value)
-	# This line works with pandas 0.22.0 but not 0.20.3
-	# NOTE: "reindex_axis(..)" should be used instead of "reindex(..)" for older versions of pandas
-	return df.reindex(sorted(df.columns, key=lambda col_name: __element_order(col_name, partial_ordering)), axis=1,
-						   copy=False)
+	return __reindex_cols(df, partial_ordering)
 
 
 def __create_str_repr(token_seq: Iterable[str]) -> str:
@@ -166,6 +167,25 @@ def __element_order(elem: T, ordering: Sequence[T]) -> int:
 	except ValueError:
 		result = len(ordering)
 	return result
+
+
+def __reindex_cols_old_api(df: pd.DataFrame, partial_ordering: Sequence[str]) -> pd.DataFrame:
+	return df.reindex_axis(sorted(df.columns, key=lambda col_name: __element_order(col_name, partial_ordering)), axis=1,
+						   copy=False)
+
+
+def __reindex_cols_new_api(df: pd.DataFrame, partial_ordering: Sequence[str]) -> pd.DataFrame:
+	return df.reindex(sorted(df.columns, key=lambda col_name: __element_order(col_name, partial_ordering)), axis=1,
+					  copy=False)
+
+
+__PANDAS_API_BREAKING_VERSION = "0.21.0"
+if packaging.version.parse(pd.__version__) < packaging.version.parse(__PANDAS_API_BREAKING_VERSION):
+	logging.warning("Version of installed pandas (\"%s\") is older than expected (\"%s\").", pd.__version__,
+					__PANDAS_API_BREAKING_VERSION)
+	__reindex_cols = __reindex_cols_old_api
+else:
+	__reindex_cols = __reindex_cols_new_api
 
 
 def __create_argparser() -> argparse.ArgumentParser:
