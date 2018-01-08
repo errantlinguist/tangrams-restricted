@@ -436,22 +436,6 @@ public class Record implements Cloneable {
 		return asInteger(get(field));
 	}
 
-	/**
-	 * Increments the Integer under @field by @incr and returns the incremented value. If there is not such @field, it is set to @incr.
-	 */
-	public Integer incrInteger(String field, int incr) {
-		int i = getInteger(field, 0) + incr;
-		put(field, i);
-		return i;
-	}
-
-	/**
-	 * Increments the Integer under field by 1 and returns the incremented value. If there is not such @field, it is set to 1.
-	 */
-	public Integer incrInteger(String field) {
-		return incrInteger(field, 1);
-	}
-
 	public Record getRecord(String field) {
 		return asRecord(get(field));
 	}
@@ -586,25 +570,6 @@ public class Record implements Cloneable {
 	
 
 	
-	/**
-	 * Saves the record in JSON format to a file. If the file already exists, the content in the file is overwritten with the new record data.
-	 * 
-	 * @param inputJSONfile The file the record data are stored in
-	 * @throws IOException
-	 */
-	public void toJSON (File inputJSONfile) throws IOException {
-		//Without the if the method will throw a NullPointer when no parent is directly specified when creating the new file
-		if (inputJSONfile.getParent() != null) {
-			if (!inputJSONfile.getParentFile().exists()) {
-				inputJSONfile.getParentFile().mkdirs();
-			}
-		}
-		OutputStream out = new FileOutputStream(inputJSONfile);
-		final PrintStream printStream = new PrintStream(out);
-		printStream.print(toJSON().toString());
-		printStream.close();
-	}
-
 	private static JsonArray toJsonArray(List<?> list) {
 		JsonArray arr = new JsonArray();
 		for (Object val : list) {
@@ -643,9 +608,9 @@ public class Record implements Cloneable {
 	 * Reads a Record from a Properties file.
 	 * 
 	 * @param file JSON file with Record data
-	 * @return Record
-	 * @throws IOException
-	 * @throws JsonToRecordException
+	 * @return A new {@link Record} representing the file data.
+	 * @throws IOException If an error occurs while reading the file.
+	 * @throws JsonToRecordException If a JSON parsing error occurs.
 	 */
 	public static Record fromJSON(File file) throws IOException, JsonToRecordException {
 		return fromJSON(Utils.readTextFile(file));
@@ -653,7 +618,9 @@ public class Record implements Cloneable {
 
 	/**
 	 * Converts the JSON compatible String to a Record.
-	 * @throws JsonToRecordException 
+	 * @param string The string to parse.
+	 * @return A new {@link Record} representing the string data.
+	 * @throws JsonToRecordException If a JSON parsing error occurs.
 	 */
 	public static Record fromJSON(String string) throws JsonToRecordException {
 		try {
@@ -665,16 +632,6 @@ public class Record implements Cloneable {
 		}
 	}
 	
-	public static Object fromJSONValue(String string) throws JsonToRecordException {
-		try {
-			@SuppressWarnings("deprecation")
-			JsonValue json = JsonObject.readFrom(string);
-			return parseJsonValue(json);
-		} catch (ParseException e) {
-			throw new JsonToRecordException(e.getMessage());
-		}
-	}
-
 	private static Record parseJsonObject(JsonObject json) throws JsonToRecordException {
 		try {
 			Record record;
@@ -824,37 +781,6 @@ public class Record implements Cloneable {
 		return result;
 	}
 
-	/**
-	 * Converts the Record data to properties format.
-	 * 
-	 * @return Properties object with the record data
-	 */
-	public Properties toProperties() {
-		Properties prop = new Properties();
-		writeProperties(prop, "", this);
-		return prop;
-	}
-
-	/**
-	 * Saves the record in a properties file. If the file already exists, the content in the file is overwritten with the new record data.
-	 * 
-	 * @param file The file the record data are stored in
-	 * @throws IOException
-	 */
-	public void toProperties(File file) throws IOException {
-		Properties prop = toProperties();
-		 //Without the if the method will throw a NullPointer when no parent is directly specified when creating the new file
-		if (file.getParent() != null) {
-			if (!file.getParentFile().exists()) {
-				file.getParentFile().mkdirs();
-			}
-		}
-		OutputStream out = new FileOutputStream(file);
-		prop.store(out, "");
-		out.close();
-		
-	}
-
 	private static void writeProperties(Properties prop, String key, Record rec) {
 		for (String field : rec.getFields()) {
 			Object o = rec.get(field);
@@ -869,42 +795,6 @@ public class Record implements Cloneable {
 				prop.put(nkey, "" + o);
 			}
 		}
-	}
-	
-	/**
-	 * Converts an InputStream of a Properties file into a Record object.
-	 * 
-	 * @param inputStream InputStream from properties file with Record data
-	 * @return Record
-	 */
-	public static Record fromProperties(InputStream inputStream) throws IOException {
-		Properties prop = new Properties();
-		prop.load(inputStream);
-		return fromProperties(prop);
-	}
-
-	/**
-	 * Converts a Properties object into a Record object.
-	 * @param prop Properties file with Record data
-	 * @return Record
-	 */
-	public static Record fromProperties(Properties prop) {
-		Record rec = new Record();
-		for (Object key : prop.keySet()) {
-			rec.put(key.toString().replace('.', SUBFIELD_NAME_DELIM), prop.get(key));
-		}
-		return rec;
-	}
-
-	/**
-	 * Reads a Record from a Properties file.
-	 * 
-	 * @param file A file with record data in properties format
-	 * @return Record
-	 * @throws IOException
-	 */
-	public static Record fromProperties(File file) throws IOException {
-		return fromProperties(new FileInputStream(file));
 	}
 	
 	@Override

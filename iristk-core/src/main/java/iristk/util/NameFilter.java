@@ -19,15 +19,15 @@ import java.util.regex.Pattern;
 /**
  * 
  * <p>A NameFilter is used to match the name of an event. 
- * The filter consists of a list semicolon-separated items. At least one of these items must match.
- * <p>Each item then consists of a list of space-separated include or exclude patterns. Exclude patterns start with "!".
- * <p>Example: "P1 !P2;P3 P4 !P5 !P6" means that either the event name must match P1 and must not match P2, or it must match either P3 or P4 but must not match P5 or P6. 
- * <p>If only Exclude patterns are used in a sequence, this means that anything that does not match any of these patterns is accepted. 
- * <p> 
- * <p>Each pattern may only contain characters, dots and stars. The pattern should match the whole name.
- * <p>dot (.)  : matches a dot literally
- * <p>star (*) : matches 0 or more characters, excluding dots
- * <p>double star (**): matches 0 or more characters, including dots
+ * The filter consists of a list semicolon-separated items. At least one of these items must match.</p>
+ * <p>Each item then consists of a list of space-separated include or exclude patterns. Exclude patterns start with "!".</p>
+ * <p>Example: "P1 !P2;P3 P4 !P5 !P6" means that either the event name must match P1 and must not match P2, or it must match either P3 or P4 but must not match P5 or P6.</p>
+ * <p>If only Exclude patterns are used in a sequence, this means that anything that does not match any of these patterns is accepted.</p>
+ * 
+ * <p>Each pattern may only contain characters, dots and stars. The pattern should match the whole name.</p>
+ * <p>dot (.)  : matches a dot literally</p>
+ * <p>star (*) : matches 0 or more characters, excluding dots</p>
+ * <p>double star (**): matches 0 or more characters, including dots</p>
  *
  */
 public class NameFilter {
@@ -71,6 +71,8 @@ public class NameFilter {
 
 	/**
 	 * Creates a filter by parsing a pattern string
+	 * @param patt The pattern to create a {@link NameFilter} for.
+	 * @return A (potentially-cached) {@code NameFilter} object representing the given pattern.
 	 */
 	public static NameFilter compile(String patt) {
 		return CACHED_FILTERS.computeIfAbsent(patt, p -> {
@@ -94,6 +96,8 @@ public class NameFilter {
 	
 	/**
 	 * Combines this filter (F1) with another filter (F2) and returns a new filter (F3). F1 and F2 are combined with ";", which means that F3 accepts anything that matches at least one of F1 or F2.
+	 * @param filter The {@link NameFilter} to combine with this one.
+	 * @return A {@code NameFilter} which matches the combination of the given one and this one.
 	 */
 	public NameFilter combine(NameFilter filter) {
 		if (this.equals(ALL))
