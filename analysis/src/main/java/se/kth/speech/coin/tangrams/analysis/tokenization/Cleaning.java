@@ -17,7 +17,7 @@
 package se.kth.speech.coin.tangrams.analysis.tokenization;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Jun 2, 2017
  *
  */

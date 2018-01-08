@@ -21,7 +21,7 @@ import java.awt.event.ComponentEvent;
 
 /**
  *
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 09 Jul 2017
  *
  */

@@ -36,7 +36,7 @@ import com.google.common.collect.Sets;
  * {@link #keySet()} {@link #entrySet()} and {@link #values()} propagate to
  * backing arrays and vice versa
  *
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since May 1, 2017
  *
  */

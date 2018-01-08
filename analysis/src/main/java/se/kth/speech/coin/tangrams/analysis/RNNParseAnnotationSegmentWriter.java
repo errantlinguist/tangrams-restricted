@@ -48,7 +48,7 @@ import se.kth.speech.higgins._2005.annotation.Transcription.T;
 import se.kth.speech.higgins.io.HatIO;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Oct 21, 2017
  *
  */

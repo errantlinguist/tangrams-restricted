@@ -39,7 +39,7 @@ import org.slf4j.LoggerFactory;
 import com.google.common.collect.Sets;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 24 May 2017
  * @see <a href="http://snowballstem.org/algorithms/english/stop.txt">Original
  *      stopword list location</a>

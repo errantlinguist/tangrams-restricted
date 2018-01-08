@@ -24,7 +24,7 @@ import java.time.temporal.ChronoUnit;
 import java.time.temporal.Temporal;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 11 Apr 2017
  *
  */

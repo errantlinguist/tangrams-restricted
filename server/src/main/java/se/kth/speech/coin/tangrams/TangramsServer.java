@@ -48,7 +48,7 @@ import se.kth.speech.coin.tangrams.iristk.IrisSystemStopper;
 
 /**
  *
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 10 Jan 2017
  *
  */

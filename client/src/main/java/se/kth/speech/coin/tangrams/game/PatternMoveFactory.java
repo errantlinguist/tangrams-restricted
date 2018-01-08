@@ -39,7 +39,7 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.iristk.events.Move;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 23 Mar 2017
  *
  */

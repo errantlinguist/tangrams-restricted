@@ -33,7 +33,7 @@ import se.kth.speech.higgins._2005.annotation.Annotation;
 import se.kth.speech.io.RuntimeJAXBException;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Jul 3, 2017
  *
  */

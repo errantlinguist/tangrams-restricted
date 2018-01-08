@@ -19,7 +19,7 @@ package se.kth.speech.coin.tangrams.iristk.events;
 import iristk.util.Record;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 17 Mar 2017
  *
  */

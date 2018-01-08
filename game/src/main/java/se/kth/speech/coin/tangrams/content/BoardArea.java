@@ -24,7 +24,7 @@ import java.util.Map;
 import javax.swing.UIManager;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 23 Mar 2017
  *
  */

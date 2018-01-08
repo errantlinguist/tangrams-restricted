@@ -20,7 +20,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 16 May 2017
  *
  */

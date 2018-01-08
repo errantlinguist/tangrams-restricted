@@ -54,7 +54,7 @@ import se.kth.speech.coin.tangrams.CLIParameters;
 import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Apr 29, 2017
  *
  */

@@ -26,7 +26,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 24 Aug 2017
  *
  */

@@ -20,7 +20,7 @@ import java.util.Random;
 import java.util.function.Supplier;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 10 Mar 2017
  * @see <a href="http://stackoverflow.com/a/41156/1391325">StackOverflow</a>
  *

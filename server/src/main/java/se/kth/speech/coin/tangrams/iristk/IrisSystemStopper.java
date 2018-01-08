@@ -23,7 +23,7 @@ import iristk.system.IrisSystem;
 import se.kth.speech.OneOffRunnable;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 7 Dec 2016
  *
  */

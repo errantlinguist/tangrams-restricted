@@ -27,7 +27,7 @@ import com.google.common.cache.LoadingCache;
 import edu.stanford.nlp.pipeline.Annotation;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Apr 14, 2017
  *
  */

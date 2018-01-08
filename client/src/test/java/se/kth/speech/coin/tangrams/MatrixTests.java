@@ -29,7 +29,7 @@ import se.kth.speech.Integers;
 import se.kth.speech.NamedTestDescriptionPropertyMapFactory;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 24 Mar 2017
  *
  */

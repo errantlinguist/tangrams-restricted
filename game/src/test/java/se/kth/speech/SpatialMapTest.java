@@ -21,7 +21,7 @@ import org.junit.Assume;
 import org.junit.Test;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 9 Mar 2017
  *
  */

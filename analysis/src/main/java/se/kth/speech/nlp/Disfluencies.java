@@ -17,7 +17,7 @@
 package se.kth.speech.nlp;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 29 May 2017
  *
  */

@@ -84,7 +84,7 @@ import se.kth.speech.higgins.io.HatIO;
 import se.kth.speech.nlp.stanford.AnnotationCacheFactory;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 12 Nov 2017
  *
  */

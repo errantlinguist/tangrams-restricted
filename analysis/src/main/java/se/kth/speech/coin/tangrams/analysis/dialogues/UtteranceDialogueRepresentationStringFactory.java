@@ -31,7 +31,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import se.kth.speech.coin.tangrams.analysis.DataLanguageDefaults;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 19 May 2017
  *
  */

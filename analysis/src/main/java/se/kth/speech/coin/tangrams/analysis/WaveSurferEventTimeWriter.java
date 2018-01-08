@@ -53,7 +53,7 @@ import se.kth.speech.coin.tangrams.iristk.io.LoggedEventReader;
 
 /**
  * Writes referent entity shapes for each game round to a format readable by <a href="https://sourceforge.net/projects/wavesurfer/">WaveSurfer</a>.
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 29 Aug 2017
  * @see <a href="https://sourceforge.net/projects/wavesurfer/">WaveSurfer website</a>
  *

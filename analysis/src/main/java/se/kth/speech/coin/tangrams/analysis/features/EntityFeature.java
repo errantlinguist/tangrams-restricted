@@ -28,7 +28,7 @@ import se.kth.speech.SpatialRegion;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @see
  *      <ul>
  *      <li><a href="http://anthology.aclweb.org/W/W15/W15-0124.pdf">Casey

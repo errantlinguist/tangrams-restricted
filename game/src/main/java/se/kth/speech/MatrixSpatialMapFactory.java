@@ -24,7 +24,7 @@ import java.util.function.Function;
 import com.google.common.collect.Maps;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Mar 18, 2017
  *
  */

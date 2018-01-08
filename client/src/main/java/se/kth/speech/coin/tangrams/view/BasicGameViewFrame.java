@@ -35,7 +35,7 @@ import com.google.common.collect.Maps;
 import se.kth.speech.coin.tangrams.game.Controller;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 2 Mar 2017
  *
  */

@@ -21,7 +21,7 @@ import java.util.Date;
 import java.util.function.Supplier;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 17 Jan 2017
  *
  */

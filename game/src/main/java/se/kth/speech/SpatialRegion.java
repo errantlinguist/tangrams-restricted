@@ -24,7 +24,7 @@ package se.kth.speech;
  * @see <a href=
  *      "https://en.wikipedia.org/wiki/Binary_space_partitioning">Binary space
  *      partitioning</a>
- * @author <a href="mailto:tcshore@kth.se>Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com>Todd Shore</a>
  * @since 8 Mar 2017
  *
  */

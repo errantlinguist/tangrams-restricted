@@ -14,7 +14,7 @@ import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 18 Nov 2017
  *
  */
@@ -27,7 +27,7 @@ public final class TrimmableObject2ObjectMap<K, V> implements Object2ObjectMap<K
 	 * signature similar to a {@code Callable<Boolean>} but avoids auto-boxing
 	 * of primitive {@code boolean} values to {@link Boolean} objects.
 	 *
-	 * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+	 * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
 	 * @since 18 Nov 2017
 	 *
 	 */

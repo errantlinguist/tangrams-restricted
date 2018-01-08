@@ -41,7 +41,7 @@ import se.kth.speech.coin.tangrams.iristk.GameState;
 
 /**
  *
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 16 Nov 2016
  *
  */

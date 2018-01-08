@@ -31,7 +31,7 @@ import se.kth.speech.MutablePair;
 import se.kth.speech.OneOffRunnable;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 13 Jan 2017
  *
  */

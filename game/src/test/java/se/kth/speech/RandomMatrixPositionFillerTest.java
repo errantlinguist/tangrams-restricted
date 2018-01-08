@@ -35,7 +35,7 @@ import org.junit.runner.RunWith;
 import com.google.common.collect.Maps;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 16 Mar 2017
  *
  */

@@ -17,7 +17,7 @@
 package se.kth.speech.coin.tangrams.iristk.events;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Aug 6, 2017
  *
  */

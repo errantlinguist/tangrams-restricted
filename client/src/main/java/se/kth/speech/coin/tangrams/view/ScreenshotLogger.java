@@ -35,7 +35,7 @@ import org.slf4j.LoggerFactory;
 import se.kth.speech.awt.ComponentImageCapture;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 17 Jan 2017
  *
  */

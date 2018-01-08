@@ -35,7 +35,7 @@ import it.unimi.dsi.fastutil.ints.IntSet;
 import se.kth.speech.io.RelativePaths;
 
 /**
- * @author <a href="mailto:tcshore@kth.se>Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com>Todd Shore</a>
  * @since 4 May 2017
  *
  */

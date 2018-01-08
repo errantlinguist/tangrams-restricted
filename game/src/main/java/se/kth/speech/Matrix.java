@@ -28,7 +28,7 @@ import java.util.stream.Stream;
  * that the value of the cells themselves is irrelevant; Only their positions in
  * relation to one another are.
  *
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 13 Jan 2017
  * @param <E>
  *            The type used to represent matrix cell data.

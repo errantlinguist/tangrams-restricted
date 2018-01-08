@@ -40,7 +40,7 @@ import se.kth.speech.coin.tangrams.MatrixTests;
 
 /**
  *
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 30 Mar 2017
  * 
  */

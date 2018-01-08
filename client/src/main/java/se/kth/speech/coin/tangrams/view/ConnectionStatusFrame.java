@@ -31,7 +31,7 @@ import javax.swing.JLabel;
 import com.google.common.collect.Maps;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 11 Jan 2017
  *
  */

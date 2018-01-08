@@ -28,7 +28,7 @@ import se.kth.speech.Matrix;
 import se.kth.speech.SpatialMatrix;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 25 Jan 2017
  *
  */

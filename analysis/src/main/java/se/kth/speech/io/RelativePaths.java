@@ -19,7 +19,7 @@ package se.kth.speech.io;
 import java.nio.file.Path;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 11 May 2017
  *
  */

@@ -24,7 +24,7 @@ import se.kth.speech.Lists;
 import se.kth.speech.coin.tangrams.iristk.GameEvent;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 15 May 2017
  *
  */

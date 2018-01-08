@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import iristk.system.Event;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 12 Jan 2017
  *
  */

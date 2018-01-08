@@ -26,7 +26,7 @@ import java.util.function.Supplier;
 import se.kth.speech.MutablePair;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 24 Mar 2017
  * @see <a href="http://stackoverflow.com/a/8184372/1391325">StackOverflow</a>
  */

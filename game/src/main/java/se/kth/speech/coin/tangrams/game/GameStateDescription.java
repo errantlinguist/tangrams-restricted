@@ -22,7 +22,7 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.coin.tangrams.content.ImageVisualizationInfo;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 19 Oct 2017
  *
  */

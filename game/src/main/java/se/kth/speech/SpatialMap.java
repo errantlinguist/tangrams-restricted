@@ -44,7 +44,7 @@ import se.kth.speech.fastutil.TrimmableObject2ObjectMap;
 /**
  * A very rudimentary data structure for searching a two-dimensional space.
  *
- * @author <a href="mailto:tcshore@kth.se>Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com>Todd Shore</a>
  * @since 9 Mar 2017
  *
  */

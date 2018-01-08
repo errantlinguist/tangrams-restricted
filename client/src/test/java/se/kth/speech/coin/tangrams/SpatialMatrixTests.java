@@ -30,7 +30,7 @@ import se.kth.speech.SpatialMatrix;
 import se.kth.speech.SpatialRegion;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 24 Mar 2017
  *
  */

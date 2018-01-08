@@ -26,7 +26,7 @@ import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 17 Mar 2017
  *
  */

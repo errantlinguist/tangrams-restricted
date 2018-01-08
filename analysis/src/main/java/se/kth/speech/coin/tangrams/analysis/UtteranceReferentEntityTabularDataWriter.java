@@ -92,7 +92,7 @@ import se.kth.speech.nlp.MetaLanguage;
 import se.kth.speech.nlp.SnowballPorter2EnglishStopwords;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 4 May 2017
  *
  */

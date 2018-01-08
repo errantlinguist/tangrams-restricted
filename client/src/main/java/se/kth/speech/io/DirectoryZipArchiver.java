@@ -38,7 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 29 Mar 2017
  * @see <a href=
  *      "http://www.oracle.com/technetwork/articles/java/compress-1565076.html">Oracle

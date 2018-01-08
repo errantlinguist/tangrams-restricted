@@ -24,7 +24,7 @@ import org.junit.Test;
  * instantiating
  * {@link se.kth.speech.coin.tangrams.iristk.events.ImageVisualizationInfoDescription}.
  *
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since Jul 5, 2017
  *
  */

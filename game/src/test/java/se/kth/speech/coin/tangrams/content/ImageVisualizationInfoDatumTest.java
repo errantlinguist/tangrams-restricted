@@ -32,7 +32,7 @@ import org.junit.runner.RunWith;
 import se.kth.speech.RandomStringFactory;
 
 /**
- * @author <a href="mailto:tcshore@kth.se">Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com">Todd Shore</a>
  * @since 10 Mar 2017
  *
  */

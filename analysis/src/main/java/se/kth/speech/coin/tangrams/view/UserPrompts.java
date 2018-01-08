@@ -25,7 +25,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
 
 /**
- * @author <a href="mailto:tcshore@kth.se>Todd Shore</a>
+ * @author <a href="mailto:errantlinguist+github@gmail.com>Todd Shore</a>
  * @since 30 Apr 2017
  *
  */
