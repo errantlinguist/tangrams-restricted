@@ -28,6 +28,7 @@ if (!file_test("-f", infile))
 }
 
 ALPHA <- 0.01
+print(sprintf("Using alpha = %f for significance testing.", ALPHA), quote=FALSE)
 
 maxCorefChainLength <- ifelse(length(args) < 2, 6, strtoi(args[2]))
 print(sprintf("Using a maximum coref sequence ordinality of %d.", maxCorefChainLength), quote=FALSE)
