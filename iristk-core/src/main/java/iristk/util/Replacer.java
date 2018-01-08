@@ -104,28 +104,6 @@ public abstract class Replacer implements ReplaceFun {
 		return newExpr;
 	}
 	
-	/**
-	 * Splits the string at the next unbalanced ending parenthesis (exclusive)
-	 * "a (b)) c" => ["a (b)", ") c"]
-	 */
-	public static String[] paraSplit(String str) {
-		int para = 0;
-		String rest = "";
-		for (int i = 0; i < str.length(); i++) {
-			if (str.substring(i, i+1).equals("(")) {
-				para++;
-			} else if (str.substring(i, i+1).equals(")")) {
-				para--;
-				if (para < 0) {
-					rest = str.substring(i);
-					str = str.substring(0, i);
-					break;
-				}
-			} 
-		}
-		return new String[] {str, rest};
-	}
-	
 }
 
 
