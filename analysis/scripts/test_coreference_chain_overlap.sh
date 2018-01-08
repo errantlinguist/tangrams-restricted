@@ -40,7 +40,7 @@ else
 	echo "Writing instructor target referring language to \"${target_ref_utt_file}\"."
 	./write_target_ref_utts.py "${ready_data_dir}" > "${target_ref_utt_file}" 2> "${target_ref_utt_err_file}"
 	exit_code="$?"
-	if "${exit_code}"
+	if [ ${exit_code} -eq 0 ] 
 	then
 	
 		echo "Testing referent within-speaker overlap."
