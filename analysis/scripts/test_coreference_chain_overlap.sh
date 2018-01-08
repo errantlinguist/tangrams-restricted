@@ -38,7 +38,9 @@ else
 	target_ref_utt_file="${outdir}/target_ref_utts_speaker_instructoronly.tsv"
 	target_ref_utt_err_file="${outdir}/target_ref_utts_speaker_instructoronly.err.txt"
 	echo "Writing instructor target referring language to \"${target_ref_utt_file}\"."
-	if ./write_target_ref_utts.py "${ready_data_dir}" > "${target_ref_utt_file}" 2> "${target_ref_utt_err_file}"
+	./write_target_ref_utts.py "${ready_data_dir}" > "${target_ref_utt_file}" 2> "${target_ref_utt_err_file}"
+	exit_code="$?"
+	if "${exit_code}"
 	then
 	
 		echo "Testing referent within-speaker overlap."
@@ -75,6 +77,7 @@ else
 		shape_general_overlap_file=`mktemp --tmpdir "shape-general-convergence-overlap.tsv.XXXXXXXXXXXX"` &&
 		./general_convergence_overlap.py -s "${target_ref_utt_file}" > "${shape_general_overlap_file}" &&
 		./general_convergence_overlap_means.R "${shape_general_overlap_file}" > "${outdir}/shape-general-convergence-overlap-test.txt"
+		exit_code="$?"
 		
 	else
 		echo "Could not write instructor target referring language to \"${target_ref_utt_file}\"; Check error output at \"${target_ref_utt_err_file}\"."
