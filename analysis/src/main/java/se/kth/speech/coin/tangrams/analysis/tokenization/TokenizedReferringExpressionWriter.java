@@ -154,7 +154,7 @@ public final class TokenizedReferringExpressionWriter { // NO_UCD (unused code)
 
 		private static final TokenType DEFAULT_TOKEN_TYPE = TokenType.INFLECTED;
 
-		private static final Tokenization DEFAULT_TOKENIZATION_METHOD = Tokenization.STANFORD_NPS_WITHOUT_PPS;
+		private static final Tokenization DEFAULT_TOKENIZATION_METHOD = Tokenization.STANFORD_BASIC;
 
 		private static final Pattern MULTI_OPT_VALUE_DELIMITER = Pattern.compile("\\s+");
 
