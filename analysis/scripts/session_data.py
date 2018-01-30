@@ -9,7 +9,7 @@ __license__ = "GNU General Public License, Version 3"
 import csv
 from enum import Enum, unique
 import os
-from typing import Dict, Iterator, Iterable, Tuple
+from typing import Dict, Iterator, Iterable, Optional, Tuple
 
 import pandas as pd
 
@@ -76,8 +76,8 @@ __SESSION_DATA_FILENAMES = frozenset(datum.canonical_filename for datum in Sessi
 
 
 class SessionData(object):
-	def __init__(self, name: str, session_file_prefix: str):
-		self.name = name
+	def __init__(self, session_file_prefix: str, name: Optional[str] = None):
+		self.name = os.path.basename(session_file_prefix) if name is None else name
 		self.events = os.path.join(session_file_prefix, SessionDatum.EVENTS.canonical_filename)
 		self.session_metadata = os.path.join(session_file_prefix, SessionDatum.SESSION_METADATA.canonical_filename)
 		self.participant_metadata = os.path.join(session_file_prefix,
@@ -144,7 +144,7 @@ def is_session_dir(filenames: Iterable[str]) -> bool:
 def walk_session_data(inpaths: Iterable[str]) -> Iterator[Tuple[str, SessionData]]:
 	session_dirs = walk_session_dirs(inpaths)
 	# Use the basename of the directory (i.e. the last directory name in the path) as the session name
-	return ((session_dir, SessionData(os.path.basename(session_dir), session_dir)) for session_dir in session_dirs)
+	return ((session_dir, SessionData(session_dir)) for session_dir in session_dirs)
 
 
 def walk_session_dirs(inpaths: Iterable[str]) -> Iterator[str]:
