@@ -38,8 +38,9 @@ class ScreenshotData(object):
 		self.ordered_times = []
 		for root_dirpath, _, filenames in os.walk(dirpath, followlinks=True):
 			for filename in filenames:
-				screenshot_time = parse_screenshot_timestamp(filename)
-				if screenshot_time is not None:
+				screenshot_timestamp = parse_screenshot_timestamp(filename)
+				if screenshot_timestamp is not None:
+					screenshot_time = parse_screenshot_time(screenshot_timestamp)
 					self.files_by_time[screenshot_time].append(filename)
 					self.ordered_times.append(screenshot_time)
 
@@ -57,16 +58,14 @@ def parse_screenshot_time(timestamp: str) -> datetime.time:
 	return d.time()
 
 
-def parse_screenshot_timestamp(filename: str) -> Optional[datetime.time]:
+def parse_screenshot_timestamp(filename: str) -> Optional[str]:
 	match = GAME_ROUND_SCREENSHOT_FILENAME_PATTERN.match(filename)
 	if match:
-		timestamp = match.group(2)
-		result = parse_screenshot_time(timestamp)
+		result = match.group(2)
 	else:
 		match = SELECTION_SCREENSHOT_FILENAME_PATTERN.match(filename)
 		if match:
-			timestamp = match.group(2)
-			result = parse_screenshot_time(timestamp)
+			result = match.group(2)
 		else:
 			result = None
 	return result
