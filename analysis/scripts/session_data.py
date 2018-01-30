@@ -83,6 +83,7 @@ class SessionData(object):
 		self.participant_metadata = os.path.join(session_file_prefix,
 												 SessionDatum.PARTICIPANT_METADATA.canonical_filename)
 		self.utts = os.path.join(session_file_prefix, SessionDatum.UTTERANCES.canonical_filename)
+		self.screenshot_dir = os.path.join(session_file_prefix, "screenshots")
 
 	@property
 	def __key(self):
