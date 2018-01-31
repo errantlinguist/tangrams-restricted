@@ -102,7 +102,7 @@ final class InteractiveGameViewFrameFactory implements Function<InteractiveGameV
 		this.backgroundJobService = backgroundJobService;
 		this.analysisEnabled = analysisEnabled;
 	}
-
+	
 	@Override
 	public InteractiveGameViewFrame apply(final Parameters params) {
 		LOGGER.debug("Creating view components.");
@@ -130,8 +130,9 @@ final class InteractiveGameViewFrameFactory implements Function<InteractiveGameV
 
 		for (final ListIterator<ImageVisualizationInfo.Datum> imgVizInfoDataIter = imgVizInfoData
 				.listIterator(); imgVizInfoDataIter.hasNext();) {
-			final int id = imgVizInfoDataIter.nextIndex();
 			final ImageVisualizationInfo.Datum imgVisualizationInfoDatum = imgVizInfoDataIter.next();
+			// Entity IDs are 1-indexed
+			final int id = imgVizInfoDataIter.nextIndex();
 			final ImageVisualizationInfo.Datum oldVizInfo = imgVisualizationInfoDataById.put(id,
 					imgVisualizationInfoDatum);
 			assert oldVizInfo == null;
