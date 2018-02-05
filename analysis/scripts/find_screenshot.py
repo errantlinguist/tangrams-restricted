@@ -19,7 +19,7 @@ from typing import Optional
 
 import dateutil.parser
 
-import session_data as sd
+from common import session_data as sd
 
 GAME_ROUND_SCREENSHOT_FILENAME_PATTERN = re.compile("round-([^-]+)-([^-]+)-([^.]+?)\\.png")
 SELECTION_SCREENSHOT_FILENAME_PATTERN = re.compile("selection-entity-id([^-]+)-([^-]+)-([^.]+?)\\.png")

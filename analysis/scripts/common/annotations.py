@@ -14,7 +14,7 @@ from xml.sax.saxutils import escape
 import lxml.builder
 import lxml.etree as etree
 
-import xml_files
+from common import xml_files
 
 HAT_DATA_NAMESPACE = "http://www.speech.kth.se/higgins/2005/annotation/"
 HAT_DATA_NAMESPACE_NAME = "hat"

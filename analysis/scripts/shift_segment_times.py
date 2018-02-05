@@ -17,8 +17,8 @@ from typing import IO, Iterable
 
 from lxml import etree
 
-from annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
-from etree_printing import print_etree_to_file
+from common.annotations import AnnotationParser, HAT_DATA_NAMESPACE, QNameStringFactory
+from common.etree_printing import print_etree_to_file
 
 
 def shift_segment_times(segments: Iterable[etree.Element], addend: Number):

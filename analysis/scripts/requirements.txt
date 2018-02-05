@@ -1,0 +1,6 @@
+lxml
+pandas
+python-dateutil
+nltk
+numpy
+packaging

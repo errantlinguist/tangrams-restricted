@@ -23,8 +23,7 @@ from typing import Any, Iterable, Sequence, Tuple, TypeVar
 import packaging.version
 import pandas as pd
 
-import session_data as sd
-import utterances
+from common import session_data as sd, utterances
 
 DYAD_COL_NAME = "DYAD"
 OUTPUT_FILE_DIALECT = csv.excel_tab

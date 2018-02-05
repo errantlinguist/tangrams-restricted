@@ -10,16 +10,13 @@ __license__ = "GNU General Public License, Version 3"
 
 import argparse
 import csv
-import os
 import sys
 from typing import Any, Dict, List, Mapping, Tuple
 
 import numpy as np
 import pandas as pd
 
-import alignment_metrics
-import session_data as sd
-import utterances
+from common import alignment_metrics, session_data as sd, utterances
 import write_target_ref_utts
 from coreference_chain_overlap import TokenTypeOverlapColumn, read_event_utts
 

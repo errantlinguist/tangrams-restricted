@@ -15,7 +15,7 @@ import csv
 import json
 import sys
 
-import iristk
+from common import iristk
 
 OUTPUT_CSV_DIALECT = csv.excel_tab
 
