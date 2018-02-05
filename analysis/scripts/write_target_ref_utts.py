@@ -23,7 +23,7 @@ from typing import Any, Iterable, Sequence, Tuple, TypeVar
 import packaging.version
 import pandas as pd
 
-from common import session_data as sd, utterances
+from tangrams_analysis import session_data as sd, utterances
 
 DYAD_COL_NAME = "DYAD"
 OUTPUT_FILE_DIALECT = csv.excel_tab

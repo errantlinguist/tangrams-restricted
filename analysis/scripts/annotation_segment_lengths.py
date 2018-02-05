@@ -13,8 +13,8 @@ import sys
 import xml.etree.ElementTree
 from typing import Iterable, List, Tuple
 
-from common.annotations import ANNOTATION_NAMESPACES
-from common.xml_files import walk_xml_files
+from tangrams_analysis.annotations import ANNOTATION_NAMESPACES
+from tangrams_analysis.xml_files import walk_xml_files
 
 
 def read_segments(infile_paths: Iterable[str]) -> List[Tuple[str, str, Tuple[str, ...]]]:

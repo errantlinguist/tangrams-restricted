@@ -17,8 +17,8 @@ from typing import Dict, Iterable, List, Tuple
 
 import nltk
 
-from common.annotations import ANNOTATION_NAMESPACES
-from common.xml_files import walk_xml_files
+from tangrams_analysis.annotations import ANNOTATION_NAMESPACES
+from tangrams_analysis.xml_files import walk_xml_files
 
 
 class CachingPosTagger(object):

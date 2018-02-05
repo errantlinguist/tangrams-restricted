@@ -16,7 +16,7 @@ from typing import Any, Dict, List, Mapping, Tuple
 import numpy as np
 import pandas as pd
 
-from common import alignment_metrics, session_data as sd, utterances
+from tangrams_analysis import alignment_metrics, session_data as sd, utterances
 import write_target_ref_utts
 from coreference_chain_overlap import TokenTypeOverlapColumn, read_event_utts
 

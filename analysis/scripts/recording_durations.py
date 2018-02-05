@@ -16,8 +16,8 @@ from decimal import Decimal
 from typing import IO, Iterable, Tuple, Set
 from xml.etree.ElementTree import parse as parse_etree
 
-from common import annotations
-from common.xml_files import walk_xml_files
+from tangrams_analysis import annotations
+from tangrams_analysis.xml_files import walk_xml_files
 
 
 def parent_dir(infile_path: str) -> str:

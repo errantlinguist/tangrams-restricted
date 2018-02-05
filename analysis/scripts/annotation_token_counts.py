@@ -14,8 +14,8 @@ import sys
 import xml.etree.ElementTree
 from typing import Dict, Iterable
 
-from common.annotations import ANNOTATION_NAMESPACES
-from common.xml_files import walk_xml_files
+from tangrams_analysis.annotations import ANNOTATION_NAMESPACES
+from tangrams_analysis.xml_files import walk_xml_files
 
 
 def count_tokens(infile_paths: Iterable[str]) -> Dict[str, int]:

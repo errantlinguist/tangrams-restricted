@@ -17,7 +17,7 @@ from collections import namedtuple
 from enum import Enum, unique
 from typing import Iterable, Mapping, Match
 
-from common import iristk, java_properties_files, session_data as sd
+from tangrams_analysis import iristk, java_properties_files, session_data as sd
 
 ANONYMIZED_PARTICIPANT_IDS = ("A", "B")
 

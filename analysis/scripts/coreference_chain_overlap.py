@@ -19,7 +19,7 @@ from typing import FrozenSet, Iterable, Mapping, Tuple
 import numpy as np
 import pandas as pd
 
-from common import alignment_metrics, session_data as sd, utterances
+from tangrams_analysis import alignment_metrics, session_data as sd, utterances
 import write_target_ref_utts
 
 INFILE_DTYPES = {**sd.EVENT_FILE_DTYPES, utterances.UtteranceTabularDataColumn.DIALOGUE_ROLE.value: "category",
