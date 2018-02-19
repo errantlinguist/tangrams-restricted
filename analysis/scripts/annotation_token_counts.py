@@ -12,7 +12,7 @@ import collections
 import csv
 import sys
 import xml.etree.ElementTree
-from typing import Dict, Iterable
+from typing import DefaultDict, Dict, Iterable, Set
 
 from tangrams_analysis.annotations import ANNOTATION_NAMESPACES
 from tangrams_analysis.xml_files import walk_xml_files
@@ -30,10 +30,33 @@ def count_tokens(infile_paths: Iterable[str]) -> Dict[str, int]:
 	return result
 
 
+def equal_casings(tokens: Iterable[str]) -> DefaultDict[str, Set[str]]:
+	result = collections.defaultdict(set)
+	token_tuple = tuple(tokens)
+	for i, t1 in enumerate(token_tuple):
+		t1_casefolded = t1.casefold()
+		for j, t2 in enumerate(token_tuple):
+			if i != j and t2 not in result:
+				t2_casefolded = t2.casefold()
+				if t1_casefolded == t2_casefolded:
+					result[t1].add(t2)
+	return result
+
+
 def __main(inpaths: Iterable[str]):
 	infiles = walk_xml_files(*inpaths)
 	token_counts = count_tokens(infiles)
 	print("Found {} unique token(s).".format(len(token_counts)), file=sys.stderr)
+	casing_dict = equal_casings(token_counts.keys())
+	if casing_dict:
+		print("Found {} tokens with multiple casings.".format(len(casing_dict)), file=sys.stderr)
+		# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
+		err_writer = csv.writer(sys.stderr, dialect=csv.excel_tab, lineterminator="\n")
+		err_writer.writerow(("TOKEN", "OTHER_CASINGS"))
+		for token, other_casings in sorted(casing_dict.items(), key=lambda item: item[0]):
+			casing_str = ", ".join(sorted(other_casings))
+			err_writer.writerow((token, casing_str))
+
 	# https://pythonconquerstheuniverse.wordpress.com/2011/05/08/newline-conversion-in-python-3/
 	writer = csv.writer(sys.stdout, dialect=csv.excel_tab, lineterminator="\n")
 	writer.writerow(("TOKEN", "COUNT"))
