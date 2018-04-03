@@ -36,10 +36,11 @@
 % \verb doesn't work 
 
 \newcommand{\corpusname}{KTH Tangrams}
+\newcommand{\corpusversion}{\mbox{v1.0.2}}
 
 \begin{document}
 
-\title{\corpusname{} Corpus Overview}
+\title{\corpusname{} Corpus \corpusversion{} Overview}
 \author{Todd Shore \\
 KTH Speech, Music and Hearing \\
 Stockholm, Sweden \\
@@ -51,7 +52,7 @@ Stockholm, Sweden \\
 
 \section{Introduction}
 
-This document describes the corpus \emph{\corpusname{}}, which is a collection of task-oriented dialogues situated in an online board game between two human participants. This collection was done as part of the project \emph{Co-adaptive human-robot interactive systems} (COIN) (\enquote{\"Omsesidig adaption i system f\"or m\"anniska-robotinteraktion}), funded by the Swedish Foundation for Strategic Research from \DTMdate{2016-07-01} to \DTMdate{2021-06-30} (reference number {RIT15-0133}).
+This document describes the corpus \emph{\corpusname{}}, which is a collection of task-oriented dialogues situated in an online board game between two human participants. This was done as part of the project COIN --- \emph{Co-adaptive human-robot interactive systems} (\enquote{\"Omsesidig adaption i system f\"or \linebreak m\"anniska-robotinteraktion}), funded by the Swedish Foundation for Strategic Research from \DTMdate{2016-07-01} to \DTMdate{2021-06-30} (reference number \mbox{RIT15-0133}).
 
 Each dialogue in the corpus consists of a pair of participants which alternately assume the roles of \term{instructor}, who has a visual cue of which piece is to be selected on a shared game board, and \term{manipulator}, who must select the piece in question with the help of the instructor's commands (see Figure~\ref{fig:experiment_setup}). These roles are analogous to those of director and matcher in traditional reference communication tasks, with the terms defined by \textcite{Schober&Clark:1989} but the task itself originating from \textcite{Krauss&Weinheimer:1964}. For further information on the experimental setup, see \fullcite{Shore&al:2018}.
 
@@ -62,6 +63,16 @@ Each dialogue in the corpus consists of a pair of participants which alternately
 		\label{fig:experiment_setup}
 	\end{center}
 \end{figure}
+
+\section{Version}
+
+This document is intended for \corpusname{} \corpusversion{}. The versioning scheme follows \inlinecode{MAJOR.MINOR.PATCH}:
+
+\begin{description}
+	\item[\inlinecode{MAJOR}] denotes changes to the dataset structure and\slash{}or annotation scheme.
+	\item[\inlinecode{MINOR}] denotes changes in the amount of data present, e.g.\ by adding more dialogue.
+	\item[\inlinecode{PATCH}] denotes changes in the transcriptions\slash{}annotations for previously-existing dialogues, e.g.\ fixing transcription errors.
+\end{description}
 
 \section{Data Structure}
 
