@@ -106,7 +106,7 @@ public final class SessionStatisticsWriter // NO_UCD (unused code)
 		MINUTES(MINUTES_OPT_NAME) {
 			@Override
 			public Option get() {
-				return Option.builder(optName).longOpt("mintes")
+				return Option.builder(optName).longOpt("minutes")
 						.desc("Prints statistics in \"mm:ss.SSS\" notation rather than in seconds as decimal fractions.")
 						.build();
 			};
